@@ -1,0 +1,106 @@
+# Comprobantes, notas de credito, devoluciones y envio a SUNAT. Aislado porque SUNAT es lento y se cae, y eso nunca puede parar una caja.
+spring:
+  application:
+    name: ms-facturacion
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:pg_facturacion}
+    username: ${DB_USER:u_facturacion}
+    password: ${DB_PASSWORD:}
+    hikari:
+      # 20 conexiones por pod. Con 6 replicas son 120 contra esta base, que es la mitad
+      # del techo de un Postgres sin pgbouncer. Subirlo sin medir es como se llega al
+      # "too many connections" un viernes por la tarde.
+      maximum-pool-size: ${DB_POOL:20}
+      connection-timeout: 3000
+      leak-detection-threshold: 20000
+  jpa:
+    open-in-view: false        # abrir la sesion en la vista retiene una conexion por request
+    hibernate:
+      ddl-auto: validate       # el esquema lo manda Flyway, nunca Hibernate
+    properties:
+      hibernate.jdbc.batch_size: 50
+      hibernate.order_inserts: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      acks: all                # sin esto, un broker caido pierde eventos ya confirmados
+      properties:
+        enable.idempotence: true
+        max.in.flight.requests.per.connection: 5
+    consumer:
+      group-id: ms-facturacion
+      auto-offset-reset: earliest
+      enable-auto-commit: false   # el offset se confirma cuando el efecto ya ocurrio
+      properties:
+        isolation.level: read_committed
+    listener:
+      ack-mode: manual_immediate
+      concurrency: 3
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      timeout: 200ms
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          # Validacion local con la clave publica cacheada. Cero llamadas a identidad
+          # por request: si identidad se cae, las cajas siguen vendiendo.
+          jwk-set-uri: ${JWKS_URI:http://localhost:8081/.well-known/jwks.json}
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful             # terminar la venta en vuelo antes de morir
+  tomcat:
+    threads:
+      max: 200
+    accept-count: 100
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true            # readiness y liveness para Kubernetes
+      show-details: when-authorized
+  metrics:
+    tags:
+      servicio: ms-facturacion
+  tracing:
+    sampling:
+      probability: ${TRACE_SAMPLING:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://localhost:4318/v1/traces}
+
+pos:
+  # SUNAT: "mock" levanta el simulador con latencia y fallas reales. Para el ambiente
+  # de pruebas de SUNAT, poner aqui la URL del OSE.
+  sunat:
+    url: ${SUNAT_URL:mock}
+    latencia-ms: ${SUNAT_LATENCIA_MS:800}
+    tasa-falla: ${SUNAT_TASA_FALLA:0.15}
+    intervalo-ms: 5000
+  outbox:
+    habilitado: true
+    intervalo-ms: 200
+    tamano-lote: 200
+
+logging:
+  pattern:
+    # traceId y spanId en cada linea: sin esto, una saga que falla en el cuarto
+    # consumidor es imposible de seguir en Loki.
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"
+
+spring.cloud.circuitbreaker.resilience4j:
+  # Sin esto, el circuit breaker ejecuta en su propio pool y el SecurityContext (que
+  # es un ThreadLocal) no llega al interceptor que adjunta el JWT: toda llamada entre
+  # servicios sale sin token. El timeout real lo pone cada cliente HTTP por destino.
+  disable-thread-pool: true

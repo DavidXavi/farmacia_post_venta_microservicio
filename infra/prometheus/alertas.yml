@@ -1,0 +1,79 @@
+# Alertas que despiertan a alguien.
+#
+# Nada de "CPU al 80%". Cada una de estas significa que algo del negocio esta mal o a
+# punto de estarlo, y tiene una accion clara asociada. Una alerta que nadie sabe que
+# hacer con ella se ignora a las dos semanas y entrena al equipo a ignorar el resto.
+groups:
+  - name: pos-camino-de-venta
+    rules:
+      - alert: ConfirmarVentaLenta
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_server_requests_seconds_bucket{uri=~".*confirmar.*"}[5m])) by (le)
+          ) > 0.5
+        for: 5m
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "p99 de confirmar venta por encima de 500 ms"
+          accion: "Revisar latencia de ms-inventario y ms-credito, que son las dos llamadas sincronas del camino critico."
+
+      - alert: CircuitoAbierto
+        expr: resilience4j_circuitbreaker_state{state="open"} == 1
+        for: 1m
+        labels:
+          severidad: alta
+        annotations:
+          resumen: "Circuito abierto hacia {{ $labels.name }}"
+          accion: "El servicio destino esta fallando. Verificar si la degradacion es la esperada o si esta bloqueando ventas."
+
+  - name: pos-consistencia
+    rules:
+      - alert: OutboxAtrasado
+        expr: outbox_antiguedad_segundos > 60
+        for: 2m
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "Evento sin publicar hace {{ $value }} s en {{ $labels.servicio }}"
+          accion: "Ventas confirmadas que no llegan a inventario ni facturacion. Revisar Kafka. Si es sostenido, toca pasar a Debezium."
+
+      - alert: LagDeConsumidor
+        expr: kafka_consumer_fetch_manager_records_lag_max > 10000
+        for: 5m
+        labels:
+          severidad: alta
+        annotations:
+          resumen: "Lag de {{ $value }} mensajes en {{ $labels.client_id }}"
+          accion: "Escalar replicas del consumidor o revisar por que procesa lento."
+
+      - alert: MensajesEnDLQ
+        expr: increase(kafka_consumer_dlq_total[10m]) > 0
+        for: 1m
+        labels:
+          severidad: critica
+        annotations:
+          resumen: "Mensajes en cola muerta de {{ $labels.topic }}"
+          accion: "Un evento agoto sus tres reintentos. Revisar el payload y reprocesar a mano."
+
+      - alert: CompensacionesDeSaga
+        expr: |
+          rate(saga_venta_compensada_total[10m])
+          / rate(saga_venta_iniciada_total[10m]) > 0.01
+        for: 5m
+        labels:
+          severidad: alta
+        annotations:
+          resumen: "Mas del 1% de las ventas se esta compensando"
+          accion: "Algo falla de forma sistematica en inventario o credito, no es ruido."
+
+  - name: pos-sunat
+    rules:
+      - alert: ComprobantesPendientes
+        expr: comprobantes_pendientes_total > 500 or comprobantes_antiguedad_minutos > 30
+        for: 10m
+        labels:
+          severidad: alta
+        annotations:
+          resumen: "{{ $value }} comprobantes sin enviar a SUNAT"
+          accion: "Verificar si SUNAT esta caida. Las ventas siguen: esto no para cajas, pero hay obligacion tributaria pendiente."

@@ -1,0 +1,125 @@
+---
+# El mas leido del sistema. Lectura pura y cacheable: escala lineal con replicas.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ms-catalogo
+  labels:
+    app: ms-catalogo
+    parte-de: pos-farmacia
+spec:
+  replicas: 6
+  selector:
+    matchLabels:
+      app: ms-catalogo
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0     # cero caida durante el despliegue: las cajas no se enteran
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: ms-catalogo
+    spec:
+      # 30 s para terminar la venta en vuelo antes de morir. Sin esto, un despliegue a
+      # media tarde corta transacciones a la mitad.
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ms-catalogo
+          image: pos-farmacia/ms-catalogo:1.0.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+              name: http
+          envFrom:
+            - configMapRef:
+                name: pos-comun
+            - secretRef:
+                name: pos-secretos
+          env:
+            - name: DB_NAME
+              value: "pg_catalogo"
+            - name: DB_USER
+              value: "u_catalogo"
+            - name: DB_HOST
+              value: "postgres-catalogo"
+
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "200m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+          # readiness en false mientras el consumidor de Kafka no tomo sus particiones:
+          # un pod que recibe trafico antes de estar listo devuelve errores que parecen
+          # del servicio y son del despliegue.
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 15
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                # Dar tiempo a que el Service deje de enrutar antes de cerrar.
+                command: ["sh", "-c", "sleep 5"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ms-catalogo
+  labels:
+    app: ms-catalogo
+spec:
+  selector:
+    app: ms-catalogo
+  ports:
+    - port: 8080
+      targetPort: 8080
+      name: http
+---
+# Que nunca se quede en cero replicas por un drain de nodo.
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: ms-catalogo
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: ms-catalogo
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ms-catalogo
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ms-catalogo
+  minReplicas: 6
+  maxReplicas: 24
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      # Bajar despacio: un pico de mediodia no debe provocar un desescalado que deje
+      # al sistema corto en el pico de la tarde.
+      stabilizationWindowSeconds: 300

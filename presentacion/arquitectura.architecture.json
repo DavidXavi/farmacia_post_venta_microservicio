@@ -1,0 +1,491 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "POS Farmacia: nueve microservicios, una base por servicio",
+    "output": "arquitectura.html",
+    "quality_profile": "showcase",
+    "viewBox": [
+      1380,
+      668
+    ],
+    "views": [
+      {
+        "id": "camino-de-venta",
+        "label": "Camino de la venta",
+        "focus": [
+          "caja",
+          "gateway",
+          "ventas",
+          "catalogo",
+          "inventario"
+        ],
+        "note": "Lo que pasa mientras el cajero escanea y cobra. Solo stock y credito pueden frenarla."
+      },
+      {
+        "id": "saga",
+        "label": "Saga y compensacion",
+        "focus": [
+          "ventas",
+          "kafka",
+          "facturacion",
+          "reportes",
+          "inventario"
+        ],
+        "note": "La venta se confirma local y los cuatro consumidores se enteran despues, por evento."
+      },
+      {
+        "id": "sunat",
+        "label": "Aislamiento de SUNAT",
+        "focus": [
+          "kafka",
+          "facturacion",
+          "rabbitmq",
+          "sunat"
+        ],
+        "note": "SUNAT caida significa comprobantes encolados, nunca cajas paradas."
+      },
+      {
+        "id": "degradables",
+        "label": "Dependencias degradables",
+        "focus": [
+          "ventas",
+          "clientes",
+          "promociones",
+          "redis"
+        ],
+        "note": "Si no responden, la venta sigue: sin descuento o como anonima."
+      }
+    ]
+  },
+  "components": [
+    {
+      "id": "caja",
+      "type": "external",
+      "label": "Caja POS",
+      "sublabel": "React en navegador",
+      "tag": "1500 terminales",
+      "pos": [
+        42,
+        210
+      ],
+      "size": [
+        140,
+        56
+      ]
+    },
+    {
+      "id": "gateway",
+      "type": "security",
+      "label": "api-gateway",
+      "sublabel": "valida JWT, rate limit",
+      "tag": "unico puerto expuesto",
+      "pos": [
+        232,
+        206
+      ],
+      "size": [
+        170,
+        64
+      ]
+    },
+    {
+      "id": "identidad",
+      "type": "backend",
+      "label": "ms-identidad",
+      "sublabel": "login, MFA, JWKS",
+      "tag": "pg_identidad",
+      "pos": [
+        232,
+        60
+      ],
+      "size": [
+        170,
+        58
+      ]
+    },
+    {
+      "id": "ventas",
+      "type": "backend",
+      "label": "ms-ventas",
+      "sublabel": "orquesta la saga",
+      "tag": "pg_ventas",
+      "pos": [
+        472,
+        200
+      ],
+      "size": [
+        175,
+        76
+      ]
+    },
+    {
+      "id": "catalogo",
+      "type": "backend",
+      "label": "ms-catalogo",
+      "sublabel": "productos y precios",
+      "tag": "pg_catalogo",
+      "pos": [
+        892,
+        54
+      ],
+      "size": [
+        180,
+        58
+      ]
+    },
+    {
+      "id": "clientes",
+      "type": "backend",
+      "label": "ms-clientes",
+      "sublabel": "clientes, seguros, recetas",
+      "tag": "pg_clientes",
+      "pos": [
+        892,
+        130
+      ],
+      "size": [
+        180,
+        58
+      ]
+    },
+    {
+      "id": "credito",
+      "type": "backend",
+      "label": "ms-credito",
+      "sublabel": "linea y ledger",
+      "tag": "pg_credito",
+      "pos": [
+        892,
+        206
+      ],
+      "size": [
+        180,
+        58
+      ]
+    },
+    {
+      "id": "promociones",
+      "type": "backend",
+      "label": "ms-promociones",
+      "sublabel": "evalua descuentos",
+      "tag": "pg_promociones",
+      "pos": [
+        892,
+        282
+      ],
+      "size": [
+        180,
+        58
+      ]
+    },
+    {
+      "id": "inventario",
+      "type": "backend",
+      "label": "ms-inventario",
+      "sublabel": "stock, reservas, FEFO",
+      "tag": "pg_inventario",
+      "pos": [
+        892,
+        358
+      ],
+      "size": [
+        180,
+        62
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "cache e idempotencia",
+      "pos": [
+        42,
+        330
+      ],
+      "size": [
+        150,
+        56
+      ]
+    },
+    {
+      "id": "observabilidad",
+      "type": "cloud",
+      "label": "Observabilidad",
+      "sublabel": "OTel, Prometheus, Tempo",
+      "pos": [
+        42,
+        450
+      ],
+      "size": [
+        170,
+        60
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Apache Kafka",
+      "sublabel": "eventos, particion por local",
+      "tag": "outbox transaccional",
+      "pos": [
+        472,
+        450
+      ],
+      "size": [
+        230,
+        60
+      ]
+    },
+    {
+      "id": "reportes",
+      "type": "backend",
+      "label": "ms-reportes",
+      "sublabel": "read model CQRS",
+      "tag": "pg_reportes",
+      "pos": [
+        472,
+        560
+      ],
+      "size": [
+        180,
+        58
+      ]
+    },
+    {
+      "id": "rabbitmq",
+      "type": "messagebus",
+      "label": "RabbitMQ",
+      "sublabel": "cola de emision",
+      "pos": [
+        692,
+        560
+      ],
+      "size": [
+        155,
+        56
+      ]
+    },
+    {
+      "id": "facturacion",
+      "type": "backend",
+      "label": "ms-facturacion",
+      "sublabel": "comprobantes y notas",
+      "tag": "pg_facturacion",
+      "pos": [
+        912,
+        560
+      ],
+      "size": [
+        180,
+        58
+      ]
+    },
+    {
+      "id": "sunat",
+      "type": "external",
+      "label": "SUNAT / OSE",
+      "sublabel": "lento y se cae",
+      "pos": [
+        1192,
+        560
+      ],
+      "size": [
+        150,
+        58
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Cluster Kubernetes: pos-farmacia",
+      "wraps": [
+        "gateway",
+        "identidad",
+        "ventas",
+        "catalogo",
+        "clientes",
+        "credito",
+        "promociones",
+        "inventario",
+        "redis",
+        "observabilidad",
+        "kafka",
+        "reportes",
+        "rabbitmq",
+        "facturacion"
+      ]
+    },
+    {
+      "kind": "security-group",
+      "label": "Camino critico: sin esto no hay venta",
+      "wraps": [
+        "ventas",
+        "inventario"
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "caja-gateway",
+      "from": "caja",
+      "to": "gateway",
+      "label": "HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "gateway-ventas",
+      "from": "gateway",
+      "to": "ventas",
+      "label": "/api/ventas",
+      "variant": "emphasis",
+      "labelDy": -22
+    },
+    {
+      "id": "gateway-identidad",
+      "from": "gateway",
+      "to": "identidad",
+      "label": "login"
+    },
+    {
+      "id": "jwks",
+      "from": "identidad",
+      "to": "ventas",
+      "label": "JWKS",
+      "variant": "security",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "ventas-catalogo",
+      "from": "ventas",
+      "to": "catalogo",
+      "label": "precio",
+      "labelSegment": 2
+    },
+    {
+      "id": "ventas-clientes",
+      "from": "ventas",
+      "to": "clientes",
+      "label": "cliente",
+      "variant": "dashed",
+      "labelSegment": 2
+    },
+    {
+      "id": "ventas-credito",
+      "from": "ventas",
+      "to": "credito",
+      "label": "credito",
+      "labelAt": [
+        857,
+        228
+      ]
+    },
+    {
+      "id": "ventas-promociones",
+      "from": "ventas",
+      "to": "promociones",
+      "label": "descuentos",
+      "variant": "dashed",
+      "labelSegment": 2
+    },
+    {
+      "id": "ventas-inventario",
+      "from": "ventas",
+      "to": "inventario",
+      "label": "reservar stock",
+      "variant": "emphasis",
+      "labelSegment": 2
+    },
+    {
+      "id": "ventas-kafka",
+      "from": "ventas",
+      "to": "kafka",
+      "label": "VentaConfirmada",
+      "variant": "emphasis",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "kafka-reportes",
+      "from": "kafka",
+      "to": "reportes",
+      "label": "proyecta read model",
+      "fromSide": "bottom",
+      "toSide": "top"
+    },
+    {
+      "id": "kafka-facturacion",
+      "from": "kafka",
+      "to": "facturacion",
+      "label": "emite CPE",
+      "fromSide": "right",
+      "toSide": "top"
+    },
+    {
+      "id": "facturacion-rabbit",
+      "from": "facturacion",
+      "to": "rabbitmq",
+      "label": "encola",
+      "variant": "dashed"
+    },
+    {
+      "id": "facturacion-sunat",
+      "from": "facturacion",
+      "to": "sunat",
+      "label": "reintentos"
+    },
+    {
+      "id": "gateway-redis",
+      "from": "gateway",
+      "to": "redis",
+      "label": "rate limit",
+      "variant": "dashed",
+      "labelAt": [
+        282,
+        390
+      ]
+    },
+    {
+      "id": "gateway-observabilidad",
+      "from": "gateway",
+      "to": "observabilidad",
+      "label": "trazas y metricas",
+      "variant": "dashed",
+      "labelAt": [
+        282,
+        530
+      ]
+    }
+  ],
+  "cards": [
+    {
+      "dot": "cyan",
+      "title": "Una base por servicio",
+      "items": [
+        "Nueve Postgres: ninguna consulta cruza el limite",
+        "La regla la impone el motor, no el equipo: sin GRANT cruzado",
+        "El JOIN entre contextos se pierde y se recupera en ms-reportes"
+      ]
+    },
+    {
+      "dot": "emerald",
+      "title": "Solo stock y credito frenan una venta",
+      "items": [
+        "Criticas: inventario 500 ms, credito 800 ms",
+        "Degradables: promociones y clientes 300 ms, la venta sigue",
+        "SUNAT caida: comprobante encolado y la caja sigue cobrando"
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Saga, outbox e idempotencia",
+      "items": [
+        "Confirmar venta: transaccion local mas un evento en outbox",
+        "Reservar stock: un update condicional atomico por (producto, local)",
+        "Idempotency-Key en Redis: el reintento del POS no cobra dos veces"
+      ]
+    }
+  ]
+}

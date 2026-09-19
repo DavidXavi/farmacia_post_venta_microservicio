@@ -1,0 +1,463 @@
+# Sistema POS Farmacia en microservicios.
+#
+# Tres perfiles, para no obligar a levantar 20 contenedores cuando quieres probar una venta:
+#
+#   docker compose up -d --build
+#       ~3.8 GB   camino de venta: postgres, kafka, redis, gateway, identidad,
+#                 catalogo, inventario, ventas, frontend
+#
+#   docker compose --profile completo up -d --build
+#       ~6.3 GB   los nueve servicios, Schema Registry, Kafka UI, RabbitMQ
+#
+#   docker compose --profile completo --profile observabilidad up -d --build
+#       ~7.5 GB   + Prometheus, Grafana, Tempo, Loki, OTel Collector
+#
+# Los limites de memoria estan puestos servicio por servicio. No es decoracion: sin
+# ellos, diez JVM con heap elastico se reparten toda la RAM de la laptop y el sistema
+# empieza a hacer swap justo cuando quieres medir latencia.
+
+name: pos-farmacia-micro
+
+x-jvm-limite: &jvm-limite
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+      reservations:
+        memory: 256M
+
+x-env-comun: &env-comun
+  DB_HOST: postgres
+  DB_PORT: "5432"
+  DB_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
+  KAFKA_BOOTSTRAP: kafka:29092
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  JWKS_URI: http://ms-identidad:8080/.well-known/jwks.json
+  OTLP_ENDPOINT: http://otel-collector:4318/v1/traces
+  TRACE_SAMPLING: "1.0"   # en local se muestrea todo; en produccion 0.1
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # Infraestructura
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?define DB_PASSWORD en .env}
+      POSTGRES_DB: postgres
+      POS_DB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./infra/postgres/init-bases.sh:/docker-entrypoint-initdb.d/10-init-bases.sh:ro
+    command:
+      # Valores para una laptop, no para produccion. shared_buffers al 25% de la RAM
+      # asignada al contenedor es la regla habitual.
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - max_connections=300
+      - -c
+      - work_mem=8MB
+    ports:
+      - "5452:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    deploy:
+      resources:
+        limits:
+          memory: 768M
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--maxmemory", "256mb", "--maxmemory-policy", "allkeys-lru"]
+    ports:
+      - "6380:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  kafka:
+    image: confluentinc/cp-kafka:7.6.1
+    # KRaft: sin Zookeeper. Un contenedor menos y un giga menos de RAM que la
+    # version anterior del proyecto, que todavia usaba Zookeeper.
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:29093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,CONTROLLER://0.0.0.0:29093,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9096
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # Kafka exige un UUID de 16 bytes en base64 url-safe (22 caracteres). Una
+      # cadena legible no vale: el broker se niega a arrancar. Es constante para
+      # que reiniciar no invalide el volumen de datos.
+      CLUSTER_ID: f5wrpOiPSfWaHj0MW2p-IQ
+    ports:
+      - "9096:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "kafka-broker-api-versions --bootstrap-server localhost:29092"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry:7.6.1
+    profiles: [completo]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: kafka:29092
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+      # Compatibilidad hacia atras: un productor nuevo no puede romper consumidores
+      # viejos. Es el modo de falla mas comun y mas caro de los sistemas por eventos.
+      SCHEMA_REGISTRY_SCHEMA_COMPATIBILITY_LEVEL: BACKWARD
+    ports:
+      - "8091:8081"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    profiles: [completo]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    environment:
+      KAFKA_CLUSTERS_0_NAME: pos-farmacia
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_SCHEMAREGISTRY: http://schema-registry:8081
+      DYNAMIC_CONFIG_ENABLED: "true"
+    ports:
+      - "8092:8080"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    profiles: [completo]
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-posfarmacia}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?define RABBITMQ_PASSWORD en .env}
+    ports:
+      - "5674:5672"
+      - "15674:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  # ---------------------------------------------------------------------------
+  # Gateway: el unico puerto que el frontend conoce
+  # ---------------------------------------------------------------------------
+  api-gateway:
+    build:
+      context: .
+      dockerfile: services/api-gateway/Dockerfile
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      CORS_ORIGENES: ${FRONTEND_URL:-http://localhost:5175}
+    ports:
+      # 8080 es el valor del proyecto. Si ya lo tienes ocupado por otro contenedor,
+      # cambia GATEWAY_PORT y FRONTEND_API_URL en tu .env: no toques este archivo.
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      redis:
+        condition: service_healthy
+      ms-identidad:
+        condition: service_started
+
+  # ---------------------------------------------------------------------------
+  # Camino de venta (perfil por defecto)
+  # ---------------------------------------------------------------------------
+  ms-identidad:
+    build:
+      context: .
+      dockerfile: services/ms-identidad/Dockerfile
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_identidad
+      DB_USER: u_identidad
+      JWT_EMISOR: https://pos-farmacia.local
+      JWT_MINUTOS_ACCESO: "15"
+      JWT_HORAS_REFRESH: "8"
+      # Sin estas, el servicio genera un par RSA nuevo en cada arranque: reiniciar
+      # identidad invalidaria todos los tokens vivos y dejaria obsoleto el JWKS que
+      # los otros nueve tienen cacheado. Generarlas con ./scripts/generar-claves-jwt.sh
+      JWT_CLAVE_PRIVADA: ${JWT_CLAVE_PRIVADA:-}
+      JWT_CLAVE_PUBLICA: ${JWT_CLAVE_PUBLICA:-}
+      OAUTH2_URL_FRONTEND: http://localhost:5175
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-sin-configurar}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-sin-configurar}
+      FACEBOOK_CLIENT_ID: ${FACEBOOK_CLIENT_ID:-sin-configurar}
+      FACEBOOK_CLIENT_SECRET: ${FACEBOOK_CLIENT_SECRET:-sin-configurar}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  ms-catalogo:
+    build:
+      context: .
+      dockerfile: services/ms-catalogo/Dockerfile
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_catalogo
+      DB_USER: u_catalogo
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  ms-inventario:
+    build:
+      context: .
+      dockerfile: services/ms-inventario/Dockerfile
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_inventario
+      DB_USER: u_inventario
+      POS_RESERVA_TTL_MINUTOS: "15"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  ms-ventas:
+    build:
+      context: .
+      dockerfile: services/ms-ventas/Dockerfile
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_ventas
+      DB_USER: u_ventas
+      URI_CATALOGO: http://ms-catalogo:8080
+      URI_INVENTARIO: http://ms-inventario:8080
+      URI_CLIENTES: http://ms-clientes:8080
+      URI_CREDITO: http://ms-credito:8080
+      URI_PROMOCIONES: http://ms-promociones:8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # ---------------------------------------------------------------------------
+  # Resto de servicios (perfil completo)
+  # ---------------------------------------------------------------------------
+  ms-clientes:
+    build:
+      context: .
+      dockerfile: services/ms-clientes/Dockerfile
+    profiles: [completo]
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_clientes
+      DB_USER: u_clientes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  ms-credito:
+    build:
+      context: .
+      dockerfile: services/ms-credito/Dockerfile
+    profiles: [completo]
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_credito
+      DB_USER: u_credito
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  ms-promociones:
+    build:
+      context: .
+      dockerfile: services/ms-promociones/Dockerfile
+    profiles: [completo]
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_promociones
+      DB_USER: u_promociones
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  ms-facturacion:
+    build:
+      context: .
+      dockerfile: services/ms-facturacion/Dockerfile
+    profiles: [completo]
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_facturacion
+      DB_USER: u_facturacion
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USER: ${RABBITMQ_USER:-posfarmacia}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      # Mock de SUNAT: responde con latencia y falla a veces, que es exactamente
+      # el comportamiento que justifica aislar este servicio.
+      SUNAT_URL: ${SUNAT_URL:-mock}
+      SUNAT_LATENCIA_MS: "800"
+      SUNAT_TASA_FALLA: "0.15"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  ms-reportes:
+    build:
+      context: .
+      dockerfile: services/ms-reportes/Dockerfile
+    profiles: [completo]
+    <<: *jvm-limite
+    environment:
+      <<: *env-comun
+      DB_NAME: pg_reportes
+      DB_USER: u_reportes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # Vite lo inyecta en tiempo de build. Como environment no haria nada.
+        VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:8080}
+    ports:
+      - "5175:80"
+    depends_on:
+      - api-gateway
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
+  # ---------------------------------------------------------------------------
+  # Observabilidad (perfil observabilidad)
+  # ---------------------------------------------------------------------------
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.104.0
+    profiles: [observabilidad]
+    command: ["--config=/etc/otel/config.yml"]
+    volumes:
+      - ./infra/otel/config.yml:/etc/otel/config.yml:ro
+    ports:
+      - "4318:4318"
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    profiles: [observabilidad]
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./infra/prometheus/alertas.yml:/etc/prometheus/alertas.yml:ro
+    ports:
+      - "9090:9090"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  tempo:
+    image: grafana/tempo:2.5.0
+    profiles: [observabilidad]
+    command: ["-config.file=/etc/tempo.yml"]
+    volumes:
+      - ./infra/tempo/tempo.yml:/etc/tempo.yml:ro
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  loki:
+    image: grafana/loki:3.1.0
+    profiles: [observabilidad]
+    command: ["-config.file=/etc/loki/local-config.yaml"]
+    deploy:
+      resources:
+        limits:
+          memory: 320M
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    profiles: [observabilidad]
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin}
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+
+volumes:
+  db-data:

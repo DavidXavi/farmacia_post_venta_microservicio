@@ -1,0 +1,114 @@
+# api-gateway: el unico puerto que el frontend conoce.
+#
+# Las rutas usan nombres de servicio (http://ms-catalogo:8080), que resuelve el DNS de
+# Docker Compose o de Kubernetes.
+#
+# ponytail: sin Eureka ni Consul. El descubrimiento ya lo hace la plataforma; un
+# registro de servicios aparte resolveria un problema que aqui no existe. Se agrega
+# el dia que haya que balancear entre clusteres o hacer despliegue por version.
+spring:
+  application:
+    name: api-gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${JWKS_URI:http://ms-identidad:8080/.well-known/jwks.json}
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          default-filters:
+            # Rate limit por usuario autenticado y por local. Sin esto, una caja con un
+            # script mal hecho o un POS en bucle de reintento tumba el servicio para
+            # los otros 1499 terminales.
+            - name: RequestRateLimiter
+              args:
+                redis-rate-limiter.replenishRate: 50
+                redis-rate-limiter.burstCapacity: 100
+                redis-rate-limiter.requestedTokens: 1
+                key-resolver: "#{@resolverPorUsuario}"
+
+          httpclient:
+            connect-timeout: 500
+            response-timeout: 5s
+
+          routes:
+            - id: identidad
+              uri: ${URI_IDENTIDAD:http://ms-identidad:8080}
+              predicates:
+                - Path=/api/auth/**,/api/auth,/api/usuarios/**,/api/usuarios,/api/roles/**,/api/roles,/api/locales/**,/api/locales,/api/cajas/**,/api/cajas,/api/mfa/**,/api/mfa,/api/auditoria/**,/api/auditoria
+            # El JWKS tambien se expone hacia afuera: sirve para verificar la firma de
+            # un token desde fuera del cluster sin entrar a los contenedores.
+            - id: jwks
+              uri: ${URI_IDENTIDAD:http://ms-identidad:8080}
+              predicates:
+                - Path=/.well-known/**,/.well-known,/oauth2/**,/oauth2,/login/oauth2/**,/login/oauth2
+            - id: catalogo
+              uri: ${URI_CATALOGO:http://ms-catalogo:8080}
+              predicates:
+                - Path=/api/productos/**,/api/productos,/api/categorias/**,/api/categorias,/api/laboratorios/**,/api/laboratorios,/api/presentaciones/**,/api/presentaciones
+            - id: inventario
+              uri: ${URI_INVENTARIO:http://ms-inventario:8080}
+              predicates:
+                - Path=/api/lotes/**,/api/lotes,/api/inventarios/**,/api/inventarios,/api/reservas/**,/api/reservas,/api/stock/**,/api/stock
+            - id: clientes
+              uri: ${URI_CLIENTES:http://ms-clientes:8080}
+              predicates:
+                - Path=/api/clientes/**,/api/clientes,/api/convenios/**,/api/convenios,/api/seguros/**,/api/seguros,/api/recetas/**,/api/recetas
+            - id: credito
+              uri: ${URI_CREDITO:http://ms-credito:8080}
+              predicates:
+                - Path=/api/creditos/**,/api/creditos,/api/lineas-credito/**,/api/lineas-credito
+            - id: promociones
+              uri: ${URI_PROMOCIONES:http://ms-promociones:8080}
+              predicates:
+                - Path=/api/promociones/**,/api/promociones
+            - id: ventas
+              uri: ${URI_VENTAS:http://ms-ventas:8080}
+              predicates:
+                - Path=/api/ventas/**,/api/ventas,/api/formas-pago/**,/api/formas-pago
+            - id: facturacion
+              uri: ${URI_FACTURACION:http://ms-facturacion:8080}
+              predicates:
+                - Path=/api/comprobantes/**,/api/comprobantes,/api/devoluciones/**,/api/devoluciones,/api/notas-credito/**,/api/notas-credito
+            - id: reportes
+              uri: ${URI_REPORTES:http://ms-reportes:8080}
+              predicates:
+                - Path=/api/reportes/**,/api/reportes,/api/incentivos/**,/api/incentivos,/api/reglas-incentivo/**,/api/reglas-incentivo,/api/actividad-reciente/**,/api/actividad-reciente
+
+server:
+  port: ${PORT:8080}
+  shutdown: graceful
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics,gateway
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  metrics:
+    tags:
+      servicio: api-gateway
+  tracing:
+    sampling:
+      probability: ${TRACE_SAMPLING:0.1}
+  otlp:
+    tracing:
+      endpoint: ${OTLP_ENDPOINT:http://otel-collector:4318/v1/traces}
+
+pos:
+  cors:
+    origenes: ${CORS_ORIGENES:http://localhost:5174}
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{traceId:-},%X{spanId:-}]"

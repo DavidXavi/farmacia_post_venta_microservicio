@@ -1,0 +1,36 @@
+---
+# Configuracion comun a los diez procesos. Lo que cambia por servicio va en su propio
+# Deployment; lo que cambia por entorno, en el overlay.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pos-comun
+data:
+  KAFKA_BOOTSTRAP: "kafka:9092"
+  REDIS_HOST: "redis"
+  REDIS_PORT: "6379"
+  JWKS_URI: "http://ms-identidad:8080/.well-known/jwks.json"
+  OTLP_ENDPOINT: "http://otel-collector:4318/v1/traces"
+  # 10% de muestreo en produccion. Al 100% el costo de almacenar trazas supera al de
+  # correr el sistema, y con 200 ventas/s el 10% ya da estadistica de sobra.
+  TRACE_SAMPLING: "0.1"
+  DB_PORT: "5432"
+  DB_POOL: "20"
+  URI_CATALOGO: "http://ms-catalogo:8080"
+  URI_INVENTARIO: "http://ms-inventario:8080"
+  URI_CLIENTES: "http://ms-clientes:8080"
+  URI_CREDITO: "http://ms-credito:8080"
+  URI_PROMOCIONES: "http://ms-promociones:8080"
+---
+# Plantilla. En produccion esto lo genera External Secrets desde Vault: un Secret con
+# los valores en claro dentro del repositorio es un secreto filtrado con pasos extra.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: pos-secretos
+type: Opaque
+stringData:
+  DB_PASSWORD: "cambiar-en-el-overlay"
+  JWT_CLAVE_PRIVADA: ""
+  JWT_CLAVE_PUBLICA: ""
+  RABBITMQ_PASSWORD: "cambiar-en-el-overlay"

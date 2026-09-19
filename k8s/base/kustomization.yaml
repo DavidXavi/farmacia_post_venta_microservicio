@@ -1,0 +1,26 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Manifiestos base. Los overlays de local/ y prod/ cambian replicas, recursos y
+# secretos sin duplicar un solo Deployment.
+namespace: pos-farmacia
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - api-gateway.yaml
+  - ms-identidad.yaml
+  - ms-catalogo.yaml
+  - ms-inventario.yaml
+  - ms-clientes.yaml
+  - ms-credito.yaml
+  - ms-promociones.yaml
+  - ms-ventas.yaml
+  - ms-facturacion.yaml
+  - ms-reportes.yaml
+
+labels:
+  - pairs:
+      parte-de: pos-farmacia
+      version: "1.0.0"
+    includeSelectors: false

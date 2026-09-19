@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>com.posfarmacia</groupId>
+    <artifactId>pos-farmacia-microservicios</artifactId>
+    <version>1.0.0</version>
+  </parent>
+
+  <artifactId>pos-contracts</artifactId>
+  <name>pos-contracts</name>
+  <description>
+    SOLO contratos: eventos de Kafka, nombres de topicos y DTO de las APIs publicas.
+    Cero logica de negocio y cero entidades JPA. Es la unica dependencia que pueden
+    compartir dos microservicios sin volverse un monolito distribuido: si aca entrara
+    una regla de negocio, cambiarla obligaria a desplegar los nueve servicios a la vez.
+  </description>
+
+  <dependencies>
+    <dependency>
+      <groupId>jakarta.validation</groupId>
+      <artifactId>jakarta.validation-api</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+        <configuration>
+          <skip>true</skip>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+</project>

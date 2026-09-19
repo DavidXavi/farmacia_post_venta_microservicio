@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POS Farmacia en Microservicios</title>
+<style>
+  :root {
+    --fondo: #f7f6f3;
+    --panel: #ffffff;
+    --tinta: #1a1a1a;
+    --tinta-suave: #5a5a5a;
+    --tinta-tenue: #8a8a8a;
+    --linea: #e2e0da;
+    --acento: #0f6e57;
+    --acento-suave: #e6f2ee;
+    --alerta: #9a3412;
+    --alerta-suave: #fdf0e8;
+    --aviso: #7c5e10;
+    --aviso-suave: #fbf5e3;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fondo: #16181a;
+      --panel: #1e2124;
+      --tinta: #ececec;
+      --tinta-suave: #b0b0b0;
+      --tinta-tenue: #7c7c7c;
+      --linea: #32363a;
+      --acento: #5cc4a6;
+      --acento-suave: #17342c;
+      --alerta: #f0a37a;
+      --alerta-suave: #351f14;
+      --aviso: #e5c75f;
+      --aviso-suave: #302a14;
+    }
+  }
+  :root[data-theme="dark"] {
+    --fondo: #16181a; --panel: #1e2124; --tinta: #ececec; --tinta-suave: #b0b0b0;
+    --tinta-tenue: #7c7c7c; --linea: #32363a; --acento: #5cc4a6; --acento-suave: #17342c;
+    --alerta: #f0a37a; --alerta-suave: #351f14; --aviso: #e5c75f; --aviso-suave: #302a14;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ---------- barra superior ---------- */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--linea);
+    background: var(--panel);
+    flex: 0 0 auto;
+  }
+  .marca { font-weight: 600; font-size: 14px; letter-spacing: .2px; }
+  .marca span { color: var(--tinta-tenue); font-weight: 400; }
+  .espacio { flex: 1; }
+  button {
+    font: inherit; font-size: 13px;
+    background: var(--panel); color: var(--tinta);
+    border: 1px solid var(--linea); border-radius: 7px;
+    padding: 5px 11px; cursor: pointer;
+  }
+  button:hover { border-color: var(--acento); color: var(--acento); }
+  button[aria-pressed="true"] { background: var(--acento-suave); border-color: var(--acento); color: var(--acento); }
+  .contador { font-family: var(--mono); font-size: 13px; color: var(--tinta-tenue); min-width: 56px; text-align: center; }
+
+  /* ---------- escenario ---------- */
+  .escenario { flex: 1 1 auto; position: relative; overflow: hidden; }
+  .lamina {
+    position: absolute; inset: 0;
+    padding: 34px 48px 26px;
+    overflow-y: auto;
+    display: none;
+    animation: entrar .22s ease-out;
+  }
+  .lamina.activa { display: block; }
+  @keyframes entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .lamina { animation: none; } }
+
+  .kicker {
+    font-size: 11px; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--acento); font-weight: 600; margin-bottom: 8px;
+  }
+  h1 { font-size: 40px; line-height: 1.12; margin: 0 0 14px; letter-spacing: -.02em; font-weight: 650; }
+  h2 { font-size: 27px; line-height: 1.2; margin: 0 0 16px; letter-spacing: -.015em; font-weight: 640; }
+  h3 { font-size: 15px; margin: 22px 0 7px; font-weight: 640; }
+  p { margin: 0 0 11px; max-width: 78ch; color: var(--tinta-suave); }
+  .grande { font-size: 18px; color: var(--tinta); }
+  ul { margin: 0 0 12px; padding-left: 19px; max-width: 80ch; color: var(--tinta-suave); }
+  li { margin-bottom: 6px; }
+  strong { color: var(--tinta); font-weight: 620; }
+  code { font-family: var(--mono); font-size: .9em; background: var(--acento-suave); color: var(--acento); padding: 1px 5px; border-radius: 4px; }
+
+  table { border-collapse: collapse; width: 100%; max-width: 1080px; margin: 6px 0 14px; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 11px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--tinta-tenue); font-weight: 620; }
+  td { color: var(--tinta-suave); }
+  td.num { font-family: var(--mono); color: var(--tinta); white-space: nowrap; }
+  tr.total td { border-top: 2px solid var(--linea); border-bottom: none; color: var(--tinta); font-weight: 620; }
+
+  pre {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+    background: var(--panel); border: 1px solid var(--linea); border-radius: 9px;
+    padding: 14px 16px; overflow-x: auto; margin: 6px 0 14px; color: var(--tinta);
+  }
+
+  .rejilla { display: grid; gap: 14px; margin: 6px 0 12px; }
+  .r2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .r3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tarjeta { background: var(--panel); border: 1px solid var(--linea); border-radius: 10px; padding: 14px 16px; }
+  .tarjeta h4 { margin: 0 0 6px; font-size: 14px; font-weight: 640; }
+  .tarjeta p, .tarjeta ul { font-size: 13.5px; margin-bottom: 0; }
+  .tarjeta ul { padding-left: 17px; }
+
+  .cifra { font-family: var(--mono); font-size: 34px; font-weight: 600; color: var(--acento); line-height: 1; display: block; margin-bottom: 4px; }
+  .cifra.roja { color: var(--alerta); }
+  .cifra.ambar { color: var(--aviso); }
+  .pie { font-size: 12px; color: var(--tinta-tenue); }
+
+  .nota {
+    border-left: 3px solid var(--acento); background: var(--acento-suave);
+    padding: 11px 15px; border-radius: 0 8px 8px 0; margin: 12px 0; max-width: 78ch;
+  }
+  .nota p { margin: 0; color: var(--tinta); }
+  .nota.alerta { border-color: var(--alerta); background: var(--alerta-suave); }
+  .nota.aviso { border-color: var(--aviso); background: var(--aviso-suave); }
+
+  .etiqueta { display: inline-block; font-size: 11px; font-family: var(--mono); padding: 2px 7px; border-radius: 5px; background: var(--acento-suave); color: var(--acento); }
+  .etiqueta.roja { background: var(--alerta-suave); color: var(--alerta); }
+  .etiqueta.ambar { background: var(--aviso-suave); color: var(--aviso); }
+
+  /* ---------- panel de notas del expositor ---------- */
+  .notas {
+    flex: 0 0 auto; max-height: 0; overflow: hidden;
+    border-top: 1px solid var(--linea); background: var(--panel);
+    transition: max-height .2s ease;
+  }
+  .notas.abierto { max-height: 46vh; overflow-y: auto; }
+  .notas-cuerpo { padding: 16px 22px 20px; }
+  .notas-cuerpo h4 { margin: 0 0 3px; font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--acento); }
+  .notas-cuerpo .guion { font-size: 15px; color: var(--tinta); max-width: 88ch; margin-bottom: 10px; }
+  .notas-cuerpo ul { font-size: 13.5px; }
+  .notas-cuerpo .tiempo { font-family: var(--mono); font-size: 12px; color: var(--tinta-tenue); }
+
+  .progreso { height: 2px; background: var(--linea); flex: 0 0 auto; }
+  .progreso div { height: 100%; background: var(--acento); transition: width .2s; }
+
+  @media (max-width: 860px) {
+    .lamina { padding: 22px 18px; }
+    h1 { font-size: 28px; } h2 { font-size: 21px; }
+    .r2, .r3 { grid-template-columns: 1fr; }
+    table { font-size: 12.5px; }
+    th, td { padding: 6px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">POS Farmacia <span>/ arquitectura de microservicios</span></div>
+  <div class="espacio"></div>
+  <button id="btnNotas" aria-pressed="false" title="Muestra el guion de esta diapositiva (tecla N)">Cómo exponer</button>
+  <button id="btnTema" title="Claro u oscuro">Tema</button>
+  <button id="btnAnt" title="Anterior">&larr;</button>
+  <span class="contador" id="contador">1 / 21</span>
+  <button id="btnSig" title="Siguiente">&rarr;</button>
+</header>
+
+<div class="escenario" id="escenario">
+
+<!-- 1 -->
+<section class="lamina activa"
+  data-tiempo="1 min"
+  data-guion="Preséntate y planta el marco en una frase: esto no es un sistema nuevo, es el mismo POS de farmacia que ya funcionaba, reorganizado para aguantar carga de verdad. Di los tres números del pie (200 ventas por segundo, 500 locales, nueve servicios) y pasa. No te quedes en la portada."
+  data-puntos="No leas la portada en voz alta, ya la están leyendo|Deja claro desde el inicio que las reglas de negocio NO cambiaron|Si preguntan por qué no se hizo desde cero: porque el dominio ya estaba probado">
+  <div class="kicker">Arquitectura 3, trabajo 1</div>
+  <h1>POS Farmacia<br>en microservicios</h1>
+  <p class="grande">El mismo sistema de punto de venta para cadena de boticas, partido en nueve
+  servicios con base de datos propia, saga con compensación y read model separado.</p>
+  <div class="rejilla r3" style="max-width:820px;margin-top:26px">
+    <div class="tarjeta"><span class="cifra">200</span><div class="pie">ventas por segundo en pico</div></div>
+    <div class="tarjeta"><span class="cifra">500</span><div class="pie">locales, 1500 terminales</div></div>
+    <div class="tarjeta"><span class="cifra">9</span><div class="pie">servicios, 9 bases de datos</div></div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="lamina"
+  data-tiempo="2 min"
+  data-guion="Explica de dónde se parte. El proyecto anterior ya era Clean Architecture con Kafka y RabbitMQ, y funcionaba. El problema no era el código, era que todo compartía una sola base de datos. Ese es el cuello que justifica todo lo demás. Si el profesor pregunta 'y por qué no bastaba con más réplicas', la respuesta es la siguiente diapositiva."
+  data-puntos="Recalca: siete módulos Maven, 600 archivos Java, todo contra UNA base|El monolito no estaba mal hecho, estaba mal dimensionado para el objetivo nuevo|Los reportes pesados competían por IO con las cajas: ese es el síntoma más claro">
+  <h2>De dónde venimos</h2>
+  <p>El proyecto anterior es un monolito bien construido: Clean Architecture en siete módulos Maven,
+  unos 600 archivos Java, Kafka para eventos y RabbitMQ para tareas, todo en Docker.</p>
+  <pre>backend/
+├── pos-domain/            110 archivos   entidades y reglas
+├── pos-usecases/          230 archivos   casos de uso y puertos
+├── pos-adapters-web/      122 archivos   25 controladores
+├── pos-adapters-persistence/ 128 archivos  JPA + 10 migraciones Flyway
+├── pos-adapters-messaging/  8 archivos   Kafka y RabbitMQ
+└── pos-infrastructure/     10 archivos   wiring de Spring
+
+                    ↓ TODO contra UNA base de datos ↓
+              35 tablas, un solo pool, un solo techo</pre>
+  <div class="nota alerta">
+    <p>El problema no es el código, es la base. Un reporte gerencial que escanea tres meses de
+    ventas le roba IO a las cajas justo a fin de mes, que es cuando más se vende y cuando más
+    reportes se piden.</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="lamina"
+  data-tiempo="2 min"
+  data-guion="Estos números son el contrato de toda la presentación. Insiste en que TODA decisión posterior se justifica contra ellos, y que si los números fueran otros el diseño sería otro. Esto te blinda: si alguien dice 'esto es sobre-ingeniería', la respuesta es 'para 20 locales sí lo sería, para 500 no'."
+  data-puntos="Dilos despacio, son el ancla de todo lo que sigue|La línea de SUNAT es la que más resuena con un jurado peruano|Si te preguntan de dónde salen: 3 cajas por local, 2 ventas por minuto por caja en pico">
+  <h2>Supuestos de carga</h2>
+  <p>Toda la arquitectura se justifica contra estos números. Si son otros, el diseño es otro.</p>
+  <table>
+    <tr><th>Dimensión</th><th>Valor</th><th>De dónde sale</th></tr>
+    <tr><td>Locales y terminales</td><td class="num">500 × 3 = 1500</td><td>Cadena de boticas de tamaño medio</td></tr>
+    <tr><td>Ventas en pico</td><td class="num">200 / s</td><td>2 ventas por minuto por caja</td></tr>
+    <tr><td>Lecturas de catálogo</td><td class="num">5000 req/s</td><td>~5 líneas por venta más búsquedas</td></tr>
+    <tr><td>p99 agregar producto</td><td class="num">&lt; 200 ms</td><td>El cajero escanea sin esperar</td></tr>
+    <tr><td>p99 confirmar venta</td><td class="num">&lt; 500 ms</td><td>El cliente está en el mostrador</td></tr>
+    <tr><td>Disponibilidad del cobro</td><td class="num">99.9%</td><td>Una caja parada es dinero perdido</td></tr>
+  </table>
+  <div class="nota aviso">
+    <p>SUNAT se cae. Se cae seguido. Eso nunca puede impedir una venta. Este requisito, solo,
+    justifica uno de los nueve servicios.</p>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="lamina"
+  data-tiempo="2 min"
+  data-guion="Muestra honestamente la primera propuesta, la de cuatro servicios. No la escondas: que hayas cambiado de opinión con un criterio explícito es lo que hace creíble la decisión final. Explica el criterio de ese primer corte: cohesión transaccional, o sea, qué cosas tienen que cambiar juntas dentro de una misma transacción."
+  data-puntos="Enseñar la versión descartada da credibilidad, no resta|El criterio era cohesión transaccional y era correcto para el problema de entonces|Prepara el terreno: en la siguiente diapositiva cambia el criterio, no el análisis">
+  <h2>Primera propuesta: cuatro servicios</h2>
+  <p>El criterio era <strong>cohesión transaccional</strong>: qué cosas tienen que cambiar juntas
+  dentro de una misma transacción.</p>
+  <pre>┌────────────┐ ┌────────────┐ ┌────────────┐ ┌────────────┐
+│ identidad  │ │  catalogo  │ │  clientes  │ │   ventas   │
+│            │ │            │ │            │ │            │
+│ usuarios   │ │ productos  │ │ clientes   │ │ venta      │
+│ roles      │ │ categorias │ │ seguros    │ │ pagos      │
+│ locales    │ │ lotes      │ │ convenios  │ │ promociones│
+│ cajas      │ │ stock      │ │ credito    │ │ devoluciones│
+│ auth + MFA │ │ movimientos│ │ recetas    │ │ incentivos │
+│            │ │            │ │            │ │ reportes   │
+└────────────┘ └────────────┘ └────────────┘ └────────────┘</pre>
+  <p>Cuatro procesos, cuatro bases, cuatro despliegues. Para un sistema que atiende una cadena
+  pequeña, es la respuesta correcta y se acabó la discusión.</p>
+</section>
+
+<!-- 5 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Esta es la diapositiva clave de toda la presentación. El cambio de 4 a 9 no es 'me arrepentí', es que cambió la pregunta. Con cohesión transaccional cortas por lo que cambia junto. Con alta carga tienes que cortar además por perfil de carga y por radio de falla. Da los tres ejemplos concretos, son los que convencen."
+  data-puntos="Frase para memorizar: con cuatro cortas por lo que cambia junto, con nueve cortas además por lo que falla junto|El ejemplo de catálogo e inventario es el más técnico y el más contundente|El de SUNAT es el más intuitivo: nadie discute que una caja no puede parar por un tercero">
+  <h2>Por qué cuatro se volvieron nueve</h2>
+  <p>No cambió el análisis. Cambió el criterio. A escala hay que cortar también por
+  <strong>perfil de carga</strong> y por <strong>radio de falla</strong>.</p>
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <h4>Catálogo sale de inventario</h4>
+      <p>Perfiles opuestos. Catálogo es lectura masiva de datos casi estáticos, cacheable,
+      cero contención. Inventario es escritura con contención sobre la misma fila.</p>
+      <p style="margin-top:8px"><strong>Juntos, los locks de stock se comen el pool que atendía las lecturas.</strong></p>
+    </div>
+    <div class="tarjeta">
+      <h4>Facturación sale de ventas</h4>
+      <p>Es el único servicio que habla con un tercero lento y poco confiable.</p>
+      <p style="margin-top:8px"><strong>SUNAT caída tiene que significar comprobantes encolados, no cajas paradas.</strong></p>
+    </div>
+    <div class="tarjeta">
+      <h4>Reportes sale de ventas</h4>
+      <p>Un reporte que escanea tres meses no puede tocar la base transaccional.</p>
+      <p style="margin-top:8px"><strong>Read model propio alimentado por eventos: es lo que más capacidad de consulta agrega.</strong></p>
+    </div>
+  </div>
+  <div class="nota">
+    <p>Con cuatro servicios cortas por lo que cambia junto. Con nueve cortas además por lo que
+    falla junto y por lo que escala distinto.</p>
+  </div>
+</section>
+
+<!-- 6 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Recorre el mapa de izquierda a derecha siguiendo una venta, no servicio por servicio. Empieza en la caja, pasa por el gateway, llega a ventas, y desde ahí muestra las cinco llamadas síncronas y el salto a Kafka. Si tienes proyector, abre arquitectura.html que es interactivo y tiene cuatro recorridos guiados."
+  data-puntos="Sigue el flujo de una venta, no enumeres servicios|Menciona que cada caja gris es una base de datos distinta|El HTML interactivo (arquitectura.html) tiene los mismos datos con recorridos guiados">
+  <h2>Los nueve servicios</h2>
+  <pre>                  ┌─────────────┐
+   caja POS  ───► │ api-gateway │ ◄── único puerto expuesto, valida JWT
+                  └──────┬──────┘
+                         │
+                  ┌──────▼──────┐   síncrono, con presupuesto de latencia
+                  │  ms-ventas  │──────────────────────────────┐
+                  │ orquesta la │                              │
+                  │    saga     │   ┌──────────────────────────┴────────────┐
+                  └──────┬──────┘   │ catalogo 200ms   inventario 500ms     │
+                         │          │ clientes 300ms   credito    800ms     │
+                         │          │ promociones 300ms                     │
+                         │          └───────────────────────────────────────┘
+                  ┌──────▼───────────────────┐
+                  │   Kafka  (outbox)        │  asíncrono, hecho consumado
+                  └──┬────────┬──────────┬───┘
+                     │        │          │
+              inventario   facturacion  reportes      identidad (JWKS, auditoría)
+              confirma     emite CPE    read model
+              FEFO         a SUNAT      CQRS</pre>
+  <p>Cada uno con su propia base Postgres. Ninguna consulta cruza el límite.</p>
+</section>
+
+<!-- 7 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Aquí justificas servicio por servicio. No leas la tabla entera: señala las tres filas que tienen la justificación más fuerte (inventario, facturación, reportes) y admite abiertamente que promociones es el corte discutible. Esa admisión vale más que defender los nueve por igual."
+  data-puntos="Admite que promociones es el caso limítrofe antes de que te lo pregunten|Cada servicio separado paga un costo operativo: estas son las razones que lo pagan|Si preguntan por qué crédito no está en clientes: es dinero, necesita ledger y auditoría propios">
+  <h2>Qué justifica cada corte</h2>
+  <table>
+    <tr><th>Servicio</th><th>Razón del corte</th><th>Qué pasa si se cae</th></tr>
+    <tr><td><strong>identidad</strong></td><td>No comparte tablas con nadie. Emite el JWT y publica JWKS</td><td>No se puede iniciar sesión nueva. Las cajas siguen vendiendo</td></tr>
+    <tr><td><strong>catálogo</strong></td><td>Lectura masiva cacheable, cero contención</td><td>Se sirve del caché aunque esté vencido</td></tr>
+    <tr><td><strong>inventario</strong></td><td>Contención de escritura sobre la fila de stock</td><td class="num">No hay venta</td></tr>
+    <tr><td><strong>clientes</strong></td><td>Cliente, seguro y receta son el mismo agregado extendido</td><td>La venta entra como anónima</td></tr>
+    <tr><td><strong>crédito</strong></td><td>Es dinero: ledger append-only, auditoría, conciliación</td><td>No hay pago a crédito, se ofrece efectivo</td></tr>
+    <tr><td><strong>promociones</strong></td><td>CPU pura en el camino más caliente <span class="etiqueta ambar">discutible</span></td><td>La venta entra sin descuento</td></tr>
+    <tr><td><strong>ventas</strong></td><td>El orquestador de la saga</td><td class="num">No hay venta</td></tr>
+    <tr><td><strong>facturación</strong></td><td>Único que habla con un tercero lento y caído</td><td>Comprobante encolado, la caja sigue</td></tr>
+    <tr><td><strong>reportes</strong></td><td>Escaneos analíticos fuera de la base transaccional</td><td>No hay tablero, no hay impacto en cajas</td></tr>
+  </table>
+</section>
+
+<!-- 8 -->
+<section class="lamina"
+  data-tiempo="4 min"
+  data-guion="La comparación que pediste. Deja esta diapositiva en pantalla un buen rato. La columna de la derecha es la más importante: demuestra que sabes que más servicios NO es mejor, y que hay un punto donde se vuelve peor. Si te preguntan cuántos servicios son 'los correctos', la respuesta es: los que la carga justifica, ni uno más."
+  data-puntos="Deja esta diapositiva en pantalla, es la que más preguntas genera|La columna de 15+ es la que demuestra criterio, no la de 9|Si insisten: el número correcto es el que la carga justifica, ni uno más">
+  <h2>Cuatro, nueve o más</h2>
+  <table>
+    <tr>
+      <th></th>
+      <th>4 servicios</th>
+      <th>9 servicios <span class="etiqueta">elegido</span></th>
+      <th>15 o más</th>
+    </tr>
+    <tr><td><strong>Criterio del corte</strong></td><td>Cohesión transaccional</td><td>+ perfil de carga y radio de falla</td><td>Un servicio por contexto, sin criterio adicional</td></tr>
+    <tr><td><strong>Escalado independiente</strong></td><td>Grueso: catálogo e inventario escalan juntos sin necesitarlo</td><td>Fino: 6 réplicas de catálogo, 2 de crédito</td><td>Fino pero irrelevante: muchos servicios sin carga propia</td></tr>
+    <tr><td><strong>Capacidad de consulta</strong></td><td>4 bases, 4 pools</td><td>9 bases, 9 pools, read model aparte</td><td>Más bases pero sin cuello propio que resolver</td></tr>
+    <tr><td><strong>Saltos en el camino caliente</strong></td><td class="num">2</td><td class="num">3</td><td class="num">6 a 8</td></tr>
+    <tr><td><strong>p99 de la venta</strong></td><td>Mejor</td><td>Aceptable, medido</td><td>Degradado por amplificación de cola</td></tr>
+    <tr><td><strong>Disponibilidad en cadena</strong></td><td class="num">99.7%</td><td class="num">99.5%</td><td class="num">99.1%</td></tr>
+    <tr><td><strong>Aislamiento de SUNAT</strong></td><td>No: vive dentro de ventas</td><td>Sí, servicio propio</td><td>Sí</td></tr>
+    <tr><td><strong>Procesos a operar</strong></td><td class="num">5</td><td class="num">10</td><td class="num">16+</td></tr>
+    <tr><td><strong>Pipelines y guardias</strong></td><td>Manejable por 2 personas</td><td>Necesita un rol de plataforma</td><td>Necesita un equipo de plataforma</td></tr>
+    <tr class="total"><td>Veredicto</td><td>Correcto para 20 locales</td><td>Correcto para 500 locales</td><td>Peor que 9 para cualquier tamaño de esta cadena</td></tr>
+  </table>
+</section>
+
+<!-- 9 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Esta es la matemática que casi nadie calcula y la que más impresiona. Explica la amplificación de cola con la frase clave: con cinco saltos, lo que era tu p99 se convierte en tu p95, o sea el usuario percibe el sistema cinco veces más lento aunque cada servicio esté igual de rápido. Y luego la disponibilidad, que se multiplica en vez de sumarse."
+  data-puntos="Frase clave: con 5 saltos tu p99 se convierte en tu p95|La disponibilidad se MULTIPLICA, no se promedia: 0.999 elevado a 5|Por eso el camino de la venta tiene 3 saltos y no 8">
+  <h2>La matemática de agregar saltos</h2>
+  <p>Cada llamada síncrona que agregas se paga dos veces: en la cola de latencia y en la
+  disponibilidad.</p>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>La cola se multiplica</h4>
+      <p class="pie" style="margin-bottom:8px">Si cada servicio tiene p99 de 50 ms, o sea 1% de llamadas lentas:</p>
+      <table style="margin:0">
+        <tr><th>Saltos</th><th>Al menos uno lento</th></tr>
+        <tr><td class="num">1</td><td class="num">1.0%</td></tr>
+        <tr><td class="num">3</td><td class="num">3.0%</td></tr>
+        <tr><td class="num">5</td><td class="num">4.9%</td></tr>
+        <tr><td class="num">8</td><td class="num">7.7%</td></tr>
+      </table>
+      <p class="pie">Con 5 saltos, lo que era tu p99 se convirtió en tu p95.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>La disponibilidad se multiplica</h4>
+      <p class="pie" style="margin-bottom:8px">Servicios al 99.9% en cadena síncrona:</p>
+      <table style="margin:0">
+        <tr><th>Saltos</th><th>Disponible</th><th>Caída al mes</th></tr>
+        <tr><td class="num">1</td><td class="num">99.90%</td><td class="num">43 min</td></tr>
+        <tr><td class="num">3</td><td class="num">99.70%</td><td class="num">2.2 h</td></tr>
+        <tr><td class="num">5</td><td class="num">99.50%</td><td class="num">3.6 h</td></tr>
+        <tr><td class="num">9</td><td class="num">99.10%</td><td class="num">6.5 h</td></tr>
+      </table>
+      <p class="pie">Por eso solo dos llamadas pueden impedir una venta.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 10 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Aquí contestas la pregunta directa: ¿más servicios soportan más consultas? La respuesta honesta es que no por sí solos. La capacidad la da partir los DATOS, no partir el código. El servicio es el vehículo, la base es la carga. Esa frase resume toda la diapositiva."
+  data-puntos="Frase clave: los microservicios no escalan capacidad, los datos repartidos sí|La caché es el único cambio que mueve el orden de magnitud, y no tiene nada que ver con cuántos servicios haya|El fan-out es lo que mata bajo carga: 5 llamadas por venta en vez de 1">
+  <h2>¿Más servicios soportan más consultas?</h2>
+  <p class="grande">Depende. Dividir no agrega capacidad por sí solo: la capacidad la da partir
+  los datos, no partir el código.</p>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>Lo que sí mejora</h4>
+      <ul>
+        <li>Cada servicio se lleva su base: nueve pools, nueve cachés de página, nueve discos</li>
+        <li>Las réplicas de lectura se ponen donde hacen falta, no en todo por igual</li>
+        <li>El read model saca los escaneos analíticos de la base transaccional</li>
+      </ul>
+    </div>
+    <div class="tarjeta">
+      <h4>Lo que empeora</h4>
+      <ul>
+        <li>La latencia se suma y la cola se multiplica</li>
+        <li>La disponibilidad en cadena se multiplica hacia abajo</li>
+        <li>El fan-out: una acción del cajero se vuelve veinte llamadas internas</li>
+      </ul>
+    </div>
+  </div>
+  <h3>Lo que de verdad sube la capacidad de lectura, por orden de efecto</h3>
+  <table>
+    <tr><th>#</th><th>Palanca</th><th>Efecto</th><th>¿Necesita más servicios?</th></tr>
+    <tr><td class="num">1</td><td>Caché de dos niveles (Caffeine + Redis)</td><td class="num">10x a 100x</td><td>No</td></tr>
+    <tr><td class="num">2</td><td>Read model separado (CQRS)</td><td class="num">5x a 20x</td><td>Sí, uno</td></tr>
+    <tr><td class="num">3</td><td>Réplicas de lectura</td><td class="num">Lineal</td><td>No</td></tr>
+    <tr><td class="num">4</td><td>Endpoints por lote (evitar fan-out)</td><td class="num">÷ líneas por venta</td><td>No</td></tr>
+    <tr><td class="num">5</td><td>Más réplicas del mismo servicio</td><td class="num">Lineal</td><td>No</td></tr>
+    <tr><td class="num">6</td><td>Partir un servicio más</td><td class="num">Solo si tenía cuello propio</td><td>Sí</td></tr>
+  </table>
+</section>
+
+<!-- 11 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Muestra el reparto real de las 35 tablas que ya existían. El detalle que impresiona es que la regla se impone con permisos del motor, no con disciplina: el usuario de catálogo no puede ni conectarse a la base de ventas. Y luego di qué se pierde: el JOIN entre contextos, y dónde se recupera."
+  data-puntos="El dato fuerte: la regla la impone Postgres con REVOKE CONNECT, no la buena voluntad del equipo|Lo que se pierde es el JOIN entre contextos, y se recupera en el read model|En desarrollo es un contenedor con 9 bases; en producción son 9 instancias">
+  <h2>Una base por servicio</h2>
+  <p>Las 35 tablas del monolito, repartidas. Ninguna consulta cruza el límite.</p>
+  <div class="rejilla r3">
+    <div class="tarjeta"><h4>pg_identidad</h4><p class="pie">roles, locales, usuarios, usuarios_roles, cajas, sesiones_caja, auditoria_operaciones, refresh_tokens</p></div>
+    <div class="tarjeta"><h4>pg_catalogo</h4><p class="pie">categorias, laboratorios, presentaciones, productos</p></div>
+    <div class="tarjeta"><h4>pg_inventario</h4><p class="pie">lotes, movimientos_inventario, <strong>stock_local</strong>, <strong>reservas</strong>, <strong>asignaciones_lote</strong></p></div>
+    <div class="tarjeta"><h4>pg_clientes</h4><p class="pie">clientes, convenios_seguro, coberturas_seguro, afiliaciones_cliente, recetas, usos_receta</p></div>
+    <div class="tarjeta"><h4>pg_credito</h4><p class="pie">lineas_credito, movimientos_credito, <strong>reservas_credito</strong></p></div>
+    <div class="tarjeta"><h4>pg_promociones</h4><p class="pie">promociones, promocion_condiciones</p></div>
+    <div class="tarjeta"><h4>pg_ventas</h4><p class="pie">ventas, detalles_venta, detalle_venta_lotes, pagos, formas_pago, <strong>saga_venta</strong></p></div>
+    <div class="tarjeta"><h4>pg_facturacion</h4><p class="pie">comprobantes, devoluciones, detalle_devoluciones, notas_credito, <strong>series_comprobante</strong>, <strong>envios_sunat</strong></p></div>
+    <div class="tarjeta"><h4>pg_reportes</h4><p class="pie">reglas_incentivo, incentivos_venta, <strong>rm_ventas</strong>, <strong>rm_venta_lineas</strong>, <strong>rm_ventas_diarias</strong></p></div>
+  </div>
+  <pre>CREATE DATABASE pg_ventas OWNER u_ventas;
+REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
+
+-- El usuario de ms-catalogo no puede ni CONECTARSE a pg_ventas.
+-- La regla la impone el motor, no la disciplina del equipo.</pre>
+</section>
+
+<!-- 12 -->
+<section class="lamina"
+  data-tiempo="4 min"
+  data-guion="Recorre los seis pasos de una venta en voz alta como si fueras el cajero. El punto que tiene que quedar clarísimo: el paso 5, confirmar, es una transacción LOCAL más un evento. No llama a nadie. Por eso responde en menos de 500 ms y por eso la caída de facturación no para la caja."
+  data-puntos="Cuéntalo como el cajero lo vive, no como lo vive el servidor|El paso 5 es el corazón: transacción local más un evento, cero llamadas externas|Los pasos del 6 ocurren cuando el cliente ya se fue">
+  <h2>El camino de una venta</h2>
+  <pre>1. Cajero abre venta          POST /ventas
+   └─ Nada más. Cero llamadas a otros servicios.
+
+2. Cajero escanea producto    POST /ventas/{id}/lineas
+   ├─ GET  precio             → catalogo      (caché local, ~1 ms)
+   ├─ POST reserva de stock   → inventario    SÍNCRONO Y CRÍTICO
+   └─ POST evaluar promos     → promociones   degradable, 300 ms
+
+3. Cajero identifica cliente  → clientes      degradable
+
+4. Cajero registra pago       POST /ventas/{id}/pagos   Idempotency-Key
+   └─ si es crédito           → credito       SÍNCRONO Y CRÍTICO
+
+5. Cajero confirma            POST /ventas/{id}/confirmar   Idempotency-Key
+   UNA transacción local:
+     ├─ venta.estado = CONFIRMADA
+     ├─ saga_venta abierta
+     └─ INSERT outbox (VentaConfirmada)
+   ────► Responde al cajero. Fin del camino crítico.
+
+6. Asíncrono, el cliente ya se fue:
+   outbox ──► Kafka ──┬─► inventario   confirma reservas, aplica FEFO
+                      ├─► credito      convierte reserva en cargo firme
+                      ├─► facturacion  emite CPE, reintenta contra SUNAT
+                      └─► reportes     actualiza el read model</pre>
+</section>
+
+<!-- 13 -->
+<section class="lamina"
+  data-tiempo="4 min"
+  data-guion="Los tres problemas duros. Si solo tuvieras tiempo para una diapositiva técnica, es esta. El UPDATE condicional es lo más elegante: un solo statement atómico, sin SELECT FOR UPDATE, sin deadlock, y la contención queda acotada al local que es el shard natural del negocio. Ensáyalo, es el momento fuerte."
+  data-puntos="Este es tu momento técnico fuerte, ensáyalo|El UPDATE condicional: un statement, atómico, sin lock explícito, sin deadlock|Si alguien pregunta por qué no optimistic locking de JPA: reintenta en la aplicación y a 200 ventas/s eso es una tormenta">
+  <h2>Los tres problemas duros</h2>
+  <h3>1. Contención de stock</h3>
+  <pre>UPDATE stock_local
+   SET reservado = reservado + :cant
+ WHERE producto_id = :p AND local_id = :l
+   AND disponible - reservado &gt;= :cant;
+-- 0 filas afectadas = no hay stock. El cajero se entera en un round trip.</pre>
+  <p>Un solo statement atómico. Sin <code>SELECT FOR UPDATE</code>, sin transacción larga, sin
+  deadlock posible. La contención queda acotada a la fila (producto, local), que es el shard
+  natural del negocio: 500 boticas vendiendo el mismo paracetamol son 500 filas independientes.</p>
+
+  <h3>2. Idempotencia</h3>
+  <p>Un POS reintenta. Un reintento que cobra dos veces no es un problema técnico, es un problema
+  legal con el cliente en el mostrador. Header <code>Idempotency-Key</code> guardado en Redis 24 h,
+  y tabla <code>evento_procesado</code> para los consumidores de Kafka.</p>
+
+  <h3>3. Publicación confiable de eventos</h3>
+  <p>Escribir en Postgres y publicar en Kafka son dos sistemas. Si el segundo falla después del
+  primero, la venta quedó confirmada y el stock nunca se descontó, y nadie se entera hasta el
+  inventario físico. El <strong>outbox transaccional</strong> hace que la fila del evento y la
+  fila de la venta entren o no entren juntas.</p>
+</section>
+
+<!-- 14 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="La regla de una sola frase que ordena todo el sistema: nada fuera de stock y pago puede impedir una venta. Léela tal cual. Luego recorre la tabla mostrando qué pasa cuando cada dependencia falla. El punto emocional: un sistema que se niega a cobrar porque el servicio de promociones está lento no es resiliente, le hizo perder la venta a la botica."
+  data-puntos="Lee la regla en voz alta tal cual, es la frase que resume el diseño|Frase de cierre: negarse a cobrar por un descuento no aplicado le hace perder la venta a la botica|Menciona que la degradación se registra y alerta: silenciosa sería peor">
+  <h2>Qué se degrada y qué no</h2>
+  <div class="nota">
+    <p><strong>Nada fuera de stock y pago puede impedir una venta.</strong></p>
+  </div>
+  <table>
+    <tr><th>Llamada</th><th>Timeout</th><th>Si falla</th></tr>
+    <tr><td>ventas → inventario</td><td class="num">500 ms</td><td class="num">Falla la línea, el cajero lo ve</td></tr>
+    <tr><td>ventas → crédito</td><td class="num">800 ms</td><td class="num">Falla el pago a crédito, ofrece efectivo</td></tr>
+    <tr><td>ventas → catálogo</td><td class="num">200 ms</td><td>Sirve del caché aunque esté vencido</td></tr>
+    <tr><td>ventas → promociones</td><td class="num">300 ms</td><td>Venta sin promoción, degradación registrada</td></tr>
+    <tr><td>ventas → clientes</td><td class="num">300 ms</td><td>Venta anónima</td></tr>
+    <tr><td>facturación → SUNAT</td><td class="num">15 s</td><td>Encola y reintenta, la venta ya terminó</td></tr>
+  </table>
+  <p>Circuit breaker por destino, bulkhead con pool separado por dependencia, y reintentos solo
+  en operaciones idempotentes. Cuando un circuito abre se publica como métrica y el tablero lo
+  muestra por local: la degradación silenciosa es peor que la caída ruidosa.</p>
+</section>
+
+<!-- 15 -->
+<section class="lamina"
+  data-tiempo="4 min"
+  data-guion="Empieza el bloque de costos, que es donde se decide si el proyecto se aprueba o no. Presenta el esfuerzo paso por paso y señala el paso 6, inventario, que se lleva el 17% del esfuerzo él solo porque es donde entra la saga. Di que son estimaciones y que el rango real es de 5 a 7 meses con el equipo propuesto."
+  data-puntos="Señala el paso 6: cinco semanas él solo, es donde entra la saga|Aclara que 29 semanas-persona NO son 29 semanas de calendario|El equipo mínimo es 4 personas y hay pasos que no paralelizan">
+  <h2>Costo de la migración: esfuerzo</h2>
+  <table>
+    <tr><th>Paso</th><th>Qué incluye</th><th>Semanas-persona</th></tr>
+    <tr><td class="num">1-2</td><td>Copiar el proyecto e infraestructura nueva: Kafka, Schema Registry, Redis, observabilidad</td><td class="num">3</td></tr>
+    <tr><td class="num">3</td><td>Gateway delante del monolito, frontend apuntando al gateway</td><td class="num">1</td></tr>
+    <tr><td class="num">4</td><td>Extraer identidad: JWT, JWKS, OAuth2, MFA</td><td class="num">2</td></tr>
+    <tr><td class="num">5</td><td>Extraer catálogo con caché de dos niveles e invalidación por evento</td><td class="num">2</td></tr>
+    <tr><td class="num">6</td><td><strong>Extraer inventario: contador de stock, reservas con TTL, FEFO, saga</strong></td><td class="num">5</td></tr>
+    <tr><td class="num">7</td><td>Extraer promociones y clientes</td><td class="num">3</td></tr>
+    <tr><td class="num">8</td><td>Extraer crédito con su ledger append-only</td><td class="num">2</td></tr>
+    <tr><td class="num">9</td><td>Extraer facturación con reintentos contra SUNAT</td><td class="num">3</td></tr>
+    <tr><td class="num">10</td><td>Extraer reportes, reconstruir el read model desde el historial</td><td class="num">3</td></tr>
+    <tr><td class="num">11</td><td>Lo que queda es ventas: el monolito desaparece</td><td class="num">2</td></tr>
+    <tr><td class="num">12</td><td>Pruebas de carga contra los supuestos y ajuste de réplicas y pools</td><td class="num">3</td></tr>
+    <tr class="total"><td></td><td>Total</td><td class="num">29 semanas-persona</td></tr>
+  </table>
+  <div class="rejilla r3" style="max-width:860px">
+    <div class="tarjeta"><span class="cifra">7</span><div class="pie">meses-persona de desarrollo</div></div>
+    <div class="tarjeta"><span class="cifra">4</span><div class="pie">personas: 2 backend, 1 plataforma, 1 QA</div></div>
+    <div class="tarjeta"><span class="cifra ambar">5 a 7</span><div class="pie">meses de calendario, porque los pasos 4 a 11 no paralelizan del todo</div></div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="lamina"
+  data-tiempo="4 min"
+  data-guion="El costo que nadie pone en la propuesta y el que después duele. Infraestructura por tres o cuatro, y un costo operativo permanente que antes no existía. Sé explícito con que las cifras en soles son orden de magnitud y hay que validarlas con el proveedor. Ese cuidado te da credibilidad."
+  data-puntos="Aclara que las cifras en soles son orden de magnitud, no una cotización|El costo permanente es el que más duele: no termina cuando termina el proyecto|El rol de plataforma a medio tiempo antes no existía y ahora es obligatorio">
+  <h2>Costo de la migración: infraestructura y operación</h2>
+  <h3>Infraestructura mensual</h3>
+  <table>
+    <tr><th></th><th>Monolito hoy</th><th>Nueve microservicios</th></tr>
+    <tr><td>Cómputo</td><td>2 instancias de aplicación</td><td>Clúster de 6 a 8 nodos, ~30 pods</td></tr>
+    <tr><td>Bases de datos</td><td>1 Postgres gestionado</td><td>9 Postgres + 10 réplicas de lectura</td></tr>
+    <tr><td>Mensajería</td><td>1 Kafka, 1 RabbitMQ</td><td>3 brokers Kafka, Schema Registry, RabbitMQ</td></tr>
+    <tr><td>Caché</td><td>No hay</td><td>Redis cluster, 3 nodos</td></tr>
+    <tr><td>Observabilidad</td><td>Logs del contenedor</td><td>Prometheus, Loki, Tempo, Grafana + almacenamiento</td></tr>
+    <tr class="total"><td>Orden de magnitud</td><td class="num">S/ 1,500 a 2,600</td><td class="num">S/ 6,700 a 11,100</td></tr>
+  </table>
+  <p class="pie">Cifras indicativas para nube gestionada, a validar con el proveedor. El multiplicador
+  (entre 3x y 4x) es más confiable que los montos absolutos.</p>
+
+  <h3>Costo permanente, el que no termina con el proyecto</h3>
+  <div class="rejilla r3">
+    <div class="tarjeta"><h4>Guardia</h4><p>Antes un sistema, ahora diez que pueden fallar por separado. El de turno necesita entender sagas, outbox y lag de Kafka.</p></div>
+    <div class="tarjeta"><h4>Despliegues</h4><p>Diez pipelines en vez de uno. Migraciones en expand y contract, porque durante el rollout conviven dos versiones.</p></div>
+    <div class="tarjeta"><h4>Rol de plataforma</h4><p>Medio tiempo dedicado que antes no existía. La observabilidad deja de ser opcional y pasa a ser infraestructura crítica.</p></div>
+  </div>
+</section>
+
+<!-- 17 -->
+<section class="lamina"
+  data-tiempo="2 min"
+  data-guion="Lo que NO cuesta. Es la diapositiva que tranquiliza y hay que darla después del costo, no antes. El mensaje: el dominio se mueve de casa, no se rehace. Las reglas de negocio validadas siguen valiendo y sus tests también. El frontend solo cambia la URL base."
+  data-puntos="Va después del costo, no antes: primero el golpe, después el alivio|Frase: el dominio se mueve de casa, no se rehace|El riesgo real está concentrado en un solo paso, el 6, y se mitiga corriendo en sombra">
+  <h2>Lo que no cuesta</h2>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>Las reglas de negocio no se reescriben</h4>
+      <p>El dominio se mueve de paquete, no se rehace. FEFO, copago, línea de crédito, validación
+      de recetas: el mismo código, en otra casa. Sus pruebas unitarias siguen valiendo.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>El frontend casi no se toca</h4>
+      <p>Solo cambia la URL base para apuntar al gateway. React, rutas y componentes quedan
+      intactos.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>Las migraciones se reparten, no se rediseñan</h4>
+      <p>Las 35 tablas ya evitaban llaves foráneas entre contextos. El corte es mecánico:
+      cada servicio se lleva sus tablas y renumera desde V1.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>El riesgo está concentrado</h4>
+      <p>De los doce pasos, solo el 6 es peligroso. Se mitiga corriendo en sombra: el servicio
+      nuevo calcula sin que nadie use su resultado, hasta que coincida con el monolito.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 18 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="La diapositiva más honesta de la presentación y la que más credibilidad da. Di abiertamente que para una cadena de 20 locales esta arquitectura es una pérdida neta. Saber cuándo NO aplicar un patrón demuestra más criterio que saber aplicarlo."
+  data-puntos="Esta es la diapositiva que más credibilidad te da, no la saltes|Frase: saber cuándo no aplicar un patrón demuestra más criterio que aplicarlo|Si preguntan el punto de quiebre: cuando una sola Postgres afinada deja de aguantar, o cuando el equipo pasa de 8 personas">
+  <h2>Cuándo no hacer esto</h2>
+  <p class="grande">Con 20 locales y 40 cajas, esta arquitectura es una pérdida neta.</p>
+  <p>Un monolito con réplicas de lectura y caché aguanta ese volumen de sobra, con un décimo del
+  costo operativo. Pagar nueve despliegues, nueve bases y una guardia que entiende sagas para
+  atender 5 ventas por segundo no es arquitectura, es sobrecosto.</p>
+  <h3>El punto de quiebre</h3>
+  <ul>
+    <li>Cuando el pico supera lo que una sola Postgres bien afinada sostiene junto con los reportes, alrededor de 50 a 80 ventas por segundo</li>
+    <li>Cuando el equipo pasa de unas 8 personas y los despliegues empiezan a bloquearse entre sí</li>
+    <li>Cuando una integración externa lenta, como SUNAT, empieza a costar ventas de verdad</li>
+    <li>Cuando un reporte gerencial ya afecta medibles el p99 de las cajas</li>
+  </ul>
+  <div class="nota aviso">
+    <p>Saber cuándo no aplicar un patrón demuestra más criterio que saber aplicarlo.</p>
+  </div>
+</section>
+
+<!-- 19 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="El plan de migración. Lo importante no son los doce pasos sino la propiedad que los ordena: strangler fig, el monolito sigue atendiendo hasta el último paso y cada paso deja el sistema funcionando. Si uno sale mal se revierte esa extracción sin tocar las anteriores."
+  data-puntos="La propiedad clave: cada paso deja el sistema funcionando|El monolito atiende hasta el paso 11, no hay un día del cambio grande|Si uno sale mal se revierte solo esa extracción">
+  <h2>Plan de migración: strangler fig</h2>
+  <p>El monolito sigue vivo y atendiendo hasta el último paso. No hay un día del cambio grande.</p>
+  <pre> 1  Copiar el proyecto y verificar que levanta              ✔ hecho
+ 2  Infraestructura nueva: Kafka, Redis, observabilidad     ✔ hecho
+ 3  Gateway delante, frontend apuntando al gateway          ✔ hecho
+ 4  Extraer identidad          el corte sin dependencias    ✔ hecho
+ 5  Extraer catálogo           caché e invalidación         ✔ hecho
+ 6  Extraer inventario         saga, reservas, FEFO         ✔ hecho  ← el riesgoso
+ 7  Extraer promociones y clientes                          ✔ hecho
+ 8  Extraer crédito            ledger append-only           ✔ hecho
+ 9  Extraer facturación        reintentos contra SUNAT      ✔ hecho
+10  Extraer reportes           read model reconstruible     ✔ hecho
+11  Lo que queda es ventas: el monolito desaparece          ✔ hecho
+12  Pruebas de carga y ajuste de réplicas y pools           ○ pendiente</pre>
+  <p>Cada paso deja el sistema funcionando. Si uno sale mal, se revierte esa extracción sin tocar
+  las anteriores.</p>
+</section>
+
+<!-- 20 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Lo que deliberadamente no se hizo. Esta lista demuestra que cada pieza que SÍ está tiene una razón, y que no se metió tecnología por moda. Cada línea tiene la condición concreta que la activaría. Eso es lo que distingue una decisión de una omisión."
+  data-puntos="Cada línea tiene la condición que la activaría: eso distingue decisión de omisión|El de Eureka es el más contundente: resuelve un problema que Kubernetes no tiene|Si preguntan por service mesh: Resilience4j y los Service de k8s ya cubren lo que necesitamos hoy">
+  <h2>Lo que deliberadamente no hicimos</h2>
+  <table>
+    <tr><th>Pieza</th><th>Por qué no</th><th>Cuándo entraría</th></tr>
+    <tr><td>Service mesh (Istio, Linkerd)</td><td>Los Service de Kubernetes más Resilience4j cubren descubrimiento, balanceo y resiliencia</td><td>Cuando haga falta mTLS automático a esta escala o tráfico dividido por versión</td></tr>
+    <tr><td>Eureka o Consul</td><td>El DNS de Kubernetes ya resuelve. Eureka resuelve un problema que Kubernetes no tiene</td><td>Cuando haya que balancear entre clústeres</td></tr>
+    <tr><td>Config Server</td><td>ConfigMaps y Secrets alcanzan</td><td>Cuando haga falta recargar configuración sin reiniciar</td></tr>
+    <tr><td>Debezium</td><td>El publicador de outbox por sondeo aguanta el volumen proyectado</td><td>Cuando la métrica <code>outbox.antiguedad</code> pase de 60 s de forma sostenida</td></tr>
+    <tr><td>ClickHouse</td><td>Postgres particionado con agregados cubre los reportes actuales</td><td>Cuando un reporte tarde más de lo aceptable</td></tr>
+    <tr><td>Event sourcing</td><td>Outbox y eventos de integración sí. Reconstruir el estado desde el log, no</td><td>Si apareciera un requisito real de auditoría temporal completa</td></tr>
+    <tr><td>GraphQL o BFF</td><td>Un solo frontend con un gateway REST alcanza</td><td>Cuando haya app móvil con necesidades distintas</td></tr>
+  </table>
+</section>
+
+<!-- 21 -->
+<section class="lamina"
+  data-tiempo="2 min"
+  data-guion="Cierra con lo que se entrega y con la frase final. Menciona que todo compila y que el FEFO tiene pruebas en verde. Ofrece abrir arquitectura.html si quieren ver el diagrama interactivo. Y termina con la frase del punto de quiebre: la arquitectura correcta es la que la carga justifica, ni una pieza más."
+  data-puntos="Menciona que el build pasa y que hay pruebas en verde: es verificable, no una propuesta|Ofrece abrir arquitectura.html, es interactivo|Frase final: la arquitectura correcta es la que la carga justifica, ni una pieza más">
+  <h2>Qué se entrega</h2>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>Código</h4>
+      <ul>
+        <li>13 módulos Maven que compilan: contratos, plataforma, gateway y nueve servicios</li>
+        <li>Clean Architecture por paquetes dentro de cada servicio</li>
+        <li>Migraciones Flyway repartidas, con los datos de prueba</li>
+        <li>Pruebas del FEFO en verde</li>
+      </ul>
+    </div>
+    <div class="tarjeta">
+      <h4>Infraestructura</h4>
+      <ul>
+        <li><code>docker-compose.yml</code> con tres perfiles según cuánta RAM quieras gastar</li>
+        <li>Manifiestos de Kubernetes con Kustomize, HPA y PodDisruptionBudget</li>
+        <li>Prometheus con alertas que despiertan a alguien</li>
+      </ul>
+    </div>
+    <div class="tarjeta">
+      <h4>Documentación</h4>
+      <ul>
+        <li><code>docs/cliente/</code>: la arquitectura explicada sin jerga</li>
+        <li><code>docs/</code>: decisiones técnicas y cómo ejecutar</li>
+        <li><code>presentacion/arquitectura.html</code>: diagrama interactivo</li>
+      </ul>
+    </div>
+    <div class="tarjeta">
+      <h4>Lo que falta</h4>
+      <ul>
+        <li>Pruebas de carga contra los 200 ventas/s proyectados</li>
+        <li>Medir promociones para decidir si sigue separado</li>
+        <li>Integración real con SUNAT, hoy simulada</li>
+      </ul>
+    </div>
+  </div>
+  <div class="nota">
+    <p>La arquitectura correcta es la que la carga justifica, ni una pieza más.</p>
+  </div>
+</section>
+
+</div>
+
+<div class="progreso"><div id="barra" style="width:4.7%"></div></div>
+
+<div class="notas" id="notas">
+  <div class="notas-cuerpo">
+    <h4>Cómo exponer esta diapositiva <span class="tiempo" id="tiempo"></span></h4>
+    <p class="guion" id="guion"></p>
+    <ul id="puntos"></ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  var laminas = Array.prototype.slice.call(document.querySelectorAll('.lamina'));
+  var actual = 0;
+
+  var contador = document.getElementById('contador');
+  var barra = document.getElementById('barra');
+  var panelNotas = document.getElementById('notas');
+  var btnNotas = document.getElementById('btnNotas');
+  var guion = document.getElementById('guion');
+  var puntos = document.getElementById('puntos');
+  var tiempo = document.getElementById('tiempo');
+
+  function pintarNotas() {
+    var l = laminas[actual];
+    guion.textContent = l.dataset.guion || 'Sin guion para esta diapositiva.';
+    tiempo.textContent = l.dataset.tiempo ? '· ' + l.dataset.tiempo : '';
+    puntos.innerHTML = '';
+    (l.dataset.puntos || '').split('|').filter(Boolean).forEach(function (p) {
+      var li = document.createElement('li');
+      li.textContent = p;
+      puntos.appendChild(li);
+    });
+  }
+
+  function ir(n) {
+    actual = Math.max(0, Math.min(laminas.length - 1, n));
+    laminas.forEach(function (l, i) { l.classList.toggle('activa', i === actual); });
+    contador.textContent = (actual + 1) + ' / ' + laminas.length;
+    barra.style.width = ((actual + 1) / laminas.length * 100) + '%';
+    laminas[actual].scrollTop = 0;
+    pintarNotas();
+    // El hash permite abrir directo en una diapositiva (#8) y sobrevive a un F5
+    // en medio de la exposicion, que es cuando mas duele perder el sitio.
+    if (location.hash !== '#' + (actual + 1)) {
+      history.replaceState(null, '', '#' + (actual + 1));
+    }
+    try { localStorage.setItem('pos-lamina', String(actual)); } catch (e) { /* modo privado */ }
+  }
+
+  function alternarNotas() {
+    var abierto = panelNotas.classList.toggle('abierto');
+    btnNotas.setAttribute('aria-pressed', abierto ? 'true' : 'false');
+    try { localStorage.setItem('pos-notas', abierto ? '1' : '0'); } catch (e) { /* modo privado */ }
+  }
+
+  document.getElementById('btnSig').onclick = function () { ir(actual + 1); };
+  document.getElementById('btnAnt').onclick = function () { ir(actual - 1); };
+  btnNotas.onclick = alternarNotas;
+
+  document.getElementById('btnTema').onclick = function () {
+    var raiz = document.documentElement;
+    var oscuro = raiz.getAttribute('data-theme') === 'dark'
+      || (!raiz.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    raiz.setAttribute('data-theme', oscuro ? 'light' : 'dark');
+    try { localStorage.setItem('pos-tema', oscuro ? 'light' : 'dark'); } catch (e) { /* modo privado */ }
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); ir(actual + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); ir(actual - 1); }
+    else if (e.key === 'Home') { ir(0); }
+    else if (e.key === 'End') { ir(laminas.length - 1); }
+    else if (e.key === 'n' || e.key === 'N') { alternarNotas(); }
+  });
+
+  window.addEventListener('hashchange', function () {
+    var n = parseInt(location.hash.slice(1), 10);
+    if (!isNaN(n) && n - 1 !== actual) { ir(n - 1); }
+  });
+
+  // El hash manda sobre lo guardado: si alguien comparte el enlace de la
+  // diapositiva 8, tiene que abrir en la 8 aunque el navegador recuerde otra.
+  var inicial = parseInt(location.hash.slice(1), 10);
+  try {
+    var t = localStorage.getItem('pos-tema');
+    if (t) { document.documentElement.setAttribute('data-theme', t); }
+    if (localStorage.getItem('pos-notas') === '1') { alternarNotas(); }
+    if (isNaN(inicial)) {
+      inicial = parseInt(localStorage.getItem('pos-lamina') || '0', 10) + 1;
+    }
+  } catch (e) {
+    // Ventana privada o almacenamiento bloqueado: se arranca en la primera.
+  }
+  ir(isNaN(inicial) ? 0 : inicial - 1);
+})();
+</script>
+</body>
+</html>
