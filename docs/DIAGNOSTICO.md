@@ -31,7 +31,7 @@ descartaba el evento y la venta se quedaba sin comprobante.
 
 ---
 
-## Los siete patrones que se repitieron
+## Los ocho patrones que se repitieron
 
 ### 1. Degradación silenciosa
 
@@ -129,6 +129,25 @@ Tres casos en la cuarta tanda, los tres invisibles con el sistema sano:
 **Qué mirar:** por cada pieza de infraestructura, preguntar qué hace cuando nadie la
 configura. Si la respuesta es "descarta", "crea con lo mínimo" o "usa la zona del
 servidor", configurarla explícito y dejar una prueba que lo diga.
+
+### 8. La documentación promete piezas que el código no tiene
+
+El patrón que más se repitió en la cuarta tanda. Todo sonaba bien en los documentos y en la
+presentación, y el jurado lo habría preguntado:
+
+| Se decía | Lo que había |
+|---|---|
+| RabbitMQ para la cola de comprobantes | El contenedor levantado y ninguna línea que lo usara |
+| Caché de catálogo en dos niveles con Redis | Solo Caffeine en memoria |
+| Tópicos de 12 particiones con cadena de reintentos y cola muerta | Una partición y el evento descartado |
+| Logs en JSON enviados a Loki | Loki levantado sin nadie que le envíe |
+| Bulkhead por destino y tablero de circuitos por local | Bulkhead desactivado, sin tablero |
+| Degradación definida para crédito | Crédito no se consulta |
+| "Encola y reintenta con esperas cada vez más largas" | Un job cada 5 s |
+
+**Qué mirar:** por cada frase que describe un mecanismo, buscar el código que lo hace. Un
+`grep` del nombre de la pieza (Rabbit, Redis, retry, dlq, bulkhead) en `src/main` alcanza. Si
+solo aparece en `docs/` y en la presentación, o se construye o se borra de los documentos.
 
 ---
 

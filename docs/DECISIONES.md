@@ -166,24 +166,28 @@ SELECT.
 
 ## 7. Solo stock y crédito pueden impedir una venta
 
-**Decisión.** Timeout, circuit breaker y bulkhead por destino, con comportamiento definido
-para cada falla:
+**Decisión.** Timeout y circuit breaker por destino, con comportamiento definido para cada
+falla. Sin bulkhead de hilos propio: está desactivado (`disable-thread-pool: true`) porque el
+pool aparte perdía el `SecurityContext` y las llamadas salían sin token.
 
 | Llamada | Timeout | Si falla |
 |---|---|---|
 | ventas → inventario | 500 ms | Falla la línea, el cajero lo ve |
-| ventas → crédito | 800 ms | Falla el pago a crédito, se ofrece efectivo |
+| ventas → crédito | 800 ms | Falla el pago a crédito, se ofrece efectivo. **Hoy no se consulta** (`ESTADO.md`, punto 5) |
 | ventas → catálogo | 200 ms | Sirve del caché aunque esté vencido |
 | ventas → promociones | 300 ms | Venta sin promoción, degradación registrada |
 | ventas → clientes | 300 ms | Venta anónima |
-| facturación → SUNAT | 15 s | Encola y reintenta, la venta ya terminó |
+| facturación → SUNAT | 15 s | Queda pendiente y se reintenta cada 5 s, la venta ya terminó |
+| ventas → identidad | 300 ms | El reporte sale sin nombre de local |
+| cualquiera → Redis | 200 ms | Sin límite de peticiones ni atajo de reintento, la venta sigue |
 
 **El razonamiento.** Un sistema que se niega a cobrar porque el servicio de promociones está
 lento no es resiliente, le hizo perder la venta a la botica. El cliente igual se lleva su
 producto.
 
-**La degradación se registra.** Cuando un circuito abre se publica como métrica y el tablero
-lo muestra por local. La degradación silenciosa es peor que la caída ruidosa.
+**La degradación se registra.** Cada rama de degradación deja una línea en el log con su
+motivo, y el estado de los circuitos sale como métrica en Prometheus. No hay tablero de
+Grafana armado todavía. La degradación silenciosa es peor que la caída ruidosa.
 
 ---
 

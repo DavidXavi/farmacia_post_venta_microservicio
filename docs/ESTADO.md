@@ -306,6 +306,24 @@ identidad no tenía `GET /api/locales/{id}`. Ya lo tiene; ahora se consulta con 
 300 ms, circuit breaker y caché de diez minutos. Si identidad no responde, el reporte sale
 sin nombre y la venta sigue.
 
+**Antes de abrir el navegador, revisando el código contra la documentación:**
+
+- **RabbitMQ estaba levantado y ningún servicio lo usaba.** Facturación ya consumía Kafka y
+  enviaba a SUNAT desde una tabla. Se sacó (decisión 12).
+- **La caché de catálogo "de dos niveles con Redis" no existía.** Solo hay Caffeine en
+  memoria del pod. Se corrigió la documentación (decisión 9) en vez de construir un nivel
+  que no hace falta.
+- **Con Redis caído, confirmar venta respondía 500.** El filtro de `Idempotency-Key` no
+  atrapaba el error: Redis podía parar las cajas. Ahora deja pasar la petición sin la
+  protección de reintento (`FiltroIdempotencyKeyTest`). El rate limit del gateway ya dejaba
+  pasar.
+- **`pos.catalogo.cambios` se publica y nadie lo consume.** Las otras réplicas de catálogo se
+  enteran de un cambio de precio cuando vence su caché, en 60 s como máximo. Está así en la
+  decisión 9; un consumidor en ms-catalogo lo haría inmediato.
+- **La presentación y la decisión 7 prometían tres cosas que no están:** bulkhead de hilos
+  (desactivado a propósito), un tablero que muestra los circuitos por local (no hay tablero)
+  y la degradación del crédito (crédito no se consulta). Se corrigieron.
+
 **Detalles:** la columna Total de Devoluciones salía vacía; el selector de cajas no decía de
 qué local era cada una; después de confirmar, la pantalla de venta seguía mostrando los
 botones de agregar y pagar (comparaba contra `Confirmada`).
