@@ -8,7 +8,17 @@ const AYUDA_CATALOGOS = [
   'Las Reglas de incentivo asocian una comisión por unidad vendida a un producto o a una categoría (no ambos a la vez), dentro de un rango de fechas de vigencia.',
 ]
 
-const TIPOS_FORMA_PAGO = ['Efectivo', 'TarjetaDebito', 'TarjetaCredito', 'Transferencia', 'BilleteraDigital', 'CopagoSeguro', 'CreditoFarmacia', 'Otro']
+// El valor es el que espera ms-ventas; la etiqueta, la que lee el usuario.
+const TIPOS_FORMA_PAGO = [
+  { valor: 'EFECTIVO', etiqueta: 'Efectivo' },
+  { valor: 'TARJETA_DEBITO', etiqueta: 'Tarjeta de debito' },
+  { valor: 'TARJETA_CREDITO', etiqueta: 'Tarjeta de credito' },
+  { valor: 'TRANSFERENCIA', etiqueta: 'Transferencia' },
+  { valor: 'BILLETERA_DIGITAL', etiqueta: 'Billetera digital' },
+  { valor: 'COPAGO_SEGURO', etiqueta: 'Copago de seguro' },
+  { valor: 'CREDITO_FARMACIA', etiqueta: 'Credito de farmacia' },
+  { valor: 'OTRO', etiqueta: 'Otro' },
+]
 
 function SeccionSimple({ titulo, items, campos, onCrear }) {
   const vacio = Object.fromEntries(campos.map((c) => [c.nombre, c.tipo === 'checkbox' ? false : '']))
@@ -37,7 +47,7 @@ function SeccionSimple({ titulo, items, campos, onCrear }) {
             {campo.tipo === 'select' ? (
               <select value={form[campo.nombre]} onChange={(e) => setForm((p) => ({ ...p, [campo.nombre]: e.target.value }))} required={campo.requerido}>
                 <option value="">--</option>
-                {campo.opciones.map((o) => <option key={o} value={o}>{o}</option>)}
+                {campo.opciones.map((o) => <option key={o.valor} value={o.valor}>{o.etiqueta}</option>)}
               </select>
             ) : (
               <input
@@ -147,7 +157,7 @@ export function CatalogosPage() {
               <tr key={r.id}>
                 <td>{r.nombre}</td>
                 <td>S/ {r.montoPorUnidad}</td>
-                <td>{r.fechaInicio} a {r.fechaFin}</td>
+                <td>{r.vigenciaInicio ? `${r.vigenciaInicio.slice(0, 10)} a ${(r.vigenciaFin || '').slice(0, 10)}` : 'Sin fecha'}</td>
                 <td>{r.activa ? 'Si' : 'No'}</td>
               </tr>
             ))}
@@ -171,8 +181,8 @@ function ReglaIncentivoForm({ productos, categorias, onCrear }) {
         productoId: form.productoId || null,
         categoriaId: form.categoriaId || null,
         montoPorUnidad: Number(form.montoPorUnidad),
-        fechaInicio: form.fechaInicio,
-        fechaFin: form.fechaFin,
+        vigenciaInicio: form.fechaInicio,
+        vigenciaFin: form.fechaFin,
       })
       setMensaje('Regla registrada.')
     } catch (err) {

@@ -48,14 +48,17 @@ export function ReportesPage() {
         <button onClick={consultarVentas}>Consultar</button>
         {ventas && (
           <table>
-            <thead><tr><th>Correlativo</th><th>Fecha</th><th>Estado</th><th>Total</th></tr></thead>
+            {/* ms-reportes devuelve el agregado por dia, local y producto, ya sin las anuladas. */}
+            <thead><tr><th>Dia</th><th>Producto</th><th>Unidades</th><th>Importe</th><th>Ventas</th></tr></thead>
             <tbody>
+              {ventas.length === 0 && <tr><td colSpan={5}>Sin ventas ese dia.</td></tr>}
               {ventas.map((v) => (
-                <tr key={v.id}>
-                  <td>{v.numeroCorrelativo ?? '-'}</td>
-                  <td>{new Date(v.fecha).toLocaleString()}</td>
-                  <td>{v.estado}</td>
-                  <td>S/ {v.total}</td>
+                <tr key={`${v.dia}-${v.localId}-${v.productoId}`}>
+                  <td>{v.dia}</td>
+                  <td>{v.productoNombre || v.productoId}</td>
+                  <td>{v.unidades}</td>
+                  <td>S/ {Number(v.importe).toFixed(2)}</td>
+                  <td>{v.transacciones}</td>
                 </tr>
               ))}
             </tbody>

@@ -3,12 +3,17 @@ import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { AyudaFormulario } from '../components/AyudaFormulario'
 
-const TIPOS_RECETA = ['Normal', 'Especial', 'EspecialRetenida']
+// El valor es el que guarda ms-clientes (igual que los datos semilla); la etiqueta, la que lee el usuario.
+const TIPOS_RECETA = [
+  { valor: 'NORMAL', etiqueta: 'Normal' },
+  { valor: 'ESPECIAL', etiqueta: 'Especial' },
+  { valor: 'ESPECIAL_RETENIDA', etiqueta: 'Especial retenida' },
+]
 
 const AYUDA_RECETAS = [
   'El número de receta debe ser único.',
-  'Las recetas de tipo Especial o EspecialRetenida requieren fecha de vencimiento propia.',
-  'Una receta EspecialRetenida solo puede usarse una vez: tras dispensarse queda retenida y no puede reutilizarse.',
+  'Las recetas de tipo Especial o Especial retenida requieren fecha de vencimiento propia.',
+  'Una receta Especial retenida solo puede usarse una vez: tras dispensarse queda retenida y no puede reutilizarse.',
   "La receta debe ser Aprobada por un químico farmacéutico (sección 'Validar receta') antes de poder usarse en una venta.",
 ]
 
@@ -19,7 +24,7 @@ export function RecetasPage() {
   const [observaciones, setObservaciones] = useState('')
   const [form, setForm] = useState({
     numero: '',
-    tipo: 'Normal',
+    tipo: 'NORMAL',
     fechaEmision: '',
     fechaVencimiento: '',
     productoId: '',
@@ -82,14 +87,14 @@ export function RecetasPage() {
         <label>
           Tipo
           <select value={form.tipo} onChange={(e) => actualizarCampo('tipo', e.target.value)}>
-            {TIPOS_RECETA.map((t) => <option key={t} value={t}>{t}</option>)}
+            {TIPOS_RECETA.map((t) => <option key={t.valor} value={t.valor}>{t.etiqueta}</option>)}
           </select>
         </label>
         <label>
           Fecha de emision
           <input type="date" value={form.fechaEmision} onChange={(e) => actualizarCampo('fechaEmision', e.target.value)} required />
         </label>
-        {form.tipo !== 'Normal' && (
+        {form.tipo !== 'NORMAL' && (
           <label>
             Fecha de vencimiento
             <input type="date" value={form.fechaVencimiento} onChange={(e) => actualizarCampo('fechaVencimiento', e.target.value)} required />

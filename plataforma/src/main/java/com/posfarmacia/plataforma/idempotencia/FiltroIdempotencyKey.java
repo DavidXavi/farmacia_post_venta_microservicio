@@ -29,6 +29,11 @@ import org.springframework.web.util.ContentCachingResponseWrapper;
  * <p>La clave va en Redis y no en Postgres a proposito: son efimeras, de altisima
  * frecuencia y no hace falta que sobrevivan a nada. Una tabla para esto seria
  * escritura transaccional gratis en el camino mas caliente del sistema.
+ *
+ * <p>Si Redis no responde, la peticion sigue sin esta proteccion en vez de fallar.
+ * Redis no es stock ni credito: no puede impedir una venta. Lo que se pierde mientras
+ * esta caido es solo el atajo del reintento; confirmar dos veces la misma venta igual
+ * lo rechaza el dominio, porque solo se confirma una venta en BORRADOR.
  */
 @Component
 public class FiltroIdempotencyKey extends OncePerRequestFilter {
@@ -64,7 +69,7 @@ public class FiltroIdempotencyKey extends OncePerRequestFilter {
         }
 
         String llaveRedis = "idem:" + req.getRequestURI() + ":" + clave;
-        String guardada = redis.opsForValue().get(llaveRedis);
+        String guardada = leerGuardada(llaveRedis);
         if (guardada != null) {
             log.info("Reintento idempotente de {} con clave {}: se devuelve la respuesta original",
                     req.getRequestURI(), clave);
@@ -81,9 +86,27 @@ public class FiltroIdempotencyKey extends OncePerRequestFilter {
         // guardar el error convertiria una falla transitoria en permanente.
         if (envoltura.getStatus() >= 200 && envoltura.getStatus() < 300) {
             String cuerpo = new String(envoltura.getContentAsByteArray(), java.nio.charset.StandardCharsets.UTF_8);
-            redis.opsForValue().set(llaveRedis, cuerpo, TTL);
+            guardar(llaveRedis, cuerpo);
         }
         envoltura.copyBodyToResponse();
+    }
+
+    private String leerGuardada(String llave) {
+        try {
+            return redis.opsForValue().get(llave);
+        } catch (RuntimeException e) {
+            log.warn("Redis no responde, {} sigue sin proteccion de reintento: {}", llave, e.getMessage());
+            return null;
+        }
+    }
+
+    private void guardar(String llave, String cuerpo) {
+        try {
+            redis.opsForValue().set(llave, cuerpo, TTL);
+        } catch (RuntimeException e) {
+            // La operacion ya se ejecuto y salio bien: no guardar la respuesta no la deshace.
+            log.warn("Redis no responde, no se guardo la respuesta de {}: {}", llave, e.getMessage());
+        }
     }
 
     @SuppressWarnings("unused")

@@ -14,8 +14,8 @@ La regla que ordena todo el diseño es una sola:
 **Qué pasa:** nada visible en la caja. La venta se cobra, el cliente se lleva su ticket
 impreso y su producto.
 
-**Por dentro:** el comprobante electrónico queda en una cola. El sistema reintenta solo,
-con esperas cada vez más largas. Cuando SUNAT vuelve, se envían todos los pendientes.
+**Por dentro:** el comprobante electrónico queda guardado como pendiente. El sistema lo
+reintenta solo cada cinco segundos. Cuando SUNAT vuelve, se envían todos los pendientes.
 
 **Cuándo se entera alguien:** hay una alerta que avisa si se acumulan más de 500
 comprobantes o si el más viejo lleva más de media hora esperando. No es una emergencia
@@ -88,6 +88,21 @@ reintentos, suena una alerta y queda un registro para revisar a mano.
 ### El pago falla después de haber apartado el stock
 
 **Qué pasa:** el stock apartado vuelve a estar disponible. La venta queda sin confirmar.
+
+## Comprobado, no supuesto
+
+El 28 de setiembre se apagaron piezas a propósito mientras se vendía, y se contó al final
+si alguna venta se había quedado sin su comprobante:
+
+| Qué se apagó | Qué pasó con las ventas |
+|---|---|
+| El servicio de facturación | Las cajas siguieron cobrando; al volver, salieron los comprobantes pendientes |
+| La base de datos de facturación, unos segundos | El sistema esperó y reintentó; el comprobante salió cuando la base volvió |
+| Un mensaje dañado entre servicios | Se apartó para revisión y las demás ventas siguieron normales |
+| El sistema de mensajería completo | Las cajas siguieron cobrando; los avisos esperaron guardados y salieron al volver |
+
+Al final: seis ventas, seis comprobantes, seis en los reportes. Ninguna perdida. La prueba
+se puede repetir cuando se quiera.
 
 ## Lo que sí queda pendiente y hay que decir
 

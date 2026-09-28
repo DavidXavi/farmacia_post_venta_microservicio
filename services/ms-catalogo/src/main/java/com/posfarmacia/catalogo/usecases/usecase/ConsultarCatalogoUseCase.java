@@ -35,12 +35,9 @@ public class ConsultarCatalogoUseCase {
     }
 
     /**
-     * Nivel 1 de cache: Caffeine en memoria del pod, TTL 60 s.
-     *
-     * <p>El nivel 2 (Redis, TTL 10 min) esta en CatalogoCacheConfig. Dos niveles y no
-     * uno porque un viaje a Redis por cada producto escaneado son 5000 round trips por
-     * segundo que no hacen falta: el 99% de las lecturas son de los mismos doscientos
-     * productos, y esos caben de sobra en la memoria del pod.
+     * Cache en memoria del pod, TTL 60 s (ver CatalogoCacheConfig). Sin salto de red:
+     * un viaje a Redis por cada producto escaneado serian 5000 round trips por segundo
+     * que no hacen falta.
      */
     @Cacheable(cacheNames = "productos", key = "#id", unless = "#result == null")
     public ProductoDto porId(UUID id) {

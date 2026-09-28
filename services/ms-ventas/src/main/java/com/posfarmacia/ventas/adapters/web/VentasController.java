@@ -137,8 +137,7 @@ public class VentasController {
     public ResponseEntity<VentaVista> confirmar(@PathVariable UUID ventaId,
             @RequestHeader("Idempotency-Key") String claveIdempotencia,
             @Valid @RequestBody(required = false) ConfirmarPeticion p) {
-        String tipo = p == null || p.tipoComprobante() == null ? "BOLETA" : p.tipoComprobante();
-        return ResponseEntity.ok(vista(confirmar.confirmar(ventaId, tipo)));
+        return ResponseEntity.ok(vista(confirmar.confirmar(ventaId, p == null ? null : p.tipoComprobante())));
     }
 
     @PostMapping("/{ventaId}/anular")

@@ -42,7 +42,7 @@ async function request(path, { method = 'GET', body, query, idempotencyKey } = {
     // Un codigo TOTP equivocado tambien responde 401, pero ahi la sesion sigue siendo buena:
     // solo expira la sesion por los otros 401.
     if (response.status === 401 && data?.codigo !== 'MFA_REQUERIDA' && onUnauthorized) onUnauthorized()
-    const message = data?.detail || data?.mensaje || data?.title || data?.message || `Error ${response.status}`
+    const message = data?.detail || data?.mensaje || data?.error || data?.title || data?.message || `Error ${response.status}`
     const error = new Error(message)
     // Codigo funcional del backend (ErrorResponse.codigo), p. ej. MFA_REQUERIDA.
     error.codigo = data?.codigo

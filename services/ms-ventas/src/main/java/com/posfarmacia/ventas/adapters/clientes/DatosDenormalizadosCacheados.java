@@ -48,6 +48,12 @@ public class DatosDenormalizadosCacheados implements DatosDenormalizados {
             .expireAfterWrite(Duration.ofMinutes(10))
             .build();
 
+    // 500 locales: caben todos. Un nombre de local cambia una vez al anio.
+    private final Cache<UUID, String> nombresLocal = Caffeine.newBuilder()
+            .maximumSize(1_000)
+            .expireAfterWrite(Duration.ofMinutes(10))
+            .build();
+
     private final ServiciosExternosPort servicios;
 
     public DatosDenormalizadosCacheados(ServiciosExternosPort servicios) {
@@ -72,9 +78,19 @@ public class DatosDenormalizadosCacheados implements DatosDenormalizados {
 
     @Override
     public String nombreLocal(UUID localId) {
-        // Pendiente: ms-identidad todavía no expone GET /api/locales/{id}. Hasta
-        // entonces va null, que el read model acepta sin perder la venta.
-        return null;
+        if (localId == null) {
+            return null;
+        }
+        String cacheado = nombresLocal.getIfPresent(localId);
+        if (cacheado != null) {
+            return cacheado;
+        }
+        // Un null (identidad caida) no se cachea: la venta siguiente lo vuelve a intentar.
+        String nombre = servicios.nombreLocal(localId);
+        if (nombre != null) {
+            nombresLocal.put(localId, nombre);
+        }
+        return nombre;
     }
 
     @Override

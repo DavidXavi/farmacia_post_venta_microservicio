@@ -6,7 +6,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
- * Productos, categorias, laboratorios, presentaciones. Lectura masiva sobre datos casi estaticos: cache de dos niveles y replicas de lectura.
+ * Productos, categorias, laboratorios, presentaciones. Lectura masiva sobre datos casi estaticos: cache en memoria y replicas de lectura.
  *
  * <p>Arquitectura interna: Clean Architecture por paquetes (catalogo.domain,
  * catalogo.usecases, catalogo.adapters, catalogo.infrastructure). La regla de

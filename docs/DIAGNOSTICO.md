@@ -19,14 +19,19 @@ dato.
 | Levantar y `curl` el camino feliz | Que la saga cierra | Todo lo que pasa cuando algo sale mal |
 | `curl` los caminos de error | Compensación, validaciones, degradación | Lo que el usuario ve |
 | **Abrir el navegador y apretar botones** | **Contratos frontend/backend, flujos completos** | Carga, concurrencia |
+| **Romper piezas a propósito** (`verificar-resiliencia.sh`) | **Eventos descartados, datos que no sobreviven a un reinicio** | Carga |
 
 **El navegador encontró los fallos más caros.** Activar el segundo factor dejaba al usuario
 fuera del sistema; ninguna promoción descontaba nunca. Los dos pasaban compilación, pruebas
 unitarias y barrido de API sin una sola señal.
 
+**Romper piezas encontró los que perdían ventas.** Con todo sano, cada venta cerraba su
+saga. Solo al cortar la base de facturación unos segundos apareció que el consumidor
+descartaba el evento y la venta se quedaba sin comprobante.
+
 ---
 
-## Los seis patrones que se repitieron
+## Los siete patrones que se repitieron
 
 ### 1. Degradación silenciosa
 
@@ -46,7 +51,7 @@ Degradar está bien y a veces es lo correcto; degradar en silencio no.
 
 ### 2. El contrato entre frontend y backend no lo comprueba nadie
 
-Seis casos, todos con el mismo perfil: nombres parecidos, nadie falla, el dato no llega.
+Doce casos, todos con el mismo perfil: nombres parecidos, nadie falla, el dato no llega.
 
 | El frontend usa | El backend expone | Efecto |
 |---|---|---|
@@ -56,6 +61,12 @@ Seis casos, todos con el mismo perfil: nombres parecidos, nadie falla, el dato n
 | `/api/clientes/{id}/linea-credito` | `/api/creditos/cliente/{id}` | Pantalla de Créditos muerta |
 | `/api/clientes/dni/{dni}` | `/api/clientes/por-dni/{dni}` | Búsqueda por DNI rota |
 | `dosisYCantidadAutorizada` | `dosis` + `cantidad_autorizada` | Alta de receta imposible |
+| `Factura` | `FACTURA` | La factura salía como boleta B001 |
+| `BilleteraDigital`, `DescuentoPorcentaje` | `BILLETERA_DIGITAL`, `DESCUENTO_PORCENTAJE` | Alta de forma de pago y de promoción rechazadas |
+| `fechaInicio` al crear regla de incentivo | `vigenciaInicio` | La regla se guardaba sin vigencia |
+| `estado === 'Abierta'`, `'Confirmada'` | `ABIERTA`, `CONFIRMADA` | No aparecía el botón de cerrar caja |
+| Lista de ventas | Agregado por producto y día | Reportes mostraba "Invalid Date" |
+| Productos de la promoción al editar | No venían en el listado | Editar una promoción la dejaba sin productos |
 
 **Qué mirar:** al agregar o cambiar un endpoint, cruzar lo que el frontend llama contra lo
 que el backend mapea. Un script de veinte líneas que lea los `@(Get|Post|...)Mapping` y los
@@ -101,6 +112,24 @@ sigue sin tener quien lo invoque: pagar con crédito de farmacia no verifica el 
 HTTP. Si solo aparece donde se define, es una integración muerta. Un servicio que arranca,
 responde y no lo llama nadie parece sano en el tablero.
 
+Le pasó también al arqueo de caja: la caja vive en identidad, los pagos en ventas, y nadie
+los unía. El cierre guardaba como esperado solo el monto inicial.
+
+### 7. El valor por defecto de la librería decide lo que nadie decidió
+
+Tres casos en la cuarta tanda, los tres invisibles con el sistema sano:
+
+- **Spring Kafka sin manejador de errores** reintenta diez veces sin espera y descarta el
+  evento. Nadie eligió descartar ventas; simplemente nadie eligió otra cosa.
+- **Kafka crea solo los tópicos que no existen**, con una partición. La documentación
+  hablaba de doce y la cadena procesaba de a una.
+- **`ZoneId.systemDefault()`** en un contenedor es UTC. Las ventas desde las 7 de la noche
+  caían en el reporte del día siguiente.
+
+**Qué mirar:** por cada pieza de infraestructura, preguntar qué hace cuando nadie la
+configura. Si la respuesta es "descarta", "crea con lo mínimo" o "usa la zona del
+servidor", configurarla explícito y dejar una prueba que lo diga.
+
 ---
 
 ## Qué protege hoy cada cosa
@@ -109,11 +138,15 @@ responde y no lo llama nadie parece sano en el tablero.
 |---|---|---|
 | `ArquitecturaTest` (ArchUnit, 9 servicios) | Dependencias hacia adentro, dominio sin Spring, casos de uso sin adaptadores | Cualquier cosa fuera de esas tres reglas |
 | `ReglaPromocionTest`, `AsignadorFefoTest` | Aritmética de descuentos y FEFO | El resto del dominio |
+| `TipoComprobanteTest` | Que una factura nunca salga como boleta | Serie y correlativo, que decide facturación |
+| `FiltroIdempotencyKeyTest` | Que Redis caído no impida vender | La idempotencia contra una base real |
+| `KafkaConfigTest` | Destino de la cola muerta, particiones de cada tópico | El reintento en vivo, que lo cubre el script |
 | `scripts/verificar.sh` | Camino feliz de punta a punta, aislamiento de bases, idempotencia | Los caminos de error |
-| `scripts/verificar-reglas.sh` | Reglas de negocio, anulación con compensación, convenio | Escrituras de administración |
+| `scripts/verificar-reglas.sh` | Reglas de negocio, anulación con compensación y su descuento en reportes, convenio, arqueo de caja | Escrituras de administración |
+| `scripts/verificar-resiliencia.sh` | Facturación, la base o Kafka caídos, evento corrupto, cuadre entre servicios | Carga, varias réplicas a la vez |
 | `ManejadorErrores` (plataforma) | Que una regla de negocio llegue como 4xx con mensaje | Que el mensaje sea el correcto |
 
-**Total: 40 pruebas automáticas.** Los 44 endpoints que mutan se verificaron a mano contra
+**Total: 49 pruebas automáticas y tres scripts.** Los 44 endpoints que mutan se verificaron a mano contra
 el sistema levantado, no hay pruebas que los cubran en CI. Es el hueco más grande.
 
 ---
@@ -123,14 +156,16 @@ el sistema levantado, no hay pruebas que los cubran en CI. Es el hueco más gran
 1. **¿Compila y pasan las pruebas?** Necesario y no suficiente. Los dos fallos más caros
    de esta sesión pasaron las dos cosas.
 2. **¿Arranca?** Los cinco servicios sin `Clock` compilaban. `docker compose ps` tiene que
-   mostrar los diecisiete, no trece.
-3. **¿Se ve en el navegador?** Si tocaste un endpoint que una pantalla usa, abrila. El
+   mostrar los dieciséis, no trece.
+3. **¿Se ve en el navegador?** Si tocaste un endpoint que una pantalla usa, ábrela. El
    contrato de nombres no lo comprueba nadie más.
-4. **¿La rama de error dice algo?** Provocá el fallo y leé lo que sale en pantalla. "Error
+4. **¿La rama de error dice algo?** Provoca el fallo y lee lo que sale en pantalla. "Error
    500" y "Error 405" no son mensajes.
 5. **¿Alguien llama a lo que escribiste?** `grep` del nombre del método. Si solo aparece
    donde se define, no está conectado.
-6. **Tras reconstruir un servicio suelto**, `docker compose restart api-gateway`. Si no,
+6. **¿Qué pasa si lo de al lado se cae?** Si tocaste un consumidor, una dependencia HTTP o
+   el outbox, corre `verificar-resiliencia.sh`. Es el único que apaga piezas.
+7. **Tras reconstruir un servicio suelto**, `docker compose restart api-gateway`. Si no,
    sus rutas devuelven 404 con el servicio sano.
 
 ---
@@ -147,5 +182,7 @@ Ninguna de estas es técnica pura; son criterios que alguien del negocio deberí
 - **Una devolución consulta a ms-ventas por HTTP** en vez de guardar las líneas en
   facturación. Evita mil inserciones por segundo en el camino caliente a cambio de una
   llamada en un camino frío, pero crea una dependencia nueva entre servicios.
+- **La devolución de una venta con convenio** emite la nota de crédito por el precio de la
+  línea, pero no separa cuánto vuelve al cliente (que pagó el copago) y cuánto al seguro.
 - **La cobertura de seguro degrada a cero en silencio.** Está documentado como decisión del
   proyecto, no se revirtió. Hay tres salidas posibles en `ESTADO.md`.

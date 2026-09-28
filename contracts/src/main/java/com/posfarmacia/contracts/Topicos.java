@@ -26,7 +26,7 @@ public final class Topicos {
     /** Movimientos de inventario, para el read model de reportes. */
     public static final String STOCK_MOVIMIENTOS = "pos.stock.movimientos";
 
-    /** Cambio en catalogo: invalida la cache de los dos niveles en todos los pods. */
+    /** Cambio en catalogo: permite invalidar la cache sin esperar al TTL. */
     public static final String CATALOGO_CAMBIOS = "pos.catalogo.cambios";
 
     /** Comprobante aceptado por SUNAT. Cierra la saga en ventas. */
@@ -36,10 +36,9 @@ public final class Topicos {
     public static final String AUDITORIA = "pos.auditoria";
 
     /**
-     * Sufijos de la cadena de reintento y la cola muerta. Un consumidor que falla no
-     * bloquea la particion: el mensaje salta al topico de reintento siguiente y, si
-     * agota los tres, cae en la DLQ y suena una alerta.
+     * Sufijo de la cola muerta. Un evento que sigue fallando despues de los reintentos
+     * se guarda en {@code <topico>.dlq} en vez de descartarse: queda ahi para revisarlo
+     * y volver a publicarlo.
      */
-    public static final String[] REINTENTOS = {".retry.5s", ".retry.1m", ".retry.10m"};
     public static final String DLQ = ".dlq";
 }

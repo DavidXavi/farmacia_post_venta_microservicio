@@ -81,6 +81,8 @@ management:
       endpoint: ${OTLP_ENDPOINT:http://localhost:4318/v1/traces}
 
 pos:
+  uri:
+    ventas: ${URI_VENTAS:http://localhost:8087}
   jwt:
     emisor: ${JWT_EMISOR:https://pos-farmacia.local}
     # 15 minutos, no 480. Con 1500 terminales, una ventana de 8 horas para un token

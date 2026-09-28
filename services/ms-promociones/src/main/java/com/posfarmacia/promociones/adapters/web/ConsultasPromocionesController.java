@@ -40,7 +40,10 @@ public class ConsultasPromocionesController {
 
     @GetMapping("/api/promociones")
     public List<Map<String, Object>> promociones() {
-        return filas("""
+        // Los ids de productos viajan como texto separado por comas y se parten aqui: un
+        // java.sql.Array no se serializa a JSON. Sin esta lista, editar una promocion
+        // desde la pantalla la dejaba sin productos y el guardado se rechazaba.
+        List<Map<String, Object>> filas = filas("""
                 SELECT p.id, p.nombre, p.descripcion,
                        p.tipo_beneficio AS \"tipoBeneficio\",
                        p.valor_beneficio AS \"valorBeneficio\",
@@ -48,11 +51,17 @@ public class ConsultasPromocionesController {
                        p.cantidad_minima AS \"cantidadMinima\",
                        p.vigencia_inicio AS \"vigenciaInicio\",
                        p.vigencia_fin AS \"vigenciaFin\", p.activa,
-                       COUNT(c.id) AS \"productosAlcanzados\"
+                       COUNT(c.id) AS \"productosAlcanzados\",
+                       string_agg(c.producto_id::text, ',') AS \"productosParticipantes\"
                   FROM promociones p
                   LEFT JOIN promocion_condiciones c ON c.promocion_id = p.id
                  GROUP BY p.id
                  ORDER BY p.activa DESC, p.nombre
                 """);
+        filas.forEach(f -> {
+            Object ids = f.get("productosParticipantes");
+            f.put("productosParticipantes", ids == null ? List.of() : List.of(ids.toString().split(",")));
+        });
+        return filas;
     }
 }

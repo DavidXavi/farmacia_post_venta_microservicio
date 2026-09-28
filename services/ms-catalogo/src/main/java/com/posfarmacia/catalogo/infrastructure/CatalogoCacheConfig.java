@@ -10,18 +10,18 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 /**
- * Cache de dos niveles.
+ * Cache de catalogo en memoria del pod: Caffeine, TTL 60 s.
  *
- * <p>Nivel 1, Caffeine en memoria del pod, TTL 60 s: atiende el 99% de las lecturas
- * sin salir del proceso. Nivel 2, Redis, TTL 10 min, compartido entre replicas: cubre
- * el arranque de un pod nuevo y los productos menos frecuentes.
+ * <p>Atiende el 99% de las lecturas sin salir del proceso: son los mismos doscientos
+ * productos y caben de sobra en la memoria de cada replica.
  *
- * <p>Los TTL son cortos a proposito. Con invalidacion por evento como unico mecanismo,
- * un evento perdido dejaria un precio viejo circulando indefinidamente. Con TTL de 60 s,
- * el peor caso de un evento perdido es un minuto de precio desactualizado y el sistema
- * se corrige solo. Esa combinacion (evento para lo rapido, TTL para lo seguro) es lo
- * que evita tener que hacer la invalidacion transaccional y perfecta, que seria cara
- * y fragil.
+ * <p>El TTL es corto a proposito. El pod que cambia un producto limpia su cache al
+ * instante; los demas se corrigen solos en 60 s como maximo. Un minuto de precio
+ * desactualizado en el peor caso, sin invalidacion distribuida que mantener.
+ *
+ * <p>ponytail: un solo nivel. Redis como segundo nivel solo ayudaria al pod recien
+ * arrancado, que tarda unos segundos en llenar su cache contra Postgres. Entra si las
+ * pruebas de carga muestran que ese arranque en frio pega en el p99.
  */
 @Configuration
 @EnableCaching

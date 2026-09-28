@@ -136,6 +136,12 @@ Consumidor idempotente resuelve el problema real.
 necesitan sobrevivir a nada. Una tabla sería escritura transaccional gratis en el camino
 más caliente.
 
+**Si Redis se cae, la venta sigue.** El filtro atrapa el error, lo anota en el log y deja
+pasar la petición sin la protección de reintento. Redis no es stock ni crédito: no puede
+impedir una venta. Mientras está caído, confirmar dos veces la misma venta igual lo
+rechaza el dominio (solo se confirma una venta en BORRADOR). Lo prueba
+`FiltroIdempotencyKeyTest`.
+
 ---
 
 ## 6. Saga con compensación, sin transacción distribuida
@@ -203,19 +209,24 @@ sí se puede revocar en base de datos, cubre la comodidad del cajero.
 
 ---
 
-## 9. Caché de dos niveles en catálogo
+## 9. Caché de catálogo en memoria del pod
 
-**Decisión.** Caffeine en memoria del pod (TTL 60 s) más Redis compartido (TTL 10 min), con
-invalidación por evento `pos.catalogo.cambios`.
+**Decisión.** Caffeine en memoria de cada réplica de ms-catalogo, TTL 60 s. El pod que
+cambia un producto limpia su caché al instante y publica `pos.catalogo.cambios`.
 
-**Por qué dos niveles.** Un viaje a Redis por cada producto escaneado son 5000 round trips
-por segundo que no hacen falta: el 99% de las lecturas son de los mismos doscientos
-productos y esos caben de sobra en la memoria del pod.
+**Por qué en memoria y no en Redis.** Un viaje a Redis por cada producto escaneado son
+5000 round trips por segundo que no hacen falta: el 99% de las lecturas son de los mismos
+doscientos productos y esos caben de sobra en la memoria del pod. Leer de la memoria del
+propio proceso no tiene salto de red.
 
-**Por qué TTL corto además del evento.** Con invalidación por evento como único mecanismo, un
-evento perdido dejaría un precio viejo circulando indefinidamente. Con TTL de 60 s el peor
-caso es un minuto de precio desactualizado y el sistema se corrige solo. Evento para lo
-rápido, TTL para lo seguro.
+**Por qué TTL corto.** Las otras réplicas no se enteran al instante del cambio. Con TTL de
+60 s el peor caso es un minuto de precio desactualizado y el sistema se corrige solo, sin
+invalidación distribuida que mantener.
+
+**Lo que no se hizo: Redis como segundo nivel.** La primera versión de este documento lo
+proponía (TTL 10 min, compartido entre réplicas), pero nunca se implementó y al revisarlo
+no hace falta: solo ayudaría a un pod recién arrancado, que tarda unos segundos en llenar
+su caché. Entra si las pruebas de carga muestran que ese arranque en frío pega en el p99.
 
 **Es la palanca más grande del sistema.** 10x a 100x en capacidad de lectura. Todo lo demás
 (más réplicas, más conexiones, particionar) da mejoras lineales.
@@ -316,7 +327,35 @@ tipo RPC. Si aparece, entra RabbitMQ para ese caso y solo para ese.
 
 ---
 
-## 13. Lo que deliberadamente no se hizo
+## 13. Un evento que falla se reintenta con espera y termina en la cola muerta
+
+**Decisión.** Todos los consumidores comparten un manejador de errores
+(`plataforma/mensajeria/KafkaConfig`): seis reintentos con espera creciente (1, 2, 4, 8, 16
+y 30 s) sobre la misma partición y, si igual falla, el evento se copia a `<topico>.dlq`.
+Recién ahí avanza el offset.
+
+**Qué había antes.** Nada, y eso era lo grave. El manejador por defecto de Spring Kafka
+reintenta diez veces sin espera y después descarta el evento. Un corte de un segundo en
+la base de facturación dejaba una venta sin comprobante para siempre, sin un solo error a
+la vista. La documentación describía una cadena de tópicos de reintento que nunca se
+construyó.
+
+**Alternativa descartada: tópicos de reintento** (`@RetryableTopic`, un tópico por cada
+espera). No frenan la partición mientras esperan, pero triplican los tópicos y rompen el
+orden por local: una anulación podría procesarse antes que la confirmación que anula, que
+es justo lo que la clave por local existe para evitar.
+
+**Lo que se paga.** Mientras un evento se reintenta, su partición espera hasta un minuto.
+Con doce particiones y la clave por local, eso es una botica demorada, no la cadena. Lo
+prueba `verificar-resiliencia.sh`: con un evento corrupto reintentándose, una venta normal
+se facturó igual.
+
+**Qué la cambiaría.** Que el lag de un grupo crezca de forma sostenida por eventos que se
+reintentan. Ahí entra `@RetryableTopic` para ese consumidor, aceptando el costo en orden.
+
+---
+
+## 14. Lo que deliberadamente no se hizo
 
 | Pieza | Por qué no | Cuándo entraría |
 |---|---|---|
@@ -328,10 +367,11 @@ tipo RPC. Si aparece, entra RabbitMQ para ese caso y solo para ese.
 | Avro con codegen | JSON con Schema Registry en modo JSON Schema da compatibilidad hacia atrás sin plugin de generación | Si el tamaño del payload o la estrictez lo exigieran |
 | Event sourcing | Outbox y eventos de integración sí; reconstruir el estado desde el log, no | Un requisito real de auditoría temporal completa |
 | GraphQL o BFF | Un frontend con un gateway REST alcanza | App móvil con necesidades distintas |
+| Tópicos de reintento | El reintento en la misma partición con cola muerta no pierde eventos y conserva el orden por local | Lag sostenido por eventos reintentándose (decisión 13) |
 
 ---
 
-## 14. Cuándo esta arquitectura es la decisión equivocada
+## 15. Cuándo esta arquitectura es la decisión equivocada
 
 Con 20 locales y 40 cajas, es una pérdida neta. Un monolito con réplicas de lectura y caché
 aguanta ese volumen de sobra, con un décimo del costo operativo.

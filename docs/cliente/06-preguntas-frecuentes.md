@@ -34,6 +34,15 @@ acepta. Esa tabla hace falta igual, porque hay que saber qué se emitió y qué 
 además una cola era llevar la misma cuenta en dos cuadernos. Con un solo sistema de
 mensajería hay uno menos que vigilar, actualizar y pagar. No se perdió ninguna función.
 
+**¿Para qué agregaron Redis, si antes no estaba?**
+
+Porque ahora cada servicio corre en varias copias a la vez, y hay dos datos que todas las
+copias tienen que ver igual. El primero: si la caja reintenta "confirmar venta" y el
+reintento cae en otra copia, esa copia tiene que saber que ya se cobró. El segundo: el
+límite de peticiones por usuario, que protege al resto de cajas de una que se quedó en
+bucle. Los dos son datos de corta vida que Redis borra solo cuando vencen. Si Redis se
+cae, las cajas siguen vendiendo.
+
 **¿Se reescribió el sistema desde cero?**
 
 No. Las reglas de negocio son las mismas del sistema anterior, movidas de lugar. El FEFO,
@@ -43,10 +52,18 @@ entre sí.
 
 ## Sobre la operación
 
+**¿Se puede perder una venta si algo se cae?**
+
+No, y está probado apagando piezas a propósito: el servicio de facturación, su base de
+datos y el sistema de mensajería. En todos los casos la caja siguió cobrando y cada venta
+terminó con su comprobante cuando la pieza volvió. Lo que no se puede procesar se aparta
+para revisión en vez de descartarse. El detalle está en
+[Qué pasa cuando algo falla](03-cuando-algo-falla.md).
+
 **¿Qué pasa si SUNAT se cae?**
 
-Nada visible en la caja. Se cobra, se imprime y el cliente se va. El comprobante queda en
-cola y se envía solo cuando SUNAT vuelve. Hay una alerta si se acumulan demasiados o si el
+Nada visible en la caja. Se cobra, se imprime y el cliente se va. El comprobante queda
+pendiente y se envía solo cuando SUNAT vuelve. Hay una alerta si se acumulan demasiados o si el
 más viejo lleva mucho esperando.
 
 **¿Y si se corta el internet de un local?**

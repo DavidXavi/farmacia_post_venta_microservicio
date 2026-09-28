@@ -9,7 +9,7 @@ const AYUDA_VENTA = [
   "Usa 'Ver promociones' en cada línea para aplicar automáticamente la primera promoción vigente de ese producto.",
   'Si el cliente tiene un convenio de seguro, identifícalo por DNI y aplica el convenio para calcular el copago.',
   'Registra uno o más pagos hasta cubrir el total de la venta.',
-  'Elige el tipo de comprobante y la serie, y confirma la venta: esto descuenta stock por FEFO y genera el comprobante.',
+  'Elige el tipo de comprobante (boleta o factura) y confirma la venta: esto descuenta stock por FEFO y genera el comprobante.',
   'El precio del producto no incluye IGV. Cada línea calcula: Base = (Precio × Cantidad) − Descuento, IGV = 18% de la Base, y Total línea = Base + IGV. El "Total" de la venta es la suma de los totales de línea (ya con IGV incluido).',
 ]
 
@@ -35,8 +35,7 @@ export function VentaPage() {
   const [formaPagoId, setFormaPagoId] = useState('')
   const [montoPago, setMontoPago] = useState('')
   const [convenioId, setConvenioId] = useState('')
-  const [serieComprobante, setSerieComprobante] = useState('B001')
-  const [tipoComprobante, setTipoComprobante] = useState('Boleta')
+  const [tipoComprobante, setTipoComprobante] = useState('BOLETA')
 
   useEffect(() => {
     api.get('/api/cajas').then(setCajas)
@@ -148,7 +147,8 @@ export function VentaPage() {
     try {
       const confirmada = await api.post(
         `/api/ventas/${venta.id}/confirmar`,
-        { tipoComprobante, serieComprobante },
+        // La serie (B001 o F001) la asigna ms-facturacion segun el tipo, no la caja.
+        { tipoComprobante },
         // Clave estable, no un UUID nuevo por click: confirmar dos veces la misma
         // venta nunca es legitimo, y asi un doble click devuelve la primera respuesta
         // en vez de emitir un segundo comprobante.
@@ -206,7 +206,7 @@ export function VentaPage() {
     )
   }
 
-  const ventaConfirmada = venta.estado === 'Confirmada'
+  const ventaConfirmada = venta.estado === 'CONFIRMADA'
 
   return (
     <section>
@@ -306,14 +306,9 @@ export function VentaPage() {
             <label>
               Tipo de comprobante
               <select value={tipoComprobante} onChange={(e) => setTipoComprobante(e.target.value)}>
-                <option value="Boleta">Boleta</option>
-                <option value="Factura">Factura</option>
-                <option value="Ticket">Ticket</option>
+                <option value="BOLETA">Boleta</option>
+                <option value="FACTURA">Factura</option>
               </select>
-            </label>
-            <label>
-              Serie
-              <input value={serieComprobante} onChange={(e) => setSerieComprobante(e.target.value)} />
             </label>
             <button onClick={confirmarVenta} disabled={venta.detalles.length === 0}>Confirmar venta</button>
           </div>

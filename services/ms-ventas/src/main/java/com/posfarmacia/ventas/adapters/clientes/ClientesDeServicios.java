@@ -37,6 +37,7 @@ import org.springframework.web.client.RestClient;
  *   <tr><td>catalogo</td><td>200 ms</td><td>sirve del cache aunque este vencido</td></tr>
  *   <tr><td>promociones</td><td>300 ms</td><td>venta sin promocion</td></tr>
  *   <tr><td>clientes</td><td>300 ms</td><td>venta anonima</td></tr>
+ *   <tr><td>identidad</td><td>300 ms</td><td>el reporte sale sin nombre de local</td></tr>
  * </table>
  */
 @Component
@@ -49,6 +50,7 @@ public class ClientesDeServicios implements ServiciosExternosPort {
     private final RestClient promociones;
     private final RestClient clientes;
     private final RestClient credito;
+    private final RestClient identidad;
     private final CircuitBreakerFactory<?, ?> circuitos;
 
     public ClientesDeServicios(
@@ -57,12 +59,14 @@ public class ClientesDeServicios implements ServiciosExternosPort {
             @Value("${pos.uri.promociones}") String uriPromociones,
             @Value("${pos.uri.clientes}") String uriClientes,
             @Value("${pos.uri.credito}") String uriCredito,
+            @Value("${pos.uri.identidad}") String uriIdentidad,
             CircuitBreakerFactory<?, ?> circuitos) {
         this.catalogo = ClientesHttpConfig.cliente(uriCatalogo, Duration.ofMillis(200));
         this.inventario = ClientesHttpConfig.cliente(uriInventario, Duration.ofMillis(500));
         this.promociones = ClientesHttpConfig.cliente(uriPromociones, Duration.ofMillis(300));
         this.clientes = ClientesHttpConfig.cliente(uriClientes, Duration.ofMillis(300));
         this.credito = ClientesHttpConfig.cliente(uriCredito, Duration.ofMillis(800));
+        this.identidad = ClientesHttpConfig.cliente(uriIdentidad, Duration.ofMillis(300));
         this.circuitos = circuitos;
     }
 
@@ -183,6 +187,22 @@ public class ClientesDeServicios implements ServiciosExternosPort {
                         .body(ClienteDto.class),
                 fallo -> {
                     log.warn("Clientes no respondio para el DNI {}, se vende como anonimo", dni);
+                    return null;
+                });
+    }
+
+    /** Nombre del local. Si identidad no responde, el reporte sale sin nombre y la venta sigue. */
+    @Override
+    public String nombreLocal(UUID localId) {
+        return circuitos.create("identidad").run(
+                () -> {
+                    var local = identidad.get().uri("/api/locales/{id}", localId)
+                            .retrieve()
+                            .body(java.util.Map.class);
+                    return local == null ? null : (String) local.get("nombre");
+                },
+                fallo -> {
+                    log.warn("Identidad no respondio por el local {}, el reporte sale sin nombre", localId);
                     return null;
                 });
     }

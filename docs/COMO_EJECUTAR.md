@@ -100,12 +100,15 @@ tiempo de build, no en runtime. Después de tocarlo, `docker compose build front
 
 ## Verificación funcional
 
-Hay un script que corre todo lo de abajo de una vez y termina con código distinto de cero
-si algo no cuadra:
+Hay tres scripts. Cada uno termina en "Todo pasó." o con código distinto de cero:
 
 ```bash
-./scripts/verificar.sh
+./scripts/verificar.sh              # camino feliz: bases, JWT, venta, saga, idempotencia
+./scripts/verificar-reglas.sh       # reglas que dicen que no, anulación, convenio, arqueo
+./scripts/verificar-resiliencia.sh  # ninguna venta se pierde (apaga piezas, ~4 min)
 ```
+
+Si el gateway no está en el 8080, se les pasa la URL: `GW=http://localhost:8095 ./scripts/verificar.sh`.
 
 Comprueba lo que de verdad define esta arquitectura, no que la página cargue: las nueve
 bases aisladas, el JWT validado localmente, la saga llegando a los cuatro consumidores, la
@@ -236,6 +239,55 @@ docker compose stop ms-promociones
 # agregar una línea: la venta sigue, sin descuento
 docker compose logs ms-ventas | grep "no respondio"
 ```
+
+### 10. Ninguna venta se pierde
+
+`verificar-resiliencia.sh` hace esto solo. A mano, los dos casos que más se preguntan:
+
+```bash
+# Kafka caído: la venta se confirma y el evento espera en el outbox
+docker compose stop kafka
+# hacer una venta: se confirma igual
+docker compose exec postgres psql -U postgres -d pg_ventas   -c "SELECT tipo, creado_en FROM outbox WHERE publicado_en IS NULL"
+docker compose start kafka     # el outbox publica solo y la saga sigue
+
+# Un consumidor que falla reintenta con espera y no descarta el evento
+docker compose logs -f ms-facturacion | grep -E "se reintenta|agoto"
+```
+
+## Ver logs y eventos
+
+**Logs de un servicio.** Cada línea lleva `[servicio,traceId,spanId]`:
+
+```bash
+docker compose logs -f ms-ventas
+docker compose logs ms-ventas ms-inventario ms-facturacion | grep <traceId>
+```
+
+**Kafka en el navegador:** http://localhost:8092 (Kafka UI, perfil `completo`). En Topics se
+ven los mensajes de cada tópico; en Consumers, cuánto le falta procesar a cada servicio.
+
+**Kafka por consola:**
+
+```bash
+# tópicos y sus particiones
+docker compose exec kafka kafka-topics --bootstrap-server localhost:29092 --describe
+
+# leer los eventos de un tópico
+docker compose exec kafka kafka-console-consumer --bootstrap-server localhost:29092   --topic pos.ventas.confirmadas --from-beginning
+
+# lag: cuánto le falta procesar a un servicio
+docker compose exec kafka kafka-consumer-groups --bootstrap-server localhost:29092   --describe --group ms-facturacion
+
+# lo que agotó los reintentos, con la excepción en los headers
+docker compose exec kafka kafka-console-consumer --bootstrap-server localhost:29092   --topic pos.ventas.confirmadas.dlq --from-beginning --property print.headers=true
+```
+
+**Una base:** `docker compose exec postgres psql -U postgres -d pg_ventas`, o DBeaver contra
+`localhost:5452`.
+
+Los eventos de Kafka viven en el volumen `kafka-data` y los datos en `db-data`. `docker
+compose down` los conserva; `docker compose down -v` borra los dos.
 
 ## Kubernetes
 

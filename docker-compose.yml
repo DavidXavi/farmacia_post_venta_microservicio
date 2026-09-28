@@ -111,6 +111,11 @@ services:
       # cadena legible no vale: el broker se niega a arrancar. Es constante para
       # que reiniciar no invalide el volumen de datos.
       CLUSTER_ID: f5wrpOiPSfWaHj0MW2p-IQ
+    volumes:
+      # Sin volumen, un "docker compose down" borraba los eventos que los consumidores
+      # todavia no habian leido. El outbox ya los habia marcado como publicados, asi que
+      # nadie los iba a reenviar: ventas sin comprobante.
+      - kafka-data:/var/lib/kafka/data
     ports:
       - "9096:9092"
     healthcheck:
@@ -194,6 +199,7 @@ services:
       <<: *env-comun
       DB_NAME: pg_identidad
       DB_USER: u_identidad
+      URI_VENTAS: http://ms-ventas:8080
       JWT_EMISOR: https://pos-farmacia.local
       JWT_MINUTOS_ACCESO: "15"
       JWT_HORAS_REFRESH: "8"
@@ -258,6 +264,7 @@ services:
       URI_CLIENTES: http://ms-clientes:8080
       URI_CREDITO: http://ms-credito:8080
       URI_PROMOCIONES: http://ms-promociones:8080
+      URI_IDENTIDAD: http://ms-identidad:8080
     depends_on:
       postgres:
         condition: service_healthy
@@ -436,3 +443,4 @@ services:
 
 volumes:
   db-data:
+  kafka-data:

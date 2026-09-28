@@ -3,12 +3,19 @@ import { api } from '../api/client'
 import { useAuth } from '../auth/AuthContext'
 import { AyudaFormulario } from '../components/AyudaFormulario'
 
-const TIPOS_BENEFICIO = ['DescuentoPorcentaje', 'DescuentoMonto', 'LlevaNPagaM']
+// El valor es el que espera ms-promociones; la etiqueta, la que lee el usuario.
+const TIPOS_BENEFICIO = [
+  { valor: 'DESCUENTO_PORCENTAJE', etiqueta: 'Descuento por porcentaje' },
+  { valor: 'DESCUENTO_MONTO', etiqueta: 'Descuento por monto fijo' },
+  { valor: 'LLEVA_N_PAGA_M', etiqueta: 'Lleva N, paga M' },
+]
+// El backend devuelve la vigencia como timestamp; el input date solo acepta YYYY-MM-DD.
+const soloFecha = (v) => (v ? String(v).slice(0, 10) : '')
 
 const AYUDA_VALOR_BENEFICIO = {
-  DescuentoPorcentaje: 'Valor del beneficio = porcentaje de descuento sobre el precio de la línea. Ej: 10 = 10% de descuento.',
-  DescuentoMonto: 'Valor del beneficio = monto fijo en soles que se descuenta de la línea (nunca más que el total de la línea).',
-  LlevaNPagaM: 'Valor del beneficio = el N de "lleva N y una unidad sale gratis". Ej: 3 = cada 3 unidades compradas, 1 es gratis.',
+  DESCUENTO_PORCENTAJE: 'Valor del beneficio = porcentaje de descuento sobre el precio de la línea. Ej: 10 = 10% de descuento.',
+  DESCUENTO_MONTO: 'Valor del beneficio = monto fijo en soles que se descuenta de la línea (nunca más que el total de la línea).',
+  LLEVA_N_PAGA_M: 'Valor del beneficio = el N de "lleva N y una unidad sale gratis". Ej: 3 = cada 3 unidades compradas, 1 es gratis.',
 }
 
 const AYUDA_PROMOCIONES = [
@@ -23,7 +30,7 @@ const AYUDA_PROMOCIONES = [
 const FORM_VACIO = {
   nombre: '',
   descripcion: '',
-  tipoBeneficio: 'DescuentoPorcentaje',
+  tipoBeneficio: 'DESCUENTO_PORCENTAJE',
   valorBeneficio: '',
   requiereCliente: false,
   cantidadMinima: 1,
@@ -96,8 +103,8 @@ export function PromocionesPage() {
       valorBeneficio: p.valorBeneficio,
       requiereCliente: p.requiereCliente,
       cantidadMinima: p.cantidadMinima,
-      vigenciaInicio: p.vigenciaInicio ?? '',
-      vigenciaFin: p.vigenciaFin ?? '',
+      vigenciaInicio: soloFecha(p.vigenciaInicio),
+      vigenciaFin: soloFecha(p.vigenciaFin),
       productosParticipantes: p.productosParticipantes ?? [],
     })
   }
@@ -136,7 +143,7 @@ export function PromocionesPage() {
         <label>
           Tipo de beneficio
           <select value={form.tipoBeneficio} onChange={(e) => actualizarCampo('tipoBeneficio', e.target.value)}>
-            {TIPOS_BENEFICIO.map((t) => <option key={t} value={t}>{t}</option>)}
+            {TIPOS_BENEFICIO.map((t) => <option key={t.valor} value={t.valor}>{t.etiqueta}</option>)}
           </select>
         </label>
         <label>
@@ -187,7 +194,7 @@ export function PromocionesPage() {
                 <td>{p.nombre}</td>
                 <td>{p.tipoBeneficio}</td>
                 <td>{p.valorBeneficio}</td>
-                <td>{p.vigenciaInicio ?? '-'} a {p.vigenciaFin ?? '-'}</td>
+                <td>{soloFecha(p.vigenciaInicio) || '-'} a {soloFecha(p.vigenciaFin) || '-'}</td>
                 <td>{p.activa ? 'Si' : 'No'}</td>
                 <td>
                   <button onClick={() => editar(p)}>Editar</button>

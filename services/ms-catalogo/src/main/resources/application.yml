@@ -1,4 +1,4 @@
-# Productos, categorias, laboratorios, presentaciones. Lectura masiva sobre datos casi estaticos: cache de dos niveles y replicas de lectura.
+# Productos, categorias, laboratorios, presentaciones. Lectura masiva sobre datos casi estaticos: cache en memoria y replicas de lectura.
 spring:
   application:
     name: ms-catalogo

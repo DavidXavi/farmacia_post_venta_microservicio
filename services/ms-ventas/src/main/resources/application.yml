@@ -90,6 +90,7 @@ pos:
     clientes: ${URI_CLIENTES:http://localhost:8084}
     credito: ${URI_CREDITO:http://localhost:8085}
     promociones: ${URI_PROMOCIONES:http://localhost:8086}
+    identidad: ${URI_IDENTIDAD:http://localhost:8081}
   outbox:
     habilitado: true
     intervalo-ms: 200

@@ -1,13 +1,14 @@
 # Estado del proyecto
 
-Última sesión: **19 de setiembre de 2026**, tercera tanda. La primera recorrió las
+Última sesión: **28 de setiembre de 2026**, cuarta tanda. La primera recorrió las
 pantallas y el camino feliz. La segunda fue a buscar qué pasa cuando una regla dice que no
-y cuando hay que deshacer. La tercera se sentó a usar el sistema en el navegador, pantalla
-por pantalla y botón por botón, y ahí aparecieron los que ninguna prueba de API veía: la
-pantalla de Seguridad cerraba la sesión, ningún formulario de alta existía, y ninguna
-promoción habría descontado nunca.
+y cuando hay que deshacer. La tercera se sentó a usar el sistema en el navegador. La cuarta
+hizo el CRUD completo de cada módulo en el navegador y después rompió piezas a propósito
+para ver si alguna venta se perdía: los consumidores de Kafka descartaban eventos, una
+factura salía como boleta y el arqueo de caja nunca contaba el efectivo.
 
-Los 27 endpoints de escritura están portados. Las pruebas pasaron de 1 a 40.
+Las pruebas pasaron de 40 a 49, y hay un tercer script que prueba que ninguna venta se
+pierde con facturación, la base o Kafka caídos.
 
 Este documento es el punto de retomada. Dice qué funciona (verificado, no supuesto), qué
 falta, y los fallos que ya se encontraron para no volver a descubrirlos.
@@ -20,10 +21,12 @@ falta, y los fallos que ya se encontraron para no volver a descubrirlos.
 cd C:\Users\User\source\repos\arquitectura_3_t1
 docker compose --profile completo up -d
 ./scripts/verificar.sh          # camino feliz de punta a punta
-./scripts/verificar-reglas.sh   # reglas, anulación y convenio
+./scripts/verificar-reglas.sh   # reglas, anulación, convenio y arqueo de caja
+./scripts/verificar-resiliencia.sh   # ninguna venta se pierde (apaga piezas, ~4 min)
 ```
 
-Los dos tienen que terminar en "Todo pasó."
+Los tres tienen que terminar en "Todo pasó." En esta máquina van con
+`GW=http://localhost:8095` delante.
 
 **Si se reconstruye un servicio suelto** (`docker compose up -d --build ms-ventas`),
 reiniciar después el gateway: `docker compose restart api-gateway`. Si no, sus rutas
@@ -97,6 +100,19 @@ pasaba antes.
   existencias, el sistema respondió "Solo quedan 0 unidades" en vez de fallar en seco.
 - **Sesión de 15 minutos.** El token expira y la interfaz manda al login. Comprobado.
 
+### Ninguna venta se pierde, comprobado rompiendo piezas
+
+`scripts/verificar-resiliencia.sh` apaga o rompe algo, vende, y comprueba que la venta
+termina con su comprobante igual. Pasó completo el 28 de setiembre.
+
+| Qué se rompió | Qué pasó |
+|---|---|
+| ms-facturacion apagado | Las cajas vendieron 3 ventas; al volver, emitió los 3 comprobantes |
+| La tabla de comprobantes desaparece 8 s | El consumidor reintentó con espera y emitió el comprobante al volver |
+| Un evento corrupto en `pos.ventas.confirmadas` | Una venta normal se facturó mientras tanto; el corrupto quedó en la `.dlq` |
+| Kafka apagado | La venta se confirmó; el evento esperó en el outbox y salió al volver Kafka |
+| Cuadre final | 6 ventas, 6 comprobantes, 6 en reportes, 6 sagas completas |
+
 ### Los 16 contenedores
 
 Todos arriba y sin reinicios: postgres, redis, kafka, schema-registry, kafka-ui,
@@ -125,9 +141,28 @@ tres de alta de MFA y el `PATCH` de promoción por línea.
 
 ### Pantallas recorridas en el navegador
 
-Funcionan con datos: Venta (POS), Caja, Productos, Lotes, Inventario, Clientes, Recetas,
-Promociones, Convenios, Líneas de crédito, Catálogos, Usuarios, Reportes, Actividad
-(Kafka), Devoluciones.
+Cada módulo se probó en el navegador creando y editando datos de verdad, el 28 de
+setiembre:
+
+| Pantalla | Qué se hizo |
+|---|---|
+| Catálogos | Alta de categoría, laboratorio, presentación, forma de pago, local y regla de incentivo |
+| Productos | Alta de producto, aparece en el listado y en los selectores de las otras pantallas |
+| Lotes | Tres lotes; uno bloqueado y otro retirado |
+| Inventario | El stock del local cuenta solo el lote disponible |
+| Clientes | Alta y edición de dirección |
+| Convenios | Convenio, cobertura del 40% y afiliación del cliente |
+| Líneas de crédito | Línea de S/ 500 para el cliente |
+| Promociones | Alta, edición (10% a 15%) y desactivación |
+| Recetas | Alta de receta y aprobación |
+| Usuarios | Alta de un cajero |
+| Caja | Apertura, y cierre con arqueo |
+| Venta (POS) | Cliente con convenio, promoción automática, pago en efectivo, factura. FEFO tomó el lote disponible y saltó el bloqueado y el retirado; comprobante F001-1 aceptado |
+| Devoluciones | Devolución parcial con nota de crédito |
+| Reportes, Auditoría, Actividad | Muestran lo hecho arriba |
+
+No se volvió a activar MFA: necesita el código de un teléfono y ya se probó en la tercera
+tanda.
 
 ---
 
@@ -168,24 +203,19 @@ El secreto se guarda deshabilitado y solo se activa cuando el usuario escribe un
 válido. Es a propósito: si naciera activo, cerrar la pestaña antes de escanear te deja
 fuera de tu propia cuenta.
 
-### 5. Promociones y crédito: uno cableado, el otro no
+### 5. Crédito: el servicio existe, la venta no lo usa
 
-**ms-promociones no se consulta nunca.** `GET /api/ventas/{id}/promociones-disponibles` en
-ms-ventas devuelve `List.of()` escrito a mano. El servicio existe, tiene su base, su caso
-de uso y su endpoint `/api/promociones/evaluar` funcionando, y nadie lo llama. El botón de
-aplicar promoción del POS además llama a `PATCH /api/ventas/{id}/detalles/{id}/promocion`,
-que tampoco existe.
+`ClientesDeServicios.reservarCredito()` está escrito y ningún caso de uso lo invoca. Pagar
+con la forma de pago "Crédito de farmacia" no reserva crédito ni verifica el límite:
+registra el pago y ya. Es la mitad de la regla "solo stock y crédito pueden impedir una
+venta", así que conviene cablearlo o decir en voz alta que está de muestra.
 
-**ms-credito tampoco.** `ClientesDeServicios.reservarCredito()` está escrito y no lo invoca
-ningún caso de uso. Pagar con la forma de pago "Crédito de farmacia" no reserva crédito ni
-verifica el límite: registra el pago y ya.
-
-Los dos tienen el mismo peso en la presentación (nueve servicios, la saga, la degradación)
-y conviene decidir si se cablean o si se dice en voz alta que están de muestra.
+Promociones sí quedó cableado: al agregar una línea, ms-ventas evalúa las promociones y
+aplica la mejor. Comprobado en el navegador con un 15% sobre Naproxeno.
 
 ### 6. Cobertura de pruebas
 
-De 1 prueba a 40. `ArquitecturaTest` con ArchUnit existe ahora en los nueve servicios, que
+De 1 prueba a 49. `ArquitecturaTest` con ArchUnit existe ahora en los nueve servicios, que
 es lo que `CLAUDE.md` daba por hecho: comprueba que las dependencias apunten hacia adentro,
 que el dominio no sepa de Spring ni de JPA, y que los casos de uso no toquen los
 adaptadores. La primera vez que corrió encontró una violación real en ms-ventas, un caso de
@@ -198,17 +228,87 @@ facturación y reportes son consulta y altas, sin reglas que modelar. El test us
 Lo que sigue faltando es prueba de los casos de uso nuevos: los 27 endpoints de escritura
 se verificaron corriendo contra el sistema levantado, no con pruebas que corran en CI.
 
-### 7. Detalle menor
+### 7. Decisiones de negocio que salieron en la cuarta tanda
 
-Al confirmar, la interfaz dice "Comprobante null". El comprobante se emite de forma
-asíncrona y en ese momento genuinamente no existe todavía. El mensaje honesto sería
-"comprobante en emisión".
+- **Devolución de una venta con convenio.** La nota de crédito se emite por el precio de
+  la línea (correcto ante SUNAT), pero el sistema no separa cuánto se le devuelve al
+  cliente, que pagó solo el copago, y cuánto se le abona al seguro.
+- **Stock de lo devuelto.** Una devolución no regresa la unidad al inventario. En farmacia
+  suele ser lo correcto (lo devuelto no se revende), pero no está escrito en ninguna regla.
+- **Anulación antes que confirmación.** Van por tópicos distintos. Si la anulación llegara
+  primero a reportes, la venta quedaría contada. Se anula minutos después de cobrar, así
+  que hoy no pasa; está anotado en `ReadModelJdbcAdapter.anular`.
+- **Ids a mano en dos pantallas.** Recetas pide el id del producto y Venta el id del
+  convenio, en vez de un selector. Funciona, pero un cajero no los tiene.
 
 ---
 
 ## Los fallos que ya se encontraron
 
 Están anotados para que nadie los vuelva a descubrir. Ninguno se veía al compilar.
+
+### Cuarta tanda: CRUD en el navegador y ventas que no se pierden
+
+Se recorrió cada pantalla creando, editando y dando de baja datos de prueba (todos llevan
+"QA" en el nombre), y después se rompieron piezas a propósito para ver si alguna venta se
+perdía. Aparecieron catorce fallos. Los más caros no daban error en ningún lado.
+
+**Los consumidores de Kafka descartaban eventos.** Ninguno tenía manejador de errores, y
+el de Spring Kafka por defecto reintenta diez veces seguidas, sin espera, y después avanza
+el offset. Un corte de un segundo en la base de facturación bastaba para que una venta se
+quedara sin comprobante para siempre. Ahora `plataforma/mensajeria/KafkaConfig` reintenta
+seis veces con espera creciente (cerca de un minuto) y, si igual falla, guarda el evento en
+`<topico>.dlq`. Lo prueba `verificar-resiliencia.sh`, escenarios 2 y 3.
+
+**Los tópicos tenían una partición, no doce.** Nadie los creaba: Kafka los creaba solo, con
+una partición, la primera vez que alguien publicaba. Las doce particiones y la cadena de
+tópicos de reintento (5 s, 1 min y 10 min) existían solo en la documentación. Ahora
+`KafkaConfig` crea los siete tópicos con sus particiones y su cola muerta al arrancar.
+
+**Kafka no tenía volumen.** Un `docker compose down` borraba los eventos que los
+consumidores todavía no habían leído, y el outbox ya los había marcado como publicados:
+nadie los iba a reenviar. Ahora tiene `kafka-data`. Comprobado borrando y recreando el
+contenedor.
+
+**Una factura salía como boleta.** La pantalla mandaba `Factura` y facturación compara
+contra `FACTURA`: todo lo que no fuera exacto caía en boleta B001, sin error. La opción
+"Ticket" salía igual como boleta, y el campo "Serie" se mandaba y nadie lo leía. Ahora
+ms-ventas normaliza el tipo y rechaza lo desconocido (`TipoComprobanteTest`), y la
+pantalla ofrece solo boleta y factura. Comprobado: la venta del navegador salió F001-1.
+
+**El arqueo de caja nunca contaba el efectivo.** El cierre guardaba `esperado = monto
+inicial`: todo lo cobrado en efectivo aparecía como sobrante. La caja vive en identidad y
+los pagos en ventas; ahora identidad le pregunta a ventas el efectivo de la sesión al
+cerrar, y si ventas no responde rechaza el cierre en vez de guardar un arqueo falso. Y la
+pantalla comparaba contra `Abierta` cuando el backend manda `ABIERTA`, así que el botón de
+cerrar caja no aparecía nunca. Lo prueba `verificar-reglas.sh`, paso 5.
+
+**Reportes contaba las ventas anuladas y las ponía en el día equivocado.** Anular solo
+cambiaba el estado de la venta; el agregado diario seguía sumándola. Y el día se sacaba
+con la zona del contenedor (UTC): toda venta desde las 7 de la noche caía en el reporte del
+día siguiente. Ahora anular descuenta del agregado y el día es el de Lima. Los datos
+anteriores a este cambio siguen como estaban. La pantalla además esperaba otra forma de
+respuesta y mostraba "Invalid Date".
+
+**Cuatro pantallas mandaban el enum con otro formato.** Formas de pago (`BilleteraDigital`
+por `BILLETERA_DIGITAL`), promociones (`DescuentoPorcentaje`), recetas (`EspecialRetenida`)
+y el comprobante de arriba. Las dos primeras se rechazaban con 400. Recetas se guardaba
+distinto a los datos semilla.
+
+**Las reglas de incentivo perdían las fechas.** La pantalla mandaba `fechaInicio` y el
+backend espera `vigenciaInicio`: la regla se guardaba sin vigencia, sin error.
+
+**Editar una promoción la dejaba sin productos.** El listado no devolvía qué productos
+participan, así que el formulario de edición llegaba vacío y el guardado se rechazaba.
+
+**El reporte no tenía nombre de local.** ms-ventas devolvía null a propósito porque
+identidad no tenía `GET /api/locales/{id}`. Ya lo tiene; ahora se consulta con timeout de
+300 ms, circuit breaker y caché de diez minutos. Si identidad no responde, el reporte sale
+sin nombre y la venta sigue.
+
+**Detalles:** la columna Total de Devoluciones salía vacía; el selector de cajas no decía de
+qué local era cada una; después de confirmar, la pantalla de venta seguía mostrando los
+botones de agregar y pagar (comparaba contra `Confirmada`).
 
 ### Tercera tanda: lo que solo se ve usando el sistema
 
@@ -384,7 +484,7 @@ fallado en cada comprobante aceptado. Se separó en `RegistrarEnvioUseCase`.
 
 - **Diagrama interactivo**: `presentacion/arquitectura.html` (Archify, validado y
   verificado en navegador).
-- **Presentación**: `presentacion/diapositivas.html`, 21 diapositivas con botón "Cómo
+- **Presentación**: `presentacion/diapositivas.html`, 27 diapositivas con botón "Cómo
   exponer" que muestra el guion de cada una. Incluye la comparación 4 / 9 / 15+ servicios y
   el costo de migración.
 - **Documentación para el cliente**: `docs/cliente/`, seis documentos sin jerga.
@@ -396,45 +496,11 @@ fallado en cada comprobante aceptado. Se separó en `RegistrarEnvioUseCase`.
 
 ## Por dónde seguir
 
-Antes de portar escrituras hay dos decisiones que conviene tomar, porque cambian qué se
-escribe:
-
-1. **ms-promociones y ms-credito**: se cablean o se declaran de muestra (punto 6 de lo que
-   falta). Cablearlos es más barato ahora que después de agregarles formularios.
-2. **La degradación silenciosa de las coberturas**: calentar, subir el presupuesto, o
-   decirle al cajero que no se pudo verificar. Toca el contrato de `Copago`, así que mejor
-   antes de que haya pantallas encima.
-
-Y una que no cuesta discutir: **escribir el test de ArchUnit**. La dependencia ya está en
-el pom y el proyecto lo da por hecho en cinco javadoc distintos.
-
-**Después, lo ya decidido: portar los endpoints de escritura** para que los formularios de
-cada pantalla funcionen. El orden sugerido va de mayor a menor valor demostrable:
-
-1. **ms-catalogo**: crear y editar producto, categoría, laboratorio, presentación. Es la
-   pantalla que más se usa para preparar una demo.
-2. **ms-inventario**: registrar lote, bloquear, retirar, ajustar stock. Alimenta el resto.
-3. **ms-clientes**: cliente, convenio, cobertura, afiliación, receta, validación de receta.
-4. **ms-promociones**: crear y desactivar promoción.
-5. **ms-identidad**: usuario con roles, local, caja.
-6. **ms-credito**: línea de crédito.
-7. **ms-facturacion**: devolución y nota de crédito. Es la que toca la saga de
-   compensación, así que conviene dejarla para cuando el resto ya esté probado.
-8. **ms-reportes**: regla de incentivo.
-
-Al portar cada escritura, respetar las reglas del proyecto (ver `CLAUDE.md`):
-
-- Toda operación que muta acepta `Idempotency-Key`.
-- Lo que otros servicios deben saber sale por `outbox`, nunca con `kafkaTemplate.send()`
-  desde el caso de uso.
-- Las operaciones sensibles publican en `pos.auditoria`, que resuelve de paso el punto 2
-  de abajo.
-- Antes de reconstruir imágenes, probar el arranque con `java -jar` contra la
-  infraestructura de Docker: ahorra ciclos de build de 15 minutos.
-
-Después:
-
-2. Publicar eventos de auditoría desde las operaciones sensibles (sale gratis si se hace
-   junto con las escrituras del punto anterior).
-3. Proyectar los lotes al read model para el reporte de próximos a vencer.
-4. Pruebas de carga, y con eso decidir el destino de ms-promociones.
+1. **Cablear el crédito** (punto 5). Es la única de las dos dependencias críticas que hoy no
+   frena nada: pagar con crédito de farmacia no mira el límite.
+2. **Pruebas de carga** contra los 200 ventas/s, ahora que los tópicos sí tienen doce
+   particiones y el paralelismo es real.
+3. **Las decisiones del punto 7**, sobre todo la devolución con convenio, que es dinero.
+4. **Reconstruir el read model de reportes** reproduciendo los tópicos desde el principio,
+   para que los datos anteriores al 28 de setiembre queden con el día de Lima y sin
+   anuladas.

@@ -1,5 +1,6 @@
 package com.posfarmacia.ventas.adapters.web;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -36,6 +37,25 @@ public class ConsultasVentasController {
             spec = spec.param(p);
         }
         return spec.query().listOfRows();
+    }
+
+    /**
+     * Efectivo cobrado en una sesion de caja. Lo pide ms-identidad al cerrar la caja para
+     * calcular el arqueo: sin este dato el esperado era solo el monto inicial y cada cierre
+     * mostraba como sobrante todo lo vendido en efectivo.
+     *
+     * <p>Solo ventas CONFIRMADA: una anulada devolvio el dinero y un borrador no se cobro.
+     */
+    @GetMapping("/api/ventas/sesiones-caja/{sesionId}/efectivo")
+    public Map<String, Object> efectivoDeSesion(@PathVariable UUID sesionId) {
+        BigDecimal efectivo = jdbc.sql("""
+                SELECT COALESCE(SUM(p.monto), 0)
+                  FROM pagos p
+                  JOIN ventas v ON v.id = p.venta_id
+                  JOIN formas_pago f ON f.id = p.forma_pago_id
+                 WHERE v.sesion_caja_id = ? AND v.estado = 'CONFIRMADA' AND f.tipo = 'EFECTIVO'
+                """).param(sesionId).query(BigDecimal.class).single();
+        return Map.of("sesionId", sesionId, "efectivo", efectivo);
     }
 
     @GetMapping("/api/formas-pago")

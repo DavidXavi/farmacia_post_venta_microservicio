@@ -79,6 +79,9 @@ codigo=${r##*|}
 paso "3. Anular una venta confirmada dispara la compensación"
 V2=$(abrir_venta)
 STOCK0=$(psql_en pg_inventario "SELECT disponible FROM stock_local WHERE producto_id='$LIBRE' AND local_id='$LOCAL'")
+# Unidades de ese producto en el reporte de hoy (dia de Lima). Tras anular tienen que volver aqui.
+reporte_hoy() { psql_en pg_reportes "SELECT COALESCE(SUM(unidades),0) FROM rm_ventas_diarias WHERE producto_id='$LIBRE' AND local_id='$LOCAL' AND dia=(now() AT TIME ZONE 'America/Lima')::date"; }
+REP0=$(reporte_hoy)
 curl -s -X POST "$GW/api/ventas/$V2/detalles" "${A[@]}" -d "{\"productoId\":\"$LIBRE\",\"cantidad\":4}" >/dev/null
 curl -s -X POST "$GW/api/ventas/$V2/confirmar" "${A[@]}" -H "Idempotency-Key: $(uuid)" \
     -d '{"tipoComprobante":"BOLETA"}' >/dev/null
@@ -126,6 +129,13 @@ done
     && ok "inventario devolvió el stock: $STOCK0 -> $STOCK1" \
     || falla "el stock no volvió: antes $STOCK0, después $STOCK1"
 
+for _ in $(seq 1 30); do
+    REP1=$(reporte_hoy)
+    [ "${REP1:-0}" = "${REP0:-0}" ] && break
+    sleep 1
+done
+[ "${REP1:-0}" = "${REP0:-0}" ]     && ok "reportes descontó la venta anulada: $REP0 unidades hoy, igual que antes"     || falla "reportes sigue contando la venta anulada: antes $REP0 unidades, después $REP1"
+
 # ------------------------------------------------- 4. convenio de seguro
 paso "4. El convenio de seguro descuenta de verdad"
 COB=$(psql_en pg_clientes "
@@ -161,6 +171,23 @@ else
         falla "el convenio al ${pct}% cubrió $cubierto sobre un total de $total"
     fi
 fi
+
+# ------------------------------------------------- 5. arqueo de caja
+paso "5. El cierre de caja cuenta el efectivo cobrado"
+CAJA5=$(psql_en pg_identidad "SELECT id FROM cajas WHERE local_id='$LOCAL' AND activa
+    AND id NOT IN (SELECT caja_id FROM sesiones_caja WHERE estado='ABIERTA') LIMIT 1")
+SES=$(curl -s -X POST "$GW/api/cajas/$CAJA5/aperturas" "${A[@]}" -H "Idempotency-Key: $(uuid)"     -d "{\"usuarioId\":\"$USR\",\"montoInicial\":100}" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+V5=$(curl -s -X POST "$GW/api/ventas" "${A[@]}"     -d "{\"localId\":\"$LOCAL\",\"cajaId\":\"$CAJA5\",\"sesionCajaId\":\"$SES\",\"usuarioId\":\"$USR\"}" |
+    grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4)
+linea "$V5" "$LIBRE" 2 >/dev/null
+TOTAL5=$(curl -s "$GW/api/ventas/$V5" "${A[@]}" | grep -o '"total":[0-9.]*' | tail -1 | cut -d: -f2)
+curl -s -X POST "$GW/api/ventas/$V5/pagos" "${A[@]}" -H "Idempotency-Key: $(uuid)"     -d "{\"formaPagoId\":\"00000000-0000-0000-0000-000000000001\",\"monto\":$TOTAL5}" >/dev/null
+curl -s -X POST "$GW/api/ventas/$V5/confirmar" "${A[@]}" -H "Idempotency-Key: $(uuid)"     -d '{"tipoComprobante":"BOLETA"}' >/dev/null
+DECLARADO=$(python -c "print(100 + $TOTAL5)")
+cierre=$(curl -s -X POST "$GW/api/cajas/$CAJA5/cierres" "${A[@]}" -H "Idempotency-Key: $(uuid)"     -d "{\"montoDeclarado\":$DECLARADO,\"observacion\":\"verificar-reglas\"}")
+esperado=$(echo "$cierre" | grep -o '"montoEsperado":[0-9.]*' | cut -d: -f2)
+diferencia=$(echo "$cierre" | grep -o '"diferencia":[-0-9.]*' | cut -d: -f2)
+python -c "import sys; sys.exit(0 if abs(float('${esperado:-0}') - $DECLARADO) < 0.001 and abs(float('${diferencia:-1}')) < 0.001 else 1)"     && ok "esperado S/ $esperado = 100 iniciales + S/ $TOTAL5 en efectivo, diferencia 0"     || falla "el arqueo no cuadra: esperado $esperado, diferencia $diferencia (se cobraron $TOTAL5 en efectivo): $cierre"
 
 paso "Resultado"
 if [ "$fallos" -eq 0 ]; then

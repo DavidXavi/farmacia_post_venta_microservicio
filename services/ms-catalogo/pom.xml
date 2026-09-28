@@ -13,7 +13,7 @@
 
   <artifactId>ms-catalogo</artifactId>
   <name>ms-catalogo</name>
-  <description>Productos, categorias, laboratorios, presentaciones. Lectura masiva sobre datos casi estaticos: cache de dos niveles y replicas de lectura.</description>
+  <description>Productos, categorias, laboratorios, presentaciones. Lectura masiva sobre datos casi estaticos: cache en memoria y replicas de lectura.</description>
 
   <dependencies>
     <dependency>

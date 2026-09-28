@@ -74,7 +74,7 @@ export function CajaPage() {
           <option value="">-- Selecciona una caja --</option>
           {cajas.map((c) => (
             <option key={c.id} value={c.id}>
-              {c.nombre}
+              {c.localNombre ? `${c.localNombre} — ${c.nombre}` : c.nombre}
             </option>
           ))}
         </select>
@@ -93,7 +93,7 @@ export function CajaPage() {
         </div>
       )}
 
-      {sesion?.id && sesion.estado === 'Abierta' && (
+      {sesion?.id && sesion.estado === 'ABIERTA' && (
         <div className="tarjeta">
           <h3>Sesion abierta</h3>
           <p>Apertura: {new Date(sesion.fechaApertura).toLocaleString()}</p>
@@ -110,7 +110,7 @@ export function CajaPage() {
         </div>
       )}
 
-      {sesion?.estado === 'Cerrada' && (
+      {sesion?.estado === 'CERRADA' && (
         <div className="tarjeta">
           <h3>Ultimo cierre</h3>
           <p>Esperado: S/ {sesion.montoEsperado} — Declarado: S/ {sesion.montoDeclarado}</p>

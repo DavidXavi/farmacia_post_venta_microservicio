@@ -60,10 +60,11 @@ public class ConfirmarVentaUseCase {
 
     /**
      * @param ventaId        la venta a confirmar
-     * @param tipoComprobante BOLETA o FACTURA, lo decide el cajero
+     * @param tipoComprobante BOLETA o FACTURA, lo decide el cajero. Nulo es BOLETA.
      */
     @Transactional
     public Venta confirmar(UUID ventaId, String tipoComprobante) {
+        tipoComprobante = normalizarTipo(tipoComprobante);
         Venta venta = ventas.porId(ventaId)
                 .orElseThrow(() -> new VentaInvalidaException("No existe la venta " + ventaId));
 
@@ -93,6 +94,24 @@ public class ConfirmarVentaUseCase {
         log.info("Venta {} confirmada: {} lineas, total {}. Saga abierta.",
                 venta.id(), venta.lineas().size(), venta.total());
         return venta;
+    }
+
+    /**
+     * Facturacion decide la serie comparando contra "FACTURA" exacto. Un "Factura" que
+     * pasara tal cual saldria como boleta B001 sin que nadie se entere, y ante SUNAT eso
+     * es un comprobante mal emitido. Por eso se normaliza aqui, y lo desconocido se
+     * rechaza en vez de caer en boleta.
+     */
+    static String normalizarTipo(String tipo) {
+        if (tipo == null || tipo.isBlank()) {
+            return "BOLETA";
+        }
+        String t = tipo.trim().toUpperCase(java.util.Locale.ROOT);
+        if (!t.equals("BOLETA") && !t.equals("FACTURA")) {
+            throw new VentaInvalidaException(
+                    "Tipo de comprobante desconocido: " + tipo + ". Los validos son BOLETA y FACTURA");
+        }
+        return t;
     }
 
     private List<VentaConfirmada.Linea> lineasDe(Venta venta) {

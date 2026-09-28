@@ -1,5 +1,10 @@
 package com.posfarmacia.identidad.adapters.web;
 
+import com.posfarmacia.plataforma.http.ClientesHttpConfig;
+import org.springframework.web.client.RestClient;
+import org.springframework.cloud.client.circuitbreaker.CircuitBreakerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import java.time.Duration;
 import jakarta.validation.Valid;
 import java.math.BigDecimal;
 import java.util.Map;
@@ -44,9 +49,15 @@ public class SesionesCajaController {
             """;
 
     private final JdbcClient jdbc;
+    private final RestClient ventas;
+    private final CircuitBreakerFactory<?, ?> circuitos;
 
-    public SesionesCajaController(JdbcClient jdbc) {
+    public SesionesCajaController(JdbcClient jdbc, @Value("${pos.uri.ventas}") String uriVentas,
+            CircuitBreakerFactory<?, ?> circuitos) {
         this.jdbc = jdbc;
+        // 2 s: cerrar caja pasa una vez por turno, no es el camino caliente.
+        this.ventas = ClientesHttpConfig.cliente(uriVentas, Duration.ofSeconds(2));
+        this.circuitos = circuitos;
     }
 
     @GetMapping("/{cajaId}/sesion-activa")
@@ -92,19 +103,28 @@ public class SesionesCajaController {
         }
         UUID sesionId = (UUID) abiertas.get(0).get("id");
 
+        // El efectivo cobrado lo sabe ms-ventas, no identidad. Si no responde, el cierre
+        // se rechaza en vez de guardar un arqueo equivocado: cerrar caja no es vender, y
+        // un descuadre falso termina en un cajero descontado por plata que si entrego.
+        BigDecimal efectivo = efectivoCobrado(sesionId);
+        if (efectivo == null) {
+            return ResponseEntity.status(503).body(Map.of("error",
+                    "No se pudo consultar el efectivo cobrado. La caja sigue abierta: reintenta el cierre."));
+        }
+
         // La diferencia se calcula y se guarda: es el dato del arqueo, y dejarlo para
         // que lo calcule cada reporte es como dos reportes terminan sin cuadrar.
         jdbc.sql("""
                 UPDATE sesiones_caja
                    SET fecha_cierre = now(),
                        monto_declarado = ?,
-                       monto_esperado = monto_inicial,
-                       diferencia = ? - monto_inicial,
+                       monto_esperado = monto_inicial + ?,
+                       diferencia = ? - (monto_inicial + ?),
                        observacion_cierre = ?,
                        estado = 'CERRADA'
                  WHERE id = ?
                 """)
-                .param(p.montoDeclarado()).param(p.montoDeclarado())
+                .param(p.montoDeclarado()).param(efectivo).param(p.montoDeclarado()).param(efectivo)
                 .param(p.observacion()).param(sesionId)
                 .update();
 
@@ -117,5 +137,15 @@ public class SesionesCajaController {
                   FROM sesiones_caja WHERE id = ?
                 """).param(sesionId).query().listOfRows().get(0);
         return ResponseEntity.ok(cerrada);
+    }
+
+    private BigDecimal efectivoCobrado(UUID sesionId) {
+        return circuitos.create("ventas").run(
+                () -> {
+                    var r = ventas.get().uri("/api/ventas/sesiones-caja/{id}/efectivo", sesionId)
+                            .retrieve().body(Map.class);
+                    return r == null ? null : new BigDecimal(r.get("efectivo").toString());
+                },
+                fallo -> null);
     }
 }

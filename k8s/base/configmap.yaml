@@ -21,6 +21,8 @@ data:
   URI_CLIENTES: "http://ms-clientes:8080"
   URI_CREDITO: "http://ms-credito:8080"
   URI_PROMOCIONES: "http://ms-promociones:8080"
+  URI_IDENTIDAD: "http://ms-identidad:8080"
+  URI_VENTAS: "http://ms-ventas:8080"
 ---
 # Plantilla. En produccion esto lo genera External Secrets desde Vault: un Secret con
 # los valores en claro dentro del repositorio es un secreto filtrado con pasos extra.

@@ -52,9 +52,13 @@ public class ConsultasFacturacionController {
     @GetMapping("/api/devoluciones")
     public List<Map<String, Object>> devoluciones() {
         return filas("""
-                SELECT id, venta_id AS \"ventaId\", local_id AS \"localId\",
-                       usuario_id AS \"usuarioId\", motivo, fecha
-                  FROM devoluciones ORDER BY fecha DESC LIMIT 200
+                SELECT d.id, d.venta_id AS \"ventaId\", d.local_id AS \"localId\",
+                       d.usuario_id AS \"usuarioId\", d.motivo, d.fecha,
+                       COALESCE(SUM(dd.monto_devuelto), 0) AS total
+                  FROM devoluciones d
+                  LEFT JOIN detalle_devoluciones dd ON dd.devolucion_id = d.id
+                 GROUP BY d.id
+                 ORDER BY d.fecha DESC LIMIT 200
                 """);
     }
 

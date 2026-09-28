@@ -45,8 +45,8 @@ la infraestructura va aparte y ningún servicio la lleva adentro.
 | `ms-facturacion` | Comprobantes, devoluciones, envío a SUNAT | completo | interno | `pg_facturacion` |
 | `ms-reportes` | Read model CQRS para reportes | completo | interno | `pg_reportes` |
 | `postgres` | Un Postgres 16 con las nueve bases | por defecto | 5452 | las nueve |
-| `redis` | Caché de catálogo, rate limit, idempotencia | por defecto | 6380 | |
-| `kafka` | Broker Kafka en KRaft, sin Zookeeper | por defecto | 9096 | |
+| `redis` | Rate limit del gateway e `Idempotency-Key` | por defecto | 6380 | |
+| `kafka` | Broker Kafka en KRaft, sin Zookeeper. Datos en el volumen `kafka-data` | por defecto | 9096 | |
 | `schema-registry` | Compatibilidad de esquemas de eventos | completo | 8091 | |
 | `kafka-ui` | Consola web para ver tópicos y mensajes | completo | 8092 | |
 | `otel-collector`, `tempo` | Trazas | observabilidad | 4318 | |
@@ -140,14 +140,24 @@ Un solo broker: Kafka. El sistema anterior usaba también RabbitMQ; aquí se sac
 | `pos.auditoria` | 12 | identidad |
 
 Todos con `localId` como clave de partición: orden garantizado por local y paralelismo
-natural entre locales, que es el shard real del negocio.
+natural entre locales, que es el shard real del negocio. Los crea
+`plataforma/mensajeria/KafkaConfig` al arrancar cualquier servicio, con esas particiones;
+si ya existen con menos, les agrega las que faltan.
 
-Cada grupo consumidor tiene su cadena de reintentos y su cola muerta:
+Cuando un consumidor falla, el evento no se descarta:
 
 ```
 pos.ventas.confirmadas
-  → .retry.5s  → .retry.1m  → .retry.10m  → .dlq   (alerta a on-call)
+  falla  -> reintenta a los 1, 2, 4, 8, 16 y 30 s (la partición espera, las otras siguen)
+  sigue  -> se copia a pos.ventas.confirmadas.dlq con la excepción en los headers
 ```
+
+Cada tópico tiene su `.dlq`. Lo que cae ahí queda para revisarlo y volver a publicarlo. El
+porqué de reintentar en la misma partición y no con tópicos de reintento está en la
+decisión 13 de [`DECISIONES.md`](DECISIONES.md).
+
+Kafka guarda sus datos en el volumen `kafka-data`. Sin él, un `docker compose down` borraba
+eventos que el outbox ya había dado por publicados.
 
 El envío a SUNAT no pasa por ninguna cola de mensajes. Facturación consume
 `pos.ventas.confirmadas`, guarda el comprobante como PENDIENTE y confirma el offset. Un
@@ -208,7 +218,10 @@ Kafka. Sin eso, una saga que falla en el cuarto consumidor es imposible de segui
 - Métricas: Prometheus. Además de las de infraestructura, métricas de negocio:
   `saga.venta.iniciada.total`, `saga.venta.compensada.total`, `outbox.antiguedad.segundos`,
   `reservas.vencidas.liberadas.total`, `comprobantes.pendientes.total`
-- Logs: JSON con `traceId`, `localId`, `ventaId` → Loki
+- Logs: cada línea lleva `[servicio,traceId,spanId]`, así que `docker compose logs` más un
+  `grep` del traceId sigue una venta por los nueve servicios. Loki se levanta con el perfil
+  `observabilidad`, pero hoy ningún agente le envía los logs: es el paso siguiente, no algo
+  hecho.
 
 Las alertas están en `infra/prometheus/alertas.yml`. Cada una tiene escrito qué hacer
 cuando suena.

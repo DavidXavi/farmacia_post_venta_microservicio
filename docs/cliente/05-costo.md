@@ -52,7 +52,7 @@ realista es de cinco a siete meses.
 | Servidores de aplicación | 2 instancias | Clúster de 6 a 8 nodos, unos 30 procesos |
 | Bases de datos | 1 PostgreSQL | 9 PostgreSQL más 10 copias de lectura |
 | Mensajería | 1 Kafka, 1 RabbitMQ | 3 Kafka y registro de esquemas |
-| Memoria caché | no hay | Redis en 3 nodos |
+| Memoria compartida | no hay | Redis en 3 nodos |
 | Monitoreo | registros del contenedor | Prometheus, Grafana, trazas y almacenamiento |
 | **Costo mensual** | **S/ 1,500 a 2,600** | **S/ 6,700 a 11,100** |
 

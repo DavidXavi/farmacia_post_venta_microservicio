@@ -32,6 +32,15 @@ cp .env.example .env          # completar DB_PASSWORD
 docker compose up -d --build
 ```
 
+Para comprobar que todo funciona, con el perfil `completo` levantado:
+
+```bash
+./mvnw test                          # 49 pruebas, sin Docker
+./scripts/verificar.sh               # venta de punta a punta
+./scripts/verificar-reglas.sh        # reglas, anulación, convenio, arqueo de caja
+./scripts/verificar-resiliencia.sh   # ninguna venta se pierde aunque se apaguen piezas
+```
+
 Tres perfiles, para no levantar veinte contenedores cuando solo quieres probar una venta:
 
 | Comando | Qué levanta | RAM |
@@ -60,7 +69,7 @@ arquitectura_3_t1/
 ├── services/
 │   ├── api-gateway/         Spring Cloud Gateway, valida JWT y aplica rate limit
 │   ├── ms-identidad/        usuarios, roles, locales, cajas, OAuth2, MFA, JWKS
-│   ├── ms-catalogo/         productos y precios, caché de dos niveles
+│   ├── ms-catalogo/         productos y precios, caché en memoria
 │   ├── ms-inventario/       stock, reservas con TTL, FEFO, movimientos
 │   ├── ms-clientes/         clientes, seguros, convenios, recetas
 │   ├── ms-credito/          línea de crédito y ledger append-only

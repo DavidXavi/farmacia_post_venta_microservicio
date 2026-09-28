@@ -46,8 +46,36 @@ public class ReadModelJdbcAdapter implements ReadModelPort {
                 transacciones = rm_ventas_diarias.transacciones + 1
             """;
 
+    /**
+     * El dia de negocio es el de Lima, no el del contenedor. Con la zona del sistema
+     * (UTC en Docker y en Kubernetes) toda venta desde las 7 de la noche caia en el
+     * reporte del dia siguiente.
+     *
+     * <p>ponytail: una sola zona porque la cadena opera solo en Peru, que no tiene horario
+     * de verano. Si abre en otro pais, la zona pasa a ser un dato del local.
+     */
+    static final ZoneId ZONA_NEGOCIO = ZoneId.of("America/Lima");
+
+    /** Solo pasa de CONFIRMADA a ANULADA una vez: el agregado se descuenta una sola vez. */
     private static final String ANULAR = """
-            UPDATE rm_ventas SET estado = 'ANULADA' WHERE venta_id = ?
+            UPDATE rm_ventas SET estado = 'ANULADA' WHERE venta_id = ? AND estado = 'CONFIRMADA'
+            """;
+
+    /**
+     * Devuelve al agregado diario lo que la venta le sumo al proyectarse. Sin esto, una
+     * venta anulada seguia contando en el reporte para siempre.
+     */
+    private static final String DESCONTAR_DIARIO = """
+            UPDATE rm_ventas_diarias d
+               SET unidades = d.unidades - x.unidades,
+                   importe = d.importe - x.importe,
+                   transacciones = d.transacciones - x.lineas
+              FROM (SELECT (fecha AT TIME ZONE 'America/Lima')::date AS dia, local_id, producto_id,
+                           SUM(cantidad) AS unidades, SUM(total_linea) AS importe, COUNT(*) AS lineas
+                      FROM rm_venta_lineas
+                     WHERE venta_id = ?
+                     GROUP BY 1, 2, 3) x
+             WHERE d.dia = x.dia AND d.local_id = x.local_id AND d.producto_id = x.producto_id
             """;
 
     private static final String CONSULTA_DIARIA = """
@@ -69,7 +97,8 @@ public class ReadModelJdbcAdapter implements ReadModelPort {
                    COALESCE(SUM(i.monto_calculado), 0) AS monto_total
               FROM incentivos_venta i
               JOIN rm_ventas v ON v.venta_id = i.venta_id
-             WHERE i.fecha::date BETWEEN ? AND ?
+             WHERE (i.fecha AT TIME ZONE 'America/Lima')::date BETWEEN ? AND ?
+               AND v.estado <> 'ANULADA'
              GROUP BY v.usuario_id
              ORDER BY monto_total DESC
             """;
@@ -92,7 +121,7 @@ public class ReadModelJdbcAdapter implements ReadModelPort {
                 .param(v.lineas().size())
                 .update();
 
-        LocalDate dia = v.fecha().atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate dia = v.fecha().atZone(ZONA_NEGOCIO).toLocalDate();
 
         for (var l : v.lineas()) {
             jdbc.sql(LINEA)
@@ -112,7 +141,13 @@ public class ReadModelJdbcAdapter implements ReadModelPort {
 
     @Override
     public void anular(UUID ventaId) {
-        jdbc.sql(ANULAR).param(ventaId).update();
+        // ponytail: si la anulacion llegara antes que la confirmacion (son topicos
+        // distintos), aqui no hay nada que anular y la venta se proyectaria despues como
+        // CONFIRMADA. En la practica se anula minutos despues de cobrar; si pasa, el
+        // arreglo es guardar la anulacion pendiente y aplicarla al proyectar.
+        if (jdbc.sql(ANULAR).param(ventaId).update() == 1) {
+            jdbc.sql(DESCONTAR_DIARIO).param(ventaId).update();
+        }
     }
 
     @Override

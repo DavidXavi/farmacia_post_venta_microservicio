@@ -50,4 +50,7 @@ public interface ServiciosExternosPort {
     List<CoberturaDto> coberturas(UUID convenioId, List<UUID> productoIds);
 
     ClienteDto clientePorDni(String dni);
+
+    /** Nombre del local para el read model. Null si identidad no responde. */
+    String nombreLocal(UUID localId);
 }
