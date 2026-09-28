@@ -29,9 +29,9 @@ export function ActividadRecientePage() {
 
   return (
     <section>
-      <h1>Actividad reciente (Kafka y RabbitMQ)</h1>
+      <h1>Actividad reciente (Kafka)</h1>
       <p>
-        Cada venta confirmada publica un evento en Apache Kafka y encola la emision del comprobante en RabbitMQ.
+        Cada venta confirmada publica un evento en Apache Kafka. Facturacion lo recibe, registra el comprobante y lo envia a SUNAT en segundo plano.
         Esta lista se actualiza sola y muestra lo que sus consumidores ya procesaron; la auditoria de operaciones
         sensibles (por ejemplo una nota de credito) tambien llega por Kafka y queda en la pagina Auditoria.
       </p>

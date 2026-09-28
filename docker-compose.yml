@@ -7,7 +7,7 @@
 #                 catalogo, inventario, ventas, frontend
 #
 #   docker compose --profile completo up -d --build
-#       ~6.3 GB   los nueve servicios, Schema Registry, Kafka UI, RabbitMQ
+#       ~6.3 GB   los nueve servicios, Schema Registry, Kafka UI
 #
 #   docker compose --profile completo --profile observabilidad up -d --build
 #       ~7.5 GB   + Prometheus, Grafana, Tempo, Loki, OTel Collector
@@ -160,25 +160,6 @@ services:
       resources:
         limits:
           memory: 512M
-
-  rabbitmq:
-    image: rabbitmq:3-management-alpine
-    profiles: [completo]
-    environment:
-      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-posfarmacia}
-      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?define RABBITMQ_PASSWORD en .env}
-    ports:
-      - "5674:5672"
-      - "15674:15672"
-    healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-    deploy:
-      resources:
-        limits:
-          memory: 320M
 
   # ---------------------------------------------------------------------------
   # Gateway: el unico puerto que el frontend conoce
@@ -344,10 +325,6 @@ services:
       <<: *env-comun
       DB_NAME: pg_facturacion
       DB_USER: u_facturacion
-      RABBITMQ_HOST: rabbitmq
-      RABBITMQ_PORT: "5672"
-      RABBITMQ_USER: ${RABBITMQ_USER:-posfarmacia}
-      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
       # Mock de SUNAT: responde con latencia y falla a veces, que es exactamente
       # el comportamiento que justifica aislar este servicio.
       SUNAT_URL: ${SUNAT_URL:-mock}
@@ -357,8 +334,6 @@ services:
       postgres:
         condition: service_healthy
       kafka:
-        condition: service_healthy
-      rabbitmq:
         condition: service_healthy
 
   ms-reportes:

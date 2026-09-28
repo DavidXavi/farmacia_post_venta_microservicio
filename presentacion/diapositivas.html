@@ -18,6 +18,8 @@
     --alerta-suave: #fdf0e8;
     --aviso: #7c5e10;
     --aviso-suave: #fbf5e3;
+    --info: #1d5fa8;
+    --info-suave: #e8f0fa;
     --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
     --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
@@ -35,12 +37,15 @@
       --alerta-suave: #351f14;
       --aviso: #e5c75f;
       --aviso-suave: #302a14;
+      --info: #7fb2ec;
+      --info-suave: #16263a;
     }
   }
   :root[data-theme="dark"] {
     --fondo: #16181a; --panel: #1e2124; --tinta: #ececec; --tinta-suave: #b0b0b0;
     --tinta-tenue: #7c7c7c; --linea: #32363a; --acento: #5cc4a6; --acento-suave: #17342c;
     --alerta: #f0a37a; --alerta-suave: #351f14; --aviso: #e5c75f; --aviso-suave: #302a14;
+    --info: #7fb2ec; --info-suave: #16263a;
   }
 
   * { box-sizing: border-box; }
@@ -142,6 +147,72 @@
   .etiqueta.roja { background: var(--alerta-suave); color: var(--alerta); }
   .etiqueta.ambar { background: var(--aviso-suave); color: var(--aviso); }
 
+  /* ---------- mapa de contenedores ---------- */
+  /* Dos niveles a proposito: la caja gris es el CONTENEDOR (Docker), el bloque de color
+     adentro es lo que corre en el (nuestro microservicio, software de terceros o el
+     frontend). Si los dos niveles se ven iguales, nadie distingue uno del otro. */
+  .guia-mapa { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 12.5px; color: var(--tinta-suave); margin: 0 0 10px; }
+  .guia-mapa .muestra { display: inline-flex; align-items: center; gap: 7px; }
+  .guia-mapa i { display: inline-block; width: 22px; height: 14px; border-radius: 3px; }
+  .guia-mapa .m-cont { border: 1.5px solid var(--tinta-tenue); background: var(--fondo); }
+  .guia-mapa .m-ms { background: var(--acento-suave); border: 1px solid var(--acento); }
+  .guia-mapa .m-ter { background: var(--aviso-suave); border: 1px solid var(--aviso); }
+  .guia-mapa .m-web { background: var(--info-suave); border: 1px solid var(--info); }
+  .guia-mapa .m-comp { border: 1.5px dashed var(--tinta-tenue); }
+  .host {
+    border: 2px dashed var(--linea); border-radius: 14px;
+    padding: 10px 14px 14px; margin: 0 0 10px; max-width: 1180px;
+  }
+  .host-titulo { font-family: var(--mono); font-size: 11.5px; color: var(--tinta-tenue); margin-bottom: 6px; }
+  .capa-titulo {
+    font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--tinta-tenue); font-weight: 620; margin: 2px 0 6px;
+  }
+  .fila { display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .fila.entrada { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 660px; margin: 0 auto; }
+  .fila.infra-fila { grid-template-columns: 1.6fr 1.3fr 1fr 1fr; }
+  /* el contenedor: caja gris, con su nombre de contenedor arriba */
+  .cont {
+    background: var(--fondo); border: 1.5px solid var(--tinta-tenue); border-radius: 10px;
+    padding: 0 7px 7px; font-size: 12.5px; line-height: 1.4;
+  }
+  .cont.completo { border-style: dashed; }
+  .cont-cab {
+    display: flex; align-items: baseline; gap: 6px; padding: 5px 2px 5px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--tinta-suave);
+  }
+  .cont-cab .tipo {
+    font-family: var(--sans); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--tinta-tenue); font-weight: 620;
+  }
+  .cont-cab b { color: var(--tinta); font-weight: 600; }
+  .cont-cab .puerto { margin-left: auto; font-size: 10.5px; color: var(--tinta-tenue); }
+  /* lo que corre adentro */
+  .svc { border-radius: 7px; padding: 6px 8px 7px; border: 1px solid var(--acento); background: var(--acento-suave); color: var(--tinta-suave); }
+  .svc.ter { border-color: var(--aviso); background: var(--aviso-suave); }
+  .svc.web { border-color: var(--info); background: var(--info-suave); }
+  .svc-cab { display: block; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 650; color: var(--acento); }
+  .svc.ter .svc-cab { color: var(--aviso); }
+  .svc.web .svc-cab { color: var(--info); }
+  .svc-nombre { display: block; font-weight: 640; color: var(--tinta); margin-bottom: 2px; }
+  .svc ul { margin: 0; padding-left: 15px; font-size: 12px; }
+  .svc li { margin-bottom: 1px; }
+  .svc .pie { font-size: 11.5px; }
+  .base-de { margin-top: 5px; font-size: 11px; color: var(--tinta-tenue); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .chip {
+    font-family: var(--mono); font-size: 10.5px; padding: 1px 6px; border-radius: 5px;
+    background: var(--panel); border: 1px solid var(--linea); color: var(--tinta-suave);
+  }
+  .chip.base { border-color: var(--acento); color: var(--acento); }
+  .conector {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 30px; font-size: 11.5px; color: var(--tinta-tenue);
+  }
+  .conector::before { content: ""; width: 0; height: 100%; border-left: 2px solid var(--linea); }
+  @media (max-width: 860px) {
+    .fila.entrada, .fila.infra-fila { grid-template-columns: 1fr; }
+  }
   /* ---------- panel de notas del expositor ---------- */
   .notas {
     flex: 0 0 auto; max-height: 0; overflow: hidden;
@@ -175,7 +246,7 @@
   <button id="btnNotas" aria-pressed="false" title="Muestra el guion de esta diapositiva (tecla N)">Cómo exponer</button>
   <button id="btnTema" title="Claro u oscuro">Tema</button>
   <button id="btnAnt" title="Anterior">&larr;</button>
-  <span class="contador" id="contador">1 / 21</span>
+  <span class="contador" id="contador">1 / 24</span>
   <button id="btnSig" title="Siguiente">&rarr;</button>
 </header>
 
@@ -473,6 +544,182 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
 
 <!-- 12 -->
 <section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Primero explica cómo leer el dibujo: cada caja gris es un contenedor de Docker, y el bloque de color que tiene adentro es lo que corre ahí. Verde es un microservicio nuestro, ámbar es software de terceros como Postgres o Kafka, azul es el frontend. Después recórrelo de arriba abajo: un solo contenedor de frontend, el gateway, nueve contenedores con un microservicio cada uno, y la infraestructura. Deja claro que los microservicios no tienen pantallas: son solo API, y la única interfaz es el contenedor frontend."
+  data-puntos="Caja gris = contenedor. Bloque de color adentro = lo que corre en ese contenedor|Un contenedor, un microservicio: nunca dos servicios en el mismo contenedor|Hay UN solo frontend, en su propio contenedor. Los microservicios no tienen pantallas, solo API|Postgres es un contenedor con nueve bases: cada servicio solo puede entrar a la suya|Kafka es su propio contenedor; los servicios le publican y consumen por la red de Docker">
+  <h2>Qué corre dentro de cada contenedor</h2>
+  <div class="guia-mapa">
+    <span class="muestra"><i class="m-cont"></i>caja gris: un contenedor Docker</span>
+    <span class="muestra"><i class="m-ms"></i>adentro, microservicio nuestro</span>
+    <span class="muestra"><i class="m-ter"></i>adentro, software de terceros</span>
+    <span class="muestra"><i class="m-web"></i>adentro, el frontend</span>
+    <span class="muestra"><i class="m-comp"></i>borde punteado: solo perfil completo</span>
+  </div>
+
+  <div class="host">
+    <div class="host-titulo">docker compose, red pos-farmacia-micro</div>
+
+    <div class="capa-titulo">Entrada: un solo frontend para todo el sistema</div>
+    <div class="fila entrada">
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>frontend</b><span class="puerto">:5175</span></div>
+        <div class="svc web"><span class="svc-cab">frontend</span><span class="svc-nombre">App React servida por Nginx</span><span class="pie">Las pantallas de caja y administración. Es el único frontend del sistema.</span></div>
+      </div>
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>api-gateway</b><span class="puerto">:8080</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Spring Cloud Gateway</span><span class="pie">Valida el JWT, limita peticiones y reparte a los nueve.</span></div>
+      </div>
+    </div>
+
+    <div class="conector">HTTP con JWT. Los nueve no publican puerto: solo se llega por el gateway</div>
+
+    <div class="capa-titulo">Nueve contenedores, un microservicio en cada uno, sin pantallas: solo API</div>
+    <div class="fila">
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-identidad</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-identidad</span><ul><li>API: login, JWT, JWKS</li><li>Consume <code>pos.auditoria</code></li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_identidad</span></div>
+      </div>
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-catalogo</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-catalogo</span><ul><li>API: productos y precios</li><li>Caché local más Redis</li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_catalogo</span></div>
+      </div>
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-inventario</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-inventario</span><ul><li>API: stock y reservas</li><li>Consume ventas: aplica FEFO</li><li>Job: libera reservas vencidas</li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_inventario</span></div>
+      </div>
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-ventas</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-ventas</span><ul><li>API: venta, pagos, caja</li><li>Orquesta la saga</li><li>Consume lotes y comprobantes</li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_ventas</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-clientes</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-clientes</span><ul><li>API: clientes, recetas, convenios</li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_clientes</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-credito</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-credito</span><ul><li>API: líneas de crédito</li><li>Consume ventas: cargo firme</li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_credito</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-promociones</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-promociones</span><ul><li>API: evaluar promociones</li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_promociones</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-facturacion</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-facturacion</span><ul><li>Consume ventas confirmadas</li><li>Job: envía a SUNAT cada 5 s</li><li>SUNAT simulada aquí adentro</li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_facturacion</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>ms-reportes</b></div>
+        <div class="svc"><span class="svc-cab">microservicio</span><span class="svc-nombre">ms-reportes</span><ul><li>Consume ventas: read model</li><li>API de reportes</li></ul></div>
+        <div class="base-de">su base: <span class="chip base">pg_reportes</span></div>
+      </div>
+    </div>
+
+    <div class="conector">Cada servicio entra solo a su base en postgres, y publica y consume eventos en kafka</div>
+
+    <div class="capa-titulo">Infraestructura</div>
+    <div class="fila infra-fila">
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>postgres</b><span class="puerto">:5452</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">PostgreSQL 16</span><span class="pie">Nueve bases, un usuario por base, sin permisos cruzados</span><div class="chips"><span class="chip base">pg_identidad</span><span class="chip base">pg_catalogo</span><span class="chip base">pg_inventario</span><span class="chip base">pg_ventas</span><span class="chip base">pg_clientes</span><span class="chip base">pg_credito</span><span class="chip base">pg_promociones</span><span class="chip base">pg_facturacion</span><span class="chip base">pg_reportes</span></div></div>
+      </div>
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>kafka</b><span class="puerto">:9096</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Apache Kafka, único broker</span><span class="pie">Los tópicos por donde viajan los eventos</span><div class="chips"><span class="chip">ventas.confirmadas</span><span class="chip">ventas.anuladas</span><span class="chip">stock.lotes-asignados</span><span class="chip">stock.movimientos</span><span class="chip">catalogo.cambios</span><span class="chip">comprobantes.emitidos</span><span class="chip">auditoria</span></div></div>
+      </div>
+      <div class="cont">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>redis</b><span class="puerto">:6380</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Redis 7</span><span class="pie">Caché, límite de peticiones, idempotencia</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>kafka-ui</b><span class="puerto">:8092</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Kafka UI</span><span class="pie">Consola web de Kafka. Al lado va el contenedor <code>schema-registry</code> (:8091)</span></div>
+      </div>
+    </div>
+
+    <div class="conector">Perfil observabilidad, opcional</div>
+    <div class="fila">
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>otel-collector</b><span class="puerto">:4318</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">OTel Collector</span><span class="pie">Recibe trazas</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>tempo</b></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Grafana Tempo</span><span class="pie">Guarda trazas</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>prometheus</b><span class="puerto">:9090</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Prometheus</span><span class="pie">Métricas y alertas</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>grafana</b><span class="puerto">:3000</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Grafana</span><span class="pie">Tableros</span></div>
+      </div>
+      <div class="cont completo">
+        <div class="cont-cab"><span class="tipo">contenedor</span><b>loki</b></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Grafana Loki</span><span class="pie">Logs</span></div>
+      </div>
+    </div>
+  </div>
+
+  <p class="pie">Los nueve microservicios llevan además su publicador de outbox: cada 200 ms pasa a Kafka los eventos que su transacción dejó en la tabla <code>outbox</code>.</p>
+</section>
+
+<!-- 13 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Aterriza la arquitectura en lo que de verdad corre. Cada microservicio es un contenedor con su propia base, y la infraestructura va en contenedores aparte: ningún servicio lleva Kafka ni Postgres adentro. Explica los perfiles: el de por defecto levanta solo el camino de venta, el completo los nueve servicios. Remata con que los nueve servicios no exponen puerto: todo entra por el gateway."
+  data-puntos="Un microservicio es un contenedor; la infraestructura es otro contenedor aparte|Solo frontend, gateway, Postgres, Redis, Kafka y las consolas exponen puerto; los nueve servicios no|Postgres es un contenedor con nueve bases en desarrollo y nueve instancias en producción|Si preguntan cuántos contenedores: 16 en el perfil completo, 21 con observabilidad">
+  <h2>Servicios y contenedores</h2>
+  <p>Qué corre dentro de cada contenedor del <code>docker-compose.yml</code>. Un microservicio,
+  un contenedor, una base.</p>
+
+  <h3>Entrada</h3>
+  <div class="rejilla r3">
+    <div class="tarjeta"><h4><code>frontend</code> <span class="etiqueta">:5175</span></h4><p>React servido por Nginx. Solo conoce al gateway.</p></div>
+    <div class="tarjeta"><h4><code>api-gateway</code> <span class="etiqueta">:8080</span></h4><p>Spring Cloud Gateway. Valida el JWT, limita peticiones y enruta a los nueve.</p></div>
+  </div>
+
+  <h3>Los nueve microservicios, cada uno en su contenedor y con su base</h3>
+  <table>
+    <tr><th>Contenedor</th><th>Qué lleva adentro</th><th>Base en <code>postgres</code></th><th>Perfil</th></tr>
+    <tr><td><code>ms-identidad</code></td><td>Login, emisión de JWT, JWKS, auditoría</td><td><code>pg_identidad</code></td><td>por defecto</td></tr>
+    <tr><td><code>ms-catalogo</code></td><td>Productos, precios, búsqueda</td><td><code>pg_catalogo</code></td><td>por defecto</td></tr>
+    <tr><td><code>ms-inventario</code></td><td>Stock, lotes, reservas, FEFO</td><td><code>pg_inventario</code></td><td>por defecto</td></tr>
+    <tr><td><code>ms-ventas</code></td><td>Venta, pagos, caja, orquesta la saga</td><td><code>pg_ventas</code></td><td>por defecto</td></tr>
+    <tr><td><code>ms-clientes</code></td><td>Clientes, recetas, convenios de seguro</td><td><code>pg_clientes</code></td><td>completo</td></tr>
+    <tr><td><code>ms-credito</code></td><td>Líneas de crédito y reservas de crédito</td><td><code>pg_credito</code></td><td>completo</td></tr>
+    <tr><td><code>ms-promociones</code></td><td>Promociones y descuentos</td><td><code>pg_promociones</code></td><td>completo</td></tr>
+    <tr><td><code>ms-facturacion</code></td><td>Boletas, facturas, devoluciones, envío a SUNAT</td><td><code>pg_facturacion</code></td><td>completo</td></tr>
+    <tr><td><code>ms-reportes</code></td><td>Read model para reportes (CQRS)</td><td><code>pg_reportes</code></td><td>completo</td></tr>
+  </table>
+
+  <h3>Infraestructura compartida</h3>
+  <div class="rejilla r3">
+    <div class="tarjeta"><h4><code>postgres</code> <span class="etiqueta">:5452</span></h4><p>Un Postgres 16 con las nueve bases, un usuario por base y sin permisos cruzados.</p></div>
+    <div class="tarjeta"><h4><code>kafka</code> <span class="etiqueta">:9096</span></h4><p>Único broker de mensajería. KRaft, sin Zookeeper. Todos los eventos pasan por aquí.</p></div>
+    <div class="tarjeta"><h4><code>redis</code> <span class="etiqueta">:6380</span></h4><p>Caché de catálogo, límite de peticiones del gateway e idempotencia.</p></div>
+    <div class="tarjeta"><h4><code>schema-registry</code> <span class="etiqueta">:8091</span></h4><p>Impide que un evento nuevo rompa a los consumidores viejos.</p></div>
+    <div class="tarjeta"><h4><code>kafka-ui</code> <span class="etiqueta">:8092</span></h4><p>Consola web para ver tópicos, mensajes y el retraso de cada consumidor.</p></div>
+    <div class="tarjeta"><h4>Observabilidad <span class="etiqueta ambar">perfil aparte</span></h4><p><code>otel-collector</code>, <code>tempo</code>, <code>prometheus</code>, <code>grafana</code>, <code>loki</code>.</p></div>
+  </div>
+
+  <div class="nota">
+    <p>Perfil completo: 16 contenedores. 9 servicios, gateway, frontend y 5 de infraestructura.
+    Los nueve servicios no publican puerto al host: todo entra por el gateway, igual que en
+    producción.</p>
+  </div>
+</section>
+
+<!-- 14 -->
+<section class="lamina"
   data-tiempo="4 min"
   data-guion="Recorre los seis pasos de una venta en voz alta como si fueras el cajero. El punto que tiene que quedar clarísimo: el paso 5, confirmar, es una transacción LOCAL más un evento. No llama a nadie. Por eso responde en menos de 500 ms y por eso la caída de facturación no para la caja."
   data-puntos="Cuéntalo como el cajero lo vive, no como lo vive el servidor|El paso 5 es el corazón: transacción local más un evento, cero llamadas externas|Los pasos del 6 ocurren cuando el cliente ya se fue">
@@ -504,7 +751,64 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
                       └─► reportes     actualiza el read model</pre>
 </section>
 
-<!-- 13 -->
+<!-- 15 -->
+<section class="lamina"
+  data-tiempo="3 min"
+  data-guion="Esta es la pregunta clásica del jurado: el proyecto anterior tenía Kafka y RabbitMQ, ¿por qué aquí solo Kafka? Cuenta la historia tal cual: Rabbit quedó levantado del proyecto anterior pero ningún servicio lo usaba, porque facturación ya mandaba a SUNAT desde una tabla. Lo sacamos. Recalca que la tabla hace falta igual por SUNAT, y que una cola al lado sería llevar la misma cuenta en dos cuadernos. Cierra con la condición que lo haría volver."
+  data-puntos="Sé honesto: Rabbit estaba prendido y nadie lo usaba; sacarlo fue quitar peso muerto|El argumento fuerte: SUNAT obliga a llevar el estado de cada comprobante, y esa tabla ya es la cola|SKIP LOCKED reparte el trabajo entre réplicas igual que una cola con varios consumidores|No se perdió ningún servicio: siguen siendo nueve. Rabbit era infraestructura|Volvería si aparece prioridad por mensaje, colas por local creadas al vuelo o RPC asíncrono">
+  <h2>Un solo broker: por qué sacamos RabbitMQ</h2>
+  <p>El proyecto anterior usaba Kafka para eventos y RabbitMQ para la cola de comprobantes. Al
+  pasar a microservicios, RabbitMQ quedó levantado, pero ningún servicio lo usaba: facturación
+  ya consumía Kafka y enviaba a SUNAT desde una tabla.</p>
+
+  <pre>Kafka  pos.ventas.confirmadas
+   └─► ms-facturacion
+         ├─ guarda el comprobante como PENDIENTE   (y confirma el offset)
+         └─ job cada 5 s:
+              SELECT ... WHERE estado = 'PENDIENTE' FOR UPDATE SKIP LOCKED
+              ├─ SUNAT acepta  → ACEPTADO, evento por outbox
+              └─ SUNAT falla   → sigue PENDIENTE, reintenta en el ciclo siguiente
+
+La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
+
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>Lo que se gana</h4>
+      <ul>
+        <li>Un broker que operar, monitorear y actualizar, no dos</li>
+        <li>Una sola fuente de verdad por comprobante: la tabla</li>
+        <li>El estado ante SUNAT es un SELECT, no un cruce entre tabla y cola</li>
+        <li>Un contenedor menos, 320 MB menos, una credencial menos</li>
+      </ul>
+    </div>
+    <div class="tarjeta">
+      <h4>Lo que se pierde</h4>
+      <ul>
+        <li>Reintento con espera distinta por mensaje. Se recupera con una columna <code>proximo_intento</code></li>
+        <li>Hasta 5 s de demora en el envío. SUNAT acepta envíos días después</li>
+        <li>La cola muerta nativa. La reemplaza la alerta de <code>comprobantes.pendientes.total</code></li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Qué se modificó para sacarlo</h3>
+  <table>
+    <tr><th>Contenedor o archivo</th><th>Cambio</th></tr>
+    <tr><td><code>rabbitmq</code></td><td><span class="etiqueta roja">eliminado</span> Fuera del compose, con sus puertos 5674 y 15674</td></tr>
+    <tr><td><code>ms-facturacion</code></td><td><span class="etiqueta ambar">modificado</span> Sin <code>spring-boot-starter-amqp</code>, sin variables <code>RABBITMQ_*</code>, ya no espera a Rabbit para arrancar</td></tr>
+    <tr><td><code>contracts</code></td><td>Fuera la cola, el exchange y la routing key de <code>Topicos</code></td></tr>
+    <tr><td><code>frontend</code></td><td>La pantalla Actividad decía que la venta encolaba en RabbitMQ. No era cierto</td></tr>
+    <tr><td><code>.env.example</code>, Kubernetes</td><td>Fuera <code>RABBITMQ_USER</code> y <code>RABBITMQ_PASSWORD</code></td></tr>
+  </table>
+
+  <div class="nota">
+    <p>No cambió ninguna regla de negocio ni ningún flujo, y los nueve servicios siguen siendo
+    nueve. RabbitMQ volvería solo para un caso que Kafka resuelva mal: prioridad por mensaje,
+    colas creadas al vuelo por local o respuesta asíncrona tipo RPC.</p>
+  </div>
+</section>
+
+<!-- 16 -->
 <section class="lamina"
   data-tiempo="4 min"
   data-guion="Los tres problemas duros. Si solo tuvieras tiempo para una diapositiva técnica, es esta. El UPDATE condicional es lo más elegante: un solo statement atómico, sin SELECT FOR UPDATE, sin deadlock, y la contención queda acotada al local que es el shard natural del negocio. Ensáyalo, es el momento fuerte."
@@ -532,7 +836,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
   fila de la venta entren o no entren juntas.</p>
 </section>
 
-<!-- 14 -->
+<!-- 17 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="La regla de una sola frase que ordena todo el sistema: nada fuera de stock y pago puede impedir una venta. Léela tal cual. Luego recorre la tabla mostrando qué pasa cuando cada dependencia falla. El punto emocional: un sistema que se niega a cobrar porque el servicio de promociones está lento no es resiliente, le hizo perder la venta a la botica."
@@ -555,7 +859,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
   muestra por local: la degradación silenciosa es peor que la caída ruidosa.</p>
 </section>
 
-<!-- 15 -->
+<!-- 18 -->
 <section class="lamina"
   data-tiempo="4 min"
   data-guion="Empieza el bloque de costos, que es donde se decide si el proyecto se aprueba o no. Presenta el esfuerzo paso por paso y señala el paso 6, inventario, que se lleva el 17% del esfuerzo él solo porque es donde entra la saga. Di que son estimaciones y que el rango real es de 5 a 7 meses con el equipo propuesto."
@@ -583,7 +887,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
   </div>
 </section>
 
-<!-- 16 -->
+<!-- 19 -->
 <section class="lamina"
   data-tiempo="4 min"
   data-guion="El costo que nadie pone en la propuesta y el que después duele. Infraestructura por tres o cuatro, y un costo operativo permanente que antes no existía. Sé explícito con que las cifras en soles son orden de magnitud y hay que validarlas con el proveedor. Ese cuidado te da credibilidad."
@@ -594,7 +898,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
     <tr><th></th><th>Monolito hoy</th><th>Nueve microservicios</th></tr>
     <tr><td>Cómputo</td><td>2 instancias de aplicación</td><td>Clúster de 6 a 8 nodos, ~30 pods</td></tr>
     <tr><td>Bases de datos</td><td>1 Postgres gestionado</td><td>9 Postgres + 10 réplicas de lectura</td></tr>
-    <tr><td>Mensajería</td><td>1 Kafka, 1 RabbitMQ</td><td>3 brokers Kafka, Schema Registry, RabbitMQ</td></tr>
+    <tr><td>Mensajería</td><td>1 Kafka, 1 RabbitMQ</td><td>3 brokers Kafka y Schema Registry</td></tr>
     <tr><td>Caché</td><td>No hay</td><td>Redis cluster, 3 nodos</td></tr>
     <tr><td>Observabilidad</td><td>Logs del contenedor</td><td>Prometheus, Loki, Tempo, Grafana + almacenamiento</td></tr>
     <tr class="total"><td>Orden de magnitud</td><td class="num">S/ 1,500 a 2,600</td><td class="num">S/ 6,700 a 11,100</td></tr>
@@ -610,7 +914,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
   </div>
 </section>
 
-<!-- 17 -->
+<!-- 20 -->
 <section class="lamina"
   data-tiempo="2 min"
   data-guion="Lo que NO cuesta. Es la diapositiva que tranquiliza y hay que darla después del costo, no antes. El mensaje: el dominio se mueve de casa, no se rehace. Las reglas de negocio validadas siguen valiendo y sus tests también. El frontend solo cambia la URL base."
@@ -640,7 +944,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
   </div>
 </section>
 
-<!-- 18 -->
+<!-- 21 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="La diapositiva más honesta de la presentación y la que más credibilidad da. Di abiertamente que para una cadena de 20 locales esta arquitectura es una pérdida neta. Saber cuándo NO aplicar un patrón demuestra más criterio que saber aplicarlo."
@@ -662,7 +966,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
   </div>
 </section>
 
-<!-- 19 -->
+<!-- 22 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="El plan de migración. Lo importante no son los doce pasos sino la propiedad que los ordena: strangler fig, el monolito sigue atendiendo hasta el último paso y cada paso deja el sistema funcionando. Si uno sale mal se revierte esa extracción sin tocar las anteriores."
@@ -685,7 +989,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
   las anteriores.</p>
 </section>
 
-<!-- 20 -->
+<!-- 23 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="Lo que deliberadamente no se hizo. Esta lista demuestra que cada pieza que SÍ está tiene una razón, y que no se metió tecnología por moda. Cada línea tiene la condición concreta que la activaría. Eso es lo que distingue una decisión de una omisión."
@@ -703,7 +1007,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
   </table>
 </section>
 
-<!-- 21 -->
+<!-- 24 -->
 <section class="lamina"
   data-tiempo="2 min"
   data-guion="Cierra con lo que se entrega y con la frase final. Menciona que todo compila y que el FEFO tiene pruebas en verde. Ofrece abrir arquitectura.html si quieren ver el diagrama interactivo. Y termina con la frase del punto de quiebre: la arquitectura correcta es la que la carga justifica, ni una pieza más."
@@ -751,7 +1055,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
 
 </div>
 
-<div class="progreso"><div id="barra" style="width:4.7%"></div></div>
+<div class="progreso"><div id="barra" style="width:4.2%"></div></div>
 
 <div class="notas" id="notas">
   <div class="notas-cuerpo">

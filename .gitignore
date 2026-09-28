@@ -1,7 +1,7 @@
 # ---------------------------------------------------------------------------
 # Secretos. Lo primero de la lista a proposito.
 # ---------------------------------------------------------------------------
-# El .env lleva la clave de Postgres, la de RabbitMQ y el par RSA con el que
+# El .env lleva la clave de Postgres y el par RSA con el que
 # ms-identidad firma los JWT. La plantilla .env.example SI se versiona: sin ella
 # nadie sabe que variables hacen falta.
 .env

@@ -252,7 +252,71 @@ permite cambiar sin tocar el dominio.
 
 ---
 
-## 12. Lo que deliberadamente no se hizo
+## 12. Un solo broker: Kafka, sin RabbitMQ
+
+**Decisión.** Toda la mensajería va por Kafka. RabbitMQ salió del sistema el 27 de
+setiembre de 2026.
+
+**De dónde venía.** El proyecto anterior usaba Kafka para eventos y RabbitMQ para la cola
+de emisión de comprobantes. Al partirlo en microservicios, RabbitMQ se quedó en el compose
+y en el pom de facturación, pero ninguna clase lo usaba: facturación ya consumía Kafka y
+enviaba a SUNAT desde una tabla. Estaba prendido, gastando memoria, sin hacer nada.
+
+**Por qué no hace falta.** Lo que se le pide a RabbitMQ es trabajo dirigido a un solo
+consumidor con reintento por mensaje. Eso ya lo resuelve la tabla `comprobantes`:
+
+- Cada comprobante nace PENDIENTE al llegar `VentaConfirmada`.
+- Un job cada 5 s toma lotes de 50 con `FOR UPDATE SKIP LOCKED`: seis réplicas se
+  reparten el trabajo sin tomar dos veces el mismo.
+- Si SUNAT falla, el comprobante sigue PENDIENTE y el ciclo siguiente lo reintenta.
+- La tabla hace falta igual, porque SUNAT exige saber qué se emitió, qué se rechazó y qué
+  falta (resumen diario de boletas, reenvíos, comunicaciones de baja). Con una cola además
+  habría dos fuentes de verdad sobre lo mismo, y cuando no cuadren nadie sabe a cuál creer.
+
+El reparto de trabajo que se le atribuye a RabbitMQ Kafka también lo da: con 12
+particiones y un grupo de consumidores, cada evento lo procesa una sola réplica.
+
+| | Con RabbitMQ | Solo Kafka |
+|---|---|---|
+| Brokers que operar, monitorear y actualizar | 2 | 1 |
+| Contenedores en el perfil completo | 17 | 16 |
+| Memoria en la laptop | 320 MB más de límite | |
+| Fuente de verdad de un comprobante | tabla y cola | la tabla |
+| Estado de un comprobante ante SUNAT | hay que cruzar tabla y cola | un SELECT |
+| Credenciales que custodiar | Postgres y RabbitMQ | Postgres |
+
+**Lo que se pierde.**
+
+- Reintento con espera distinta por mensaje. Hoy todos los pendientes se reintentan cada
+  5 s. Si SUNAT pidiera espaciar los envíos, se agrega una columna `proximo_intento` y el
+  job la filtra: una línea de SQL, no un broker.
+- Algo de latencia: el comprobante sale hasta 5 s después, no apenas se encola. Para un
+  trámite que SUNAT permite enviar días después, no importa.
+- La cola muerta nativa de RabbitMQ. La reemplaza la alerta sobre la métrica
+  `comprobantes.pendientes.total`.
+
+**En qué afecta.** No cambió ninguna regla de negocio ni ningún flujo: el código que emite
+comprobantes es el mismo. Los nueve microservicios siguen siendo nueve, porque RabbitMQ era
+infraestructura, no un servicio. Lo que se tocó:
+
+| Archivo | Cambio |
+|---|---|
+| `docker-compose.yml` | Fuera el contenedor `rabbitmq`, las variables `RABBITMQ_*` y el `depends_on` de `ms-facturacion` |
+| `services/ms-facturacion/pom.xml` | Fuera `spring-boot-starter-amqp` |
+| `contracts/.../Topicos.java` | Fuera la cola, el exchange y la routing key |
+| `.env.example`, `k8s/base/configmap.yaml` | Fuera `RABBITMQ_USER` y `RABBITMQ_PASSWORD` |
+| Frontend, pantalla Actividad | Decía que la venta encolaba en RabbitMQ. No era cierto |
+
+El único contenedor modificado es `ms-facturacion`, que pierde una dependencia que no
+usaba. `rabbitmq` desaparece. Los otros quince no cambian.
+
+**Qué la cambiaría.** Un caso que Kafka resuelve mal: prioridad por mensaje, espera
+distinta por mensaje a gran escala, colas creadas al vuelo por local, o respuesta asíncrona
+tipo RPC. Si aparece, entra RabbitMQ para ese caso y solo para ese.
+
+---
+
+## 13. Lo que deliberadamente no se hizo
 
 | Pieza | Por qué no | Cuándo entraría |
 |---|---|---|
@@ -267,7 +331,7 @@ permite cambiar sin tocar el dominio.
 
 ---
 
-## 13. Cuándo esta arquitectura es la decisión equivocada
+## 14. Cuándo esta arquitectura es la decisión equivocada
 
 Con 20 locales y 40 cajas, es una pérdida neta. Un monolito con réplicas de lectura y caché
 aguanta ese volumen de sobra, con un décimo del costo operativo.

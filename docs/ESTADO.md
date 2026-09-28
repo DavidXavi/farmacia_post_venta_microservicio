@@ -30,7 +30,7 @@ reiniciar después el gateway: `docker compose restart api-gateway`. Si no, sus 
 responden 404 aunque el servicio esté sano. Está anotado más abajo.
 
 El `.env` ya está creado y no se versiona. Si se pierde, regenerar las claves JWT con
-`./scripts/generar-claves-jwt.sh` y volver a completar `DB_PASSWORD` y `RABBITMQ_PASSWORD`.
+`./scripts/generar-claves-jwt.sh` y volver a completar `DB_PASSWORD`.
 
 | Acceso | URL |
 |---|---|
@@ -97,10 +97,11 @@ pasaba antes.
   existencias, el sistema respondió "Solo quedan 0 unidades" en vez de fallar en seco.
 - **Sesión de 15 minutos.** El token expira y la interfaz manda al login. Comprobado.
 
-### Los 17 contenedores
+### Los 16 contenedores
 
-Todos arriba y sin reinicios: postgres, redis, kafka, schema-registry, kafka-ui, rabbitmq,
-api-gateway, los nueve microservicios y el frontend.
+Todos arriba y sin reinicios: postgres, redis, kafka, schema-registry, kafka-ui,
+api-gateway, los nueve microservicios y el frontend. Eran 17: RabbitMQ salió el 27 de
+setiembre porque ningún servicio lo usaba (decisión 12 de `DECISIONES.md`).
 
 ### Consumo de RAM, medido
 
@@ -126,7 +127,7 @@ tres de alta de MFA y el `PATCH` de promoción por línea.
 
 Funcionan con datos: Venta (POS), Caja, Productos, Lotes, Inventario, Clientes, Recetas,
 Promociones, Convenios, Líneas de crédito, Catálogos, Usuarios, Reportes, Actividad
-(Kafka/RabbitMQ), Devoluciones.
+(Kafka), Devoluciones.
 
 ---
 

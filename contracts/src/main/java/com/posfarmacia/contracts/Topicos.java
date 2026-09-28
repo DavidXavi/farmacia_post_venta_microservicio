@@ -1,7 +1,7 @@
 package com.posfarmacia.contracts;
 
 /**
- * Nombres de topicos y colas. Constantes, no configuracion: un typo en un topico no
+ * Nombres de topicos de Kafka. Constantes, no configuracion: un typo en un topico no
  * falla, simplemente el mensaje se va a un topico que nadie lee y el error aparece
  * dias despues en un reporte que no cuadra.
  *
@@ -34,13 +34,6 @@ public final class Topicos {
 
     /** Auditoria transversal: cualquier servicio publica, identidad consume. */
     public static final String AUDITORIA = "pos.auditoria";
-
-    /** Cola RabbitMQ: emision de comprobante. Trabajo dirigido a un solo consumidor. */
-    public static final String COLA_EMITIR_COMPROBANTE = "pos.comprobantes.emitir";
-
-    /** Exchange y routing key de la cola anterior. */
-    public static final String EXCHANGE_COMPROBANTES = "pos.comprobantes";
-    public static final String RK_EMITIR = "emitir";
 
     /**
      * Sufijos de la cadena de reintento y la cola muerta. Un consumidor que falla no

@@ -40,10 +40,9 @@
         "focus": [
           "kafka",
           "facturacion",
-          "rabbitmq",
           "sunat"
         ],
-        "note": "SUNAT caida significa comprobantes encolados, nunca cajas paradas."
+        "note": "SUNAT caida significa comprobantes PENDIENTES en la tabla, nunca cajas paradas."
       },
       {
         "id": "degradables",
@@ -55,6 +54,26 @@
           "redis"
         ],
         "note": "Si no responden, la venta sigue: sin descuento o como anonima."
+      },
+      {
+        "id": "contenedores",
+        "label": "Un contenedor por servicio",
+        "focus": [
+          "gateway",
+          "identidad",
+          "ventas",
+          "catalogo",
+          "clientes",
+          "credito",
+          "promociones",
+          "inventario",
+          "reportes",
+          "facturacion",
+          "postgres",
+          "kafka",
+          "redis"
+        ],
+        "note": "Cada ms-* corre solo en su contenedor. PostgreSQL, Kafka y Redis van aparte; SUNAT va simulada dentro de ms-facturacion."
       }
     ]
   },
@@ -253,20 +272,6 @@
       ]
     },
     {
-      "id": "rabbitmq",
-      "type": "messagebus",
-      "label": "RabbitMQ",
-      "sublabel": "cola de emision",
-      "pos": [
-        692,
-        560
-      ],
-      "size": [
-        155,
-        56
-      ]
-    },
-    {
       "id": "facturacion",
       "type": "backend",
       "label": "ms-facturacion",
@@ -294,12 +299,27 @@
         150,
         58
       ]
+    },
+    {
+      "id": "postgres",
+      "type": "database",
+      "label": "PostgreSQL",
+      "sublabel": "9 bases aisladas",
+      "pos": [
+        232,
+        560
+      ],
+      "size": [
+        170,
+        58
+      ],
+      "tag": "un usuario por base"
     }
   ],
   "boundaries": [
     {
       "kind": "region",
-      "label": "Cluster Kubernetes: pos-farmacia",
+      "label": "Cluster Kubernetes: un contenedor por servicio",
       "wraps": [
         "gateway",
         "identidad",
@@ -313,8 +333,8 @@
         "observabilidad",
         "kafka",
         "reportes",
-        "rabbitmq",
-        "facturacion"
+        "facturacion",
+        "postgres"
       ]
     },
     {
@@ -424,13 +444,6 @@
       "toSide": "top"
     },
     {
-      "id": "facturacion-rabbit",
-      "from": "facturacion",
-      "to": "rabbitmq",
-      "label": "encola",
-      "variant": "dashed"
-    },
-    {
       "id": "facturacion-sunat",
       "from": "facturacion",
       "to": "sunat",
@@ -464,7 +477,7 @@
       "dot": "cyan",
       "title": "Una base por servicio",
       "items": [
-        "Nueve Postgres: ninguna consulta cruza el limite",
+        "Nueve bases: en desarrollo un contenedor PostgreSQL, en produccion nueve instancias",
         "La regla la impone el motor, no el equipo: sin GRANT cruzado",
         "El JOIN entre contextos se pierde y se recupera en ms-reportes"
       ]
@@ -475,7 +488,7 @@
       "items": [
         "Criticas: inventario 500 ms, credito 800 ms",
         "Degradables: promociones y clientes 300 ms, la venta sigue",
-        "SUNAT caida: comprobante encolado y la caja sigue cobrando"
+        "SUNAT caida: el comprobante queda PENDIENTE y la caja sigue cobrando"
       ]
     },
     {

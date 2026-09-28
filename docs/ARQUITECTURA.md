@@ -20,11 +20,40 @@ Este documento describe la estructura. El porqué de cada decisión está en
                   │  Kafka  (via outbox)   │  ASÍNCRONO, hecho consumado
                   └──┬──────┬──────┬───┬───┘
         ms-inventario │      │      │   └─ ms-reportes      read model CQRS
-        confirma FEFO │      │      └───── ms-facturacion   CPE, RabbitMQ, SUNAT
+        confirma FEFO │      │      └───── ms-facturacion   CPE, SUNAT
           ms-credito ─┘      └──────────── ms-ventas        cierra la saga
 
         ms-identidad: emite JWT, publica JWKS, consume pos.auditoria
 ```
+
+## Contenedores
+
+Qué corre en cada contenedor del `docker-compose.yml`. Un microservicio es un contenedor;
+la infraestructura va aparte y ningún servicio la lleva adentro.
+
+| Contenedor | Qué es | Perfil | Puerto en el host | Base de datos |
+|---|---|---|---|---|
+| `frontend` | React servido por Nginx | por defecto | 5175 | |
+| `api-gateway` | Spring Cloud Gateway: JWT, rate limit, rutas | por defecto | 8080 | |
+| `ms-identidad` | Login, JWT, JWKS, auditoría | por defecto | interno | `pg_identidad` |
+| `ms-catalogo` | Productos y precios | por defecto | interno | `pg_catalogo` |
+| `ms-inventario` | Stock, lotes, FEFO, reservas | por defecto | interno | `pg_inventario` |
+| `ms-ventas` | Venta, pagos, caja, orquesta la saga | por defecto | interno | `pg_ventas` |
+| `ms-clientes` | Clientes, recetas, convenios | completo | interno | `pg_clientes` |
+| `ms-credito` | Líneas de crédito | completo | interno | `pg_credito` |
+| `ms-promociones` | Promociones y descuentos | completo | interno | `pg_promociones` |
+| `ms-facturacion` | Comprobantes, devoluciones, envío a SUNAT | completo | interno | `pg_facturacion` |
+| `ms-reportes` | Read model CQRS para reportes | completo | interno | `pg_reportes` |
+| `postgres` | Un Postgres 16 con las nueve bases | por defecto | 5452 | las nueve |
+| `redis` | Caché de catálogo, rate limit, idempotencia | por defecto | 6380 | |
+| `kafka` | Broker Kafka en KRaft, sin Zookeeper | por defecto | 9096 | |
+| `schema-registry` | Compatibilidad de esquemas de eventos | completo | 8091 | |
+| `kafka-ui` | Consola web para ver tópicos y mensajes | completo | 8092 | |
+| `otel-collector`, `tempo` | Trazas | observabilidad | 4318 | |
+| `prometheus`, `grafana` | Métricas y tableros | observabilidad | 9090, 3000 | |
+| `loki` | Logs | observabilidad | interno | |
+
+Perfil completo: 16 contenedores. Eran 17 hasta que salió RabbitMQ.
 
 ## Capas dentro de cada servicio
 
@@ -96,7 +125,9 @@ hace un año dependería de que ms-catalogo esté vivo.
 
 ## Mensajería
 
-Kafka para hechos consumados, RabbitMQ para trabajo dirigido a un solo consumidor.
+Un solo broker: Kafka. El sistema anterior usaba también RabbitMQ; aquí se sacó porque su
+único trabajo ya lo hacía mejor una tabla. El porqué está en la decisión 12 de
+[`DECISIONES.md`](DECISIONES.md).
 
 | Tópico | Particiones | Lo consumen |
 |---|---|---|
@@ -118,8 +149,11 @@ pos.ventas.confirmadas
   → .retry.5s  → .retry.1m  → .retry.10m  → .dlq   (alerta a on-call)
 ```
 
-RabbitMQ se queda con `pos.comprobantes.emitir`, donde importa el trabajo dirigido a un
-consumidor y el reintento con backoff por mensaje.
+El envío a SUNAT no pasa por ninguna cola de mensajes. Facturación consume
+`pos.ventas.confirmadas`, guarda el comprobante como PENDIENTE y confirma el offset. Un
+job cada 5 s toma los pendientes con `SELECT ... FOR UPDATE SKIP LOCKED`, así que varias
+réplicas se reparten el trabajo sin pisarse, y lo que SUNAT rechaza sigue PENDIENTE para el
+ciclo siguiente. La tabla es la cola, y además es el registro que SUNAT exige llevar.
 
 ## Secuencia de una venta
 

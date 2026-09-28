@@ -33,4 +33,3 @@ stringData:
   DB_PASSWORD: "cambiar-en-el-overlay"
   JWT_CLAVE_PRIVADA: ""
   JWT_CLAVE_PUBLICA: ""
-  RABBITMQ_PASSWORD: "cambiar-en-el-overlay"

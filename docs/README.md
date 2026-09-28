@@ -13,6 +13,8 @@ quien aprueba el presupuesto, no solo quien programa.
 | [ARQUITECTURA.md](ARQUITECTURA.md) | La estructura: capas, reparto de datos, mensajería, secuencias |
 | [DECISIONES.md](DECISIONES.md) | Qué se decidió, contra qué alternativa, y qué lo cambiaría |
 | [COMO_EJECUTAR.md](COMO_EJECUTAR.md) | Levantar, verificar y depurar, paso a paso |
+| [ESTADO.md](ESTADO.md) | Punto de retomada: qué funciona verificado, qué falta, qué fallos ya se encontraron |
+| [DIAGNOSTICO.md](DIAGNOSTICO.md) | En qué se rompe este sistema: los patrones que se repiten y qué revisar antes de tocar algo |
 
 ## Para exponer
 

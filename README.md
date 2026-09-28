@@ -28,7 +28,7 @@ hablan entre sí.
 Requisitos: Docker Desktop encendido. Nada más (Java y Maven van por wrapper).
 
 ```bash
-cp .env.example .env          # completar DB_PASSWORD y RABBITMQ_PASSWORD
+cp .env.example .env          # completar DB_PASSWORD
 docker compose up -d --build
 ```
 
@@ -37,7 +37,7 @@ Tres perfiles, para no levantar veinte contenedores cuando solo quieres probar u
 | Comando | Qué levanta | RAM |
 |---|---|---|
 | `docker compose up -d --build` | Camino de venta: Postgres, Kafka, Redis, gateway, identidad, catálogo, inventario, ventas, frontend | ~3.8 GB |
-| `docker compose --profile completo up -d --build` | Los nueve servicios, Schema Registry, Kafka UI, RabbitMQ | 4.5 GB medidos |
+| `docker compose --profile completo up -d --build` | Los nueve servicios, Schema Registry, Kafka UI | ~4.2 GB |
 | `docker compose --profile completo --profile observabilidad up -d --build` | Además Prometheus, Grafana, Tempo, Loki, OTel Collector | ~7.5 GB |
 
 | Servicio | URL |
@@ -45,7 +45,6 @@ Tres perfiles, para no levantar veinte contenedores cuando solo quieres probar u
 | Frontend | http://localhost:5175 |
 | Gateway | http://localhost:8080 |
 | Kafka UI | http://localhost:8092 |
-| RabbitMQ | http://localhost:15674 |
 | Grafana | http://localhost:3000 |
 | Postgres | localhost:5452 |
 

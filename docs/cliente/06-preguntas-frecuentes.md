@@ -26,6 +26,14 @@ Para una cadena de 20 locales, sí, y está dicho en el [documento de costos](05
 Para 500 locales, no. La diferencia no es de opinión: se decide con el volumen de ventas
 por segundo y con el tamaño del equipo.
 
+**¿Por qué ya no usan RabbitMQ, si el sistema anterior lo tenía?**
+
+Porque su único trabajo era llevar los comprobantes pendientes hacia SUNAT, y eso ya lo hace
+una tabla: cada comprobante queda guardado como pendiente y se reintenta hasta que SUNAT lo
+acepta. Esa tabla hace falta igual, porque hay que saber qué se emitió y qué no. Tener
+además una cola era llevar la misma cuenta en dos cuadernos. Con un solo sistema de
+mensajería hay uno menos que vigilar, actualizar y pagar. No se perdió ninguna función.
+
 **¿Se reescribió el sistema desde cero?**
 
 No. Las reglas de negocio son las mismas del sistema anterior, movidas de lugar. El FEFO,

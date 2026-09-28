@@ -19,7 +19,7 @@ const ENLACES = [
   { to: '/seguridad', label: 'Seguridad (MFA)', icono: 'fa-shield-halved' },
   { to: '/reportes', label: 'Reportes', icono: 'fa-chart-line' },
   { to: '/auditoria', label: 'Auditoria', icono: 'fa-clipboard-list' },
-  { to: '/actividad-reciente', label: 'Actividad (Kafka/RabbitMQ)', icono: 'fa-diagram-project' },
+  { to: '/actividad-reciente', label: 'Actividad (Kafka)', icono: 'fa-diagram-project' },
 ]
 
 export function AppLayout() {
