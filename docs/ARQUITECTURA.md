@@ -47,13 +47,13 @@ la infraestructura va aparte y ningún servicio la lleva adentro.
 | `postgres` | Un Postgres 16 con las nueve bases | por defecto | 5452 | las nueve |
 | `redis` | Rate limit del gateway e `Idempotency-Key` | por defecto | 6380 | |
 | `kafka` | Broker Kafka en KRaft, sin Zookeeper. Datos en el volumen `kafka-data` | por defecto | 9096 | |
-| `schema-registry` | Compatibilidad de esquemas de eventos | completo | 8091 | |
 | `kafka-ui` | Consola web para ver tópicos y mensajes | completo | 8092 | |
 | `otel-collector`, `tempo` | Trazas | observabilidad | 4318 | |
 | `prometheus`, `grafana` | Métricas y tableros | observabilidad | 9090, 3000 | |
 | `loki` | Logs | observabilidad | interno | |
 
-Perfil completo: 16 contenedores. Eran 17 hasta que salió RabbitMQ.
+Perfil completo: 15 contenedores. Eran 17: salieron RabbitMQ y Schema Registry, que
+estaban levantados y ningún servicio usaba.
 
 ## Capas dentro de cada servicio
 

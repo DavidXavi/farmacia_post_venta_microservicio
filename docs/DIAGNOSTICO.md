@@ -182,7 +182,7 @@ el sistema levantado, no hay pruebas que los cubran en CI. Es el hueco más gran
 1. **¿Compila y pasan las pruebas?** Necesario y no suficiente. Los dos fallos más caros
    de esta sesión pasaron las dos cosas.
 2. **¿Arranca?** Los cinco servicios sin `Clock` compilaban. `docker compose ps` tiene que
-   mostrar los dieciséis, no trece.
+   mostrar los quince, no trece.
 3. **¿Se ve en el navegador?** Si tocaste un endpoint que una pantalla usa, ábrela. El
    contrato de nombres no lo comprueba nadie más.
 4. **¿La rama de error dice algo?** Provoca el fallo y lee lo que sale en pantalla. "Error

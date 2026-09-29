@@ -640,7 +640,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
       </div>
       <div class="cont completo">
         <div class="cont-cab"><span class="tipo">contenedor</span><b>kafka-ui</b><span class="puerto">:8092</span></div>
-        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Kafka UI</span><span class="pie">Consola web de Kafka. Al lado va el contenedor <code>schema-registry</code> (:8091)</span></div>
+        <div class="svc ter"><span class="svc-cab">software de terceros</span><span class="svc-nombre">Kafka UI</span><span class="pie">Consola web de Kafka: tópicos, mensajes y el retraso de cada consumidor</span></div>
       </div>
     </div>
 
@@ -676,7 +676,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="Aterriza la arquitectura en lo que de verdad corre. Cada microservicio es un contenedor con su propia base, y la infraestructura va en contenedores aparte: ningún servicio lleva Kafka ni Postgres adentro. Explica los perfiles: el de por defecto levanta solo el camino de venta, el completo los nueve servicios. Remata con que los nueve servicios no exponen puerto: todo entra por el gateway."
-  data-puntos="Un microservicio es un contenedor; la infraestructura es otro contenedor aparte|Solo frontend, gateway, Postgres, Redis, Kafka y las consolas exponen puerto; los nueve servicios no|Postgres es un contenedor con nueve bases en desarrollo y nueve instancias en producción|Si preguntan cuántos contenedores: 16 en el perfil completo, 21 con observabilidad">
+  data-puntos="Un microservicio es un contenedor; la infraestructura es otro contenedor aparte|Solo frontend, gateway, Postgres, Redis, Kafka y las consolas exponen puerto; los nueve servicios no|Postgres es un contenedor con nueve bases en desarrollo y nueve instancias en producción|Si preguntan cuántos contenedores: 15 en el perfil completo, 20 con observabilidad">
   <h2>Servicios y contenedores</h2>
   <p>Qué corre dentro de cada contenedor del <code>docker-compose.yml</code>. Un microservicio,
   un contenedor, una base.</p>
@@ -706,13 +706,12 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
     <div class="tarjeta"><h4><code>postgres</code> <span class="etiqueta">:5452</span></h4><p>Un Postgres 16 con las nueve bases, un usuario por base y sin permisos cruzados.</p></div>
     <div class="tarjeta"><h4><code>kafka</code> <span class="etiqueta">:9096</span></h4><p>Único broker de mensajería. KRaft, sin Zookeeper. Todos los eventos pasan por aquí.</p></div>
     <div class="tarjeta"><h4><code>redis</code> <span class="etiqueta">:6380</span></h4><p>Límite de peticiones del gateway e Idempotency-Key de los nueve servicios.</p></div>
-    <div class="tarjeta"><h4><code>schema-registry</code> <span class="etiqueta">:8091</span></h4><p>Impide que un evento nuevo rompa a los consumidores viejos.</p></div>
     <div class="tarjeta"><h4><code>kafka-ui</code> <span class="etiqueta">:8092</span></h4><p>Consola web para ver tópicos, mensajes y el retraso de cada consumidor.</p></div>
     <div class="tarjeta"><h4>Observabilidad <span class="etiqueta ambar">perfil aparte</span></h4><p><code>otel-collector</code>, <code>tempo</code>, <code>prometheus</code>, <code>grafana</code>, <code>loki</code>.</p></div>
   </div>
 
   <div class="nota">
-    <p>Perfil completo: 16 contenedores. 9 servicios, gateway, frontend y 5 de infraestructura.
+    <p>Perfil completo: 15 contenedores. 9 servicios, gateway, frontend y 4 de infraestructura.
     Los nueve servicios no publican puerto al host: todo entra por el gateway, igual que en
     producción.</p>
   </div>
@@ -1006,7 +1005,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   <h2>Costo de la migración: esfuerzo</h2>
   <table>
     <tr><th>Paso</th><th>Qué incluye</th><th>Semanas-persona</th></tr>
-    <tr><td class="num">1-2</td><td>Copiar el proyecto e infraestructura nueva: Kafka, Schema Registry, Redis, observabilidad</td><td class="num">3</td></tr>
+    <tr><td class="num">1-2</td><td>Copiar el proyecto e infraestructura nueva: Kafka, Redis, observabilidad</td><td class="num">3</td></tr>
     <tr><td class="num">3</td><td>Gateway delante del monolito, frontend apuntando al gateway</td><td class="num">1</td></tr>
     <tr><td class="num">4</td><td>Extraer identidad: JWT, JWKS, OAuth2, MFA</td><td class="num">2</td></tr>
     <tr><td class="num">5</td><td>Extraer catálogo con caché en memoria e invalidación por evento</td><td class="num">2</td></tr>
@@ -1037,7 +1036,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
     <tr><th></th><th>Monolito hoy</th><th>Nueve microservicios</th></tr>
     <tr><td>Cómputo</td><td>2 instancias de aplicación</td><td>Clúster de 6 a 8 nodos, ~30 pods</td></tr>
     <tr><td>Bases de datos</td><td>1 Postgres gestionado</td><td>9 Postgres + 10 réplicas de lectura</td></tr>
-    <tr><td>Mensajería</td><td>1 Kafka, 1 RabbitMQ</td><td>3 brokers Kafka y Schema Registry</td></tr>
+    <tr><td>Mensajería</td><td>1 Kafka, 1 RabbitMQ</td><td>3 brokers Kafka</td></tr>
     <tr><td>Estado compartido</td><td>No hay</td><td>Redis cluster, 3 nodos</td></tr>
     <tr><td>Observabilidad</td><td>Logs del contenedor</td><td>Prometheus, Loki, Tempo, Grafana + almacenamiento</td></tr>
     <tr class="total"><td>Orden de magnitud</td><td class="num">S/ 1,500 a 2,600</td><td class="num">S/ 6,700 a 11,100</td></tr>

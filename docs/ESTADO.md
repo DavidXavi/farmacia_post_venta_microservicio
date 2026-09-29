@@ -113,11 +113,14 @@ termina con su comprobante igual. Pasó completo el 28 de setiembre.
 | Kafka apagado | La venta se confirmó; el evento esperó en el outbox y salió al volver Kafka |
 | Cuadre final | 6 ventas, 6 comprobantes, 6 en reportes, 6 sagas completas |
 
-### Los 16 contenedores
+### Los 15 contenedores
 
-Todos arriba y sin reinicios: postgres, redis, kafka, schema-registry, kafka-ui,
-api-gateway, los nueve microservicios y el frontend. Eran 17: RabbitMQ salió el 27 de
-setiembre porque ningún servicio lo usaba (decisión 12 de `DECISIONES.md`).
+Todos arriba y sin reinicios: postgres, redis, kafka, kafka-ui, api-gateway, los nueve
+microservicios y el frontend. Eran 17: RabbitMQ salió el 27 de setiembre porque ningún
+servicio lo usaba (decisión 12 de `DECISIONES.md`), y Schema Registry el 28 por lo mismo.
+Schema Registry además se caía: Kafka creaba solo el tópico `_schemas` con
+`cleanup.policy=delete` antes de que el registry lo creara compactado, el registry se negaba
+a arrancar y la pestaña Schemas de Kafka UI se colgaba esperándolo.
 
 ### Consumo de RAM, medido
 

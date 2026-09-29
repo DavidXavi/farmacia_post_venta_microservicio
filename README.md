@@ -46,7 +46,7 @@ Tres perfiles, para no levantar veinte contenedores cuando solo quieres probar u
 | Comando | Qué levanta | RAM |
 |---|---|---|
 | `docker compose up -d --build` | Camino de venta: Postgres, Kafka, Redis, gateway, identidad, catálogo, inventario, ventas, frontend | ~3.8 GB |
-| `docker compose --profile completo up -d --build` | Los nueve servicios, Schema Registry, Kafka UI | ~4.2 GB |
+| `docker compose --profile completo up -d --build` | Los nueve servicios y Kafka UI | ~4.2 GB |
 | `docker compose --profile completo --profile observabilidad up -d --build` | Además Prometheus, Grafana, Tempo, Loki, OTel Collector | ~7.5 GB |
 
 | Servicio | URL |

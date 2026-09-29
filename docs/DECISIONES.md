@@ -294,7 +294,7 @@ particiones y un grupo de consumidores, cada evento lo procesa una sola réplica
 | | Con RabbitMQ | Solo Kafka |
 |---|---|---|
 | Brokers que operar, monitorear y actualizar | 2 | 1 |
-| Contenedores en el perfil completo | 17 | 16 |
+| Contenedores en el perfil completo | 17 | 16 (15 desde que salió Schema Registry) |
 | Memoria en la laptop | 320 MB más de límite | |
 | Fuente de verdad de un comprobante | tabla y cola | la tabla |
 | Estado de un comprobante ante SUNAT | hay que cruzar tabla y cola | un SELECT |
@@ -368,7 +368,8 @@ reintentan. Ahí entra `@RetryableTopic` para ese consumidor, aceptando el costo
 | Config Server | ConfigMaps y Secrets alcanzan | Recarga de configuración sin reiniciar |
 | Debezium | El publicador por sondeo aguanta el volumen proyectado | `outbox.antiguedad` > 60 s sostenido |
 | ClickHouse | Postgres particionado con agregados cubre los reportes actuales | Un reporte que tarde más de lo aceptable |
-| Avro con codegen | JSON con Schema Registry en modo JSON Schema da compatibilidad hacia atrás sin plugin de generación | Si el tamaño del payload o la estrictez lo exigieran |
+| Avro con codegen | JSON plano alcanza: el payload es chico y los contratos son records de `contracts` | Si el tamaño del payload o la estrictez lo exigieran |
+| Schema Registry | Estuvo levantado y ningún servicio registraba esquemas: los eventos viajan como JSON y su contrato es el record compartido de `contracts`. Salió el 28 de setiembre, después de caerse por el tópico `_schemas` creado sin compactar | Consumidores fuera de este repo, o equipos que desplieguen contratos por separado |
 | Event sourcing | Outbox y eventos de integración sí; reconstruir el estado desde el log, no | Un requisito real de auditoría temporal completa |
 | GraphQL o BFF | Un frontend con un gateway REST alcanza | App móvil con necesidades distintas |
 | Tópicos de reintento | El reintento en la misma partición con cola muerta no pierde eventos y conserva el orden por local | Lag sostenido por eventos reintentándose (decisión 13) |

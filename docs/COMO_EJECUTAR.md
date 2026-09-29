@@ -16,7 +16,7 @@ Maven no hace falta: va por wrapper (`./mvnw`).
 | Perfil | Qué levanta | RAM |
 |---|---|---|
 | por defecto | Postgres, Kafka, Redis, gateway + 4 servicios del camino de venta, frontend | ~3.8 GB |
-| `completo` | + los nueve servicios, Schema Registry, Kafka UI | **~4.2 GB** (4.5 medidos con RabbitMQ) |
+| `completo` | + los nueve servicios y Kafka UI | **~4.2 GB** (4.5 medidos con RabbitMQ) |
 | `completo` + `observabilidad` | + Prometheus, Grafana, Tempo, Loki, OTel Collector | ~7.5 GB |
 | todo + Kubernetes | + plano de control de Docker Desktop | ~9.5 GB |
 
@@ -24,7 +24,8 @@ Cada servicio Spring Boot pesa unos 400 MB en su contenedor: diez JVM son 4 GB y
 la mayor parte. Kafka en KRaft con un broker es otro giga.
 
 Medido con `docker stats` sobre los 17 contenedores del perfil completo: **4.5 GB**. Eso
-fue antes de sacar RabbitMQ (límite de 320 MB); hoy son 16 contenedores.
+fue antes de sacar RabbitMQ (límite de 320 MB) y Schema Registry (512 MB); hoy son 15
+contenedores.
 Sumando la VM de WSL2, el total ronda los 6 GB.
 
 Con 8 GB de RAM se puede, justo y sin mucho más abierto. Con 16 GB es cómodo.
@@ -78,7 +79,6 @@ docker compose down -v               # bajar y borrar los datos
 | Frontend | http://localhost:5175 | |
 | Gateway | http://localhost:8080 | el único que el frontend conoce |
 | Kafka UI | http://localhost:8092 | perfil `completo` |
-| Schema Registry | http://localhost:8091 | perfil `completo` |
 | Grafana | http://localhost:3000 | perfil `observabilidad` |
 | Prometheus | http://localhost:9090 | perfil `observabilidad` |
 | Postgres | localhost:5452 | usuario `postgres` |
