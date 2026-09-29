@@ -21,7 +21,8 @@ quien aprueba el presupuesto, no solo quien programa.
 | Archivo | Qué es |
 |---|---|
 | `../presentacion/arquitectura.html` | Diagrama interactivo con cuatro recorridos guiados |
-| `../presentacion/diapositivas.html` | 21 diapositivas con guion de exposición por diapositiva |
+| `../presentacion/exposicion.html` | 12 láminas en dos bloques (Juan y Javier), la que se expone |
+| `../presentacion/diapositivas.html` | 28 diapositivas de respaldo, con guion por diapositiva |
 
 ## De dónde viene este proyecto
 

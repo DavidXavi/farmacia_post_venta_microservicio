@@ -246,7 +246,7 @@
   <button id="btnNotas" aria-pressed="false" title="Muestra el guion de esta diapositiva (tecla N)">Cómo exponer</button>
   <button id="btnTema" title="Claro u oscuro">Tema</button>
   <button id="btnAnt" title="Anterior">&larr;</button>
-  <span class="contador" id="contador">1 / 27</span>
+  <span class="contador" id="contador">1 / 28</span>
   <button id="btnSig" title="Siguiente">&rarr;</button>
 </header>
 
@@ -754,6 +754,47 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
 <!-- 15 -->
 <section class="lamina"
   data-tiempo="3 min"
+  data-guion="Esta lámina responde la pregunta de en qué momento trabaja Kafka. Empieza por lo que no hace: mientras el cajero arma la venta, Kafka no se entera de nada, todo es HTTP. Kafka entra después del commit, cuando el outbox publica. Si tienes el sistema levantado, confirma una venta y muestra en Kafka UI los tres mensajes apareciendo en orden. Cierra con honestidad: tres tópicos se publican y nadie los lee, y uno de ellos toca SUNAT."
+  data-puntos="Kafka no participa en el camino crítico: agregar línea y confirmar son HTTP|Entra después del commit: el outbox publica cada 200 ms|Una venta deja tres mensajes en orden: confirmada, lotes asignados, comprobante emitido|El tercero tarda hasta 5 s porque espera a SUNAT; con SUNAT caída no aparece hasta que vuelva|Un tópico .dlq con mensajes es la señal de que algo se rompió|Sé honesto con los tres tópicos sin consumidor, sobre todo la anulación sin nota de crédito">
+  <h2>En qué momento trabaja Kafka</h2>
+  <p>Mientras el cajero arma la venta, Kafka no se entera de nada: eso es HTTP. Entra después
+  del commit, cuando el publicador del outbox pasa el evento al broker cada 200 ms.</p>
+
+  <table>
+    <tr><th>Acción en el POS</th><th>Tópico que se llena</th><th>Lo publica</th><th>Lo consumen</th></tr>
+    <tr><td>Confirmar venta</td><td><code>ventas.confirmadas</code></td><td>ventas</td><td>inventario, crédito, facturación, reportes</td></tr>
+    <tr><td>(sigue sola, menos de 1 s)</td><td><code>stock.lotes-asignados</code></td><td>inventario, tras el FEFO</td><td>ventas</td></tr>
+    <tr><td>(sigue sola, hasta 5 s)</td><td><code>comprobantes.emitidos</code></td><td>facturación, cuando SUNAT acepta</td><td>ventas, que cierra la saga</td></tr>
+    <tr><td>Anular venta</td><td><code>ventas.anuladas</code></td><td>ventas</td><td>inventario, crédito, reportes</td></tr>
+    <tr><td>Tareas administrativas</td><td><code>auditoria</code></td><td>seis servicios</td><td>identidad</td></tr>
+    <tr><td>Ajustar lotes</td><td><code>stock.movimientos</code></td><td>inventario</td><td><span class="etiqueta ambar">nadie</span></td></tr>
+    <tr><td>Cambiar precio</td><td><code>catalogo.cambios</code></td><td>catálogo</td><td><span class="etiqueta ambar">nadie</span></td></tr>
+  </table>
+
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>Qué ver en Kafka UI (:8092)</h4>
+      <ul>
+        <li>Una venta confirmada deja tres mensajes en orden, con el mismo <code>ventaId</code></li>
+        <li>En Consumers, el lag de cada grupo vuelve a 0 en segundos</li>
+        <li>Un tópico <code>.dlq</code> con mensajes: un evento agotó los reintentos</li>
+        <li>Son eventos, no logs. Los logs están en <code>docker compose logs</code></li>
+      </ul>
+    </div>
+    <div class="tarjeta">
+      <h4>Lo que encontramos al revisarlo</h4>
+      <ul>
+        <li>El cambio de precio llega a los demás por el TTL de 60 s, no por el evento</li>
+        <li>Reportes no proyecta los movimientos de stock</li>
+        <li>Facturación no escucha la anulación: la nota de crédito se emite registrando la devolución</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 16 -->
+<section class="lamina"
+  data-tiempo="3 min"
   data-guion="Esta es la pregunta clásica del jurado: el proyecto anterior tenía Kafka y RabbitMQ, ¿por qué aquí solo Kafka? Cuenta la historia tal cual: Rabbit quedó levantado del proyecto anterior pero ningún servicio lo usaba, porque facturación ya mandaba a SUNAT desde una tabla. Lo sacamos. Recalca que la tabla hace falta igual por SUNAT, y que una cola al lado sería llevar la misma cuenta en dos cuadernos. Cierra con la condición que lo haría volver."
   data-puntos="Sé honesto: Rabbit estaba prendido y nadie lo usaba; sacarlo fue quitar peso muerto|El argumento fuerte: SUNAT obliga a llevar el estado de cada comprobante, y esa tabla ya es la cola|SKIP LOCKED reparte el trabajo entre réplicas igual que una cola con varios consumidores|No se perdió ningún servicio: siguen siendo nueve. Rabbit era infraestructura|Volvería si aparece prioridad por mensaje, colas por local creadas al vuelo o RPC asíncrono">
   <h2>Un solo broker: por qué sacamos RabbitMQ</h2>
@@ -808,7 +849,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </div>
 </section>
 
-<!-- 16 -->
+<!-- 17 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="El monolito no tenía Redis y no le hacía falta: con dos instancias y una base, todo el estado vivía en Postgres. Al partir en nueve servicios con varias réplicas cada uno aparecen dos datos que todas las réplicas tienen que ver igual, y que son demasiado frecuentes y efímeros para Postgres: la clave de idempotencia y el contador del límite de peticiones. Explica los dos con el ejemplo del POS que reintenta. Cierra con qué pasa si Redis se cae: nada que pare una venta. Y aclara que Redis no es la caché de catálogo."
@@ -854,7 +895,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </div>
 </section>
 
-<!-- 17 -->
+<!-- 18 -->
 <section class="lamina"
   data-tiempo="4 min"
   data-guion="Los tres problemas duros. Si solo tuvieras tiempo para una diapositiva técnica, es esta. El UPDATE condicional es lo más elegante: un solo statement atómico, sin SELECT FOR UPDATE, sin deadlock, y la contención queda acotada al local que es el shard natural del negocio. Ensáyalo, es el momento fuerte."
@@ -882,7 +923,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   fila de la venta entren o no entren juntas.</p>
 </section>
 
-<!-- 18 -->
+<!-- 19 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="La regla de una sola frase que ordena todo el sistema: nada fuera de stock y pago puede impedir una venta. Léela tal cual. Luego recorre la tabla mostrando qué pasa cuando cada dependencia falla. El punto emocional: un sistema que se niega a cobrar porque el servicio de promociones está lento no es resiliente, le hizo perder la venta a la botica."
@@ -908,7 +949,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   silenciosa es peor que la caída ruidosa.</p>
 </section>
 
-<!-- 19 -->
+<!-- 20 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="Esta es la respuesta a cómo lo probamos. Recorre las capas de abajo hacia arriba y di qué encontró cada una: la clave es que cada capa encontró fallos que la anterior no veía. Las pruebas unitarias protegen la aritmética; ArchUnit protege la arquitectura; los scripts prueban el sistema levantado; el navegador encontró los contratos rotos; y romper piezas encontró lo único que perdía ventas. Cierra con que todo se puede repetir con un comando."
@@ -934,7 +975,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </div>
 </section>
 
-<!-- 20 -->
+<!-- 21 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="Aquí se demuestra la frase que más importa del sistema: ninguna venta se pierde. Cuenta que no es una promesa del diseño, es una prueba que apaga piezas mientras se vende. Recorre los cinco escenarios y termina en el cuadre: seis ventas, seis comprobantes, seis en reportes. Después cuenta con honestidad lo que la prueba encontró la primera vez: sin manejador de errores, Spring Kafka descartaba el evento tras diez reintentos seguidos. Esa honestidad suma, no resta."
@@ -957,7 +998,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </div>
 </section>
 
-<!-- 21 -->
+<!-- 22 -->
 <section class="lamina"
   data-tiempo="4 min"
   data-guion="Empieza el bloque de costos, que es donde se decide si el proyecto se aprueba o no. Presenta el esfuerzo paso por paso y señala el paso 6, inventario, que se lleva el 17% del esfuerzo él solo porque es donde entra la saga. Di que son estimaciones y que el rango real es de 5 a 7 meses con el equipo propuesto."
@@ -985,7 +1026,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </div>
 </section>
 
-<!-- 22 -->
+<!-- 23 -->
 <section class="lamina"
   data-tiempo="4 min"
   data-guion="El costo que nadie pone en la propuesta y el que después duele. Infraestructura por tres o cuatro, y un costo operativo permanente que antes no existía. Sé explícito con que las cifras en soles son orden de magnitud y hay que validarlas con el proveedor. Ese cuidado te da credibilidad."
@@ -1012,7 +1053,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </div>
 </section>
 
-<!-- 23 -->
+<!-- 24 -->
 <section class="lamina"
   data-tiempo="2 min"
   data-guion="Lo que NO cuesta. Es la diapositiva que tranquiliza y hay que darla después del costo, no antes. El mensaje: el dominio se mueve de casa, no se rehace. Las reglas de negocio validadas siguen valiendo y sus tests también. El frontend solo cambia la URL base."
@@ -1042,7 +1083,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </div>
 </section>
 
-<!-- 24 -->
+<!-- 25 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="La diapositiva más honesta de la presentación y la que más credibilidad da. Di abiertamente que para una cadena de 20 locales esta arquitectura es una pérdida neta. Saber cuándo NO aplicar un patrón demuestra más criterio que saber aplicarlo."
@@ -1064,7 +1105,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </div>
 </section>
 
-<!-- 25 -->
+<!-- 26 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="El plan de migración. Lo importante no son los doce pasos sino la propiedad que los ordena: strangler fig, el monolito sigue atendiendo hasta el último paso y cada paso deja el sistema funcionando. Si uno sale mal se revierte esa extracción sin tocar las anteriores."
@@ -1087,7 +1128,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   las anteriores.</p>
 </section>
 
-<!-- 26 -->
+<!-- 27 -->
 <section class="lamina"
   data-tiempo="3 min"
   data-guion="Lo que deliberadamente no se hizo. Esta lista demuestra que cada pieza que SÍ está tiene una razón, y que no se metió tecnología por moda. Cada línea tiene la condición concreta que la activaría. Eso es lo que distingue una decisión de una omisión."
@@ -1105,7 +1146,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
   </table>
 </section>
 
-<!-- 27 -->
+<!-- 28 -->
 <section class="lamina"
   data-tiempo="2 min"
   data-guion="Cierra con lo que se entrega y con la frase final. Menciona que todo compila, que hay 49 pruebas en verde y que ninguna venta se pierde aunque se apaguen piezas. Ofrece abrir arquitectura.html si quieren ver el diagrama interactivo. Y termina con la frase del punto de quiebre: la arquitectura correcta es la que la carga justifica, ni una pieza más."

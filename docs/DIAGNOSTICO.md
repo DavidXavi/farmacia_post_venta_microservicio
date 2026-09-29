@@ -144,10 +144,17 @@ presentación, y el jurado lo habría preguntado:
 | Bulkhead por destino y tablero de circuitos por local | Bulkhead desactivado, sin tablero |
 | Degradación definida para crédito | Crédito no se consulta |
 | "Encola y reintenta con esperas cada vez más largas" | Un job cada 5 s |
+| Todos los servicios invalidan su caché con `pos.catalogo.cambios` | Se publica y nadie lo consume |
+| Reportes proyecta `pos.stock.movimientos` | Se publica y nadie lo consume |
+| Facturación emite nota de crédito al recibir `pos.ventas.anuladas` | Facturación no escucha ese tópico |
+| Reportes consume `pos.comprobantes.emitidos` | Solo lo consume ventas |
 
 **Qué mirar:** por cada frase que describe un mecanismo, buscar el código que lo hace. Un
 `grep` del nombre de la pieza (Rabbit, Redis, retry, dlq, bulkhead) en `src/main` alcanza. Si
 solo aparece en `docs/` y en la presentación, o se construye o se borra de los documentos.
+Para eventos, cruzar cada `outbox.registrar(..., Topicos.X, ...)` con un
+`@KafkaListener(topics = Topicos.X)`: un tópico con publicador y sin listener es un
+mensaje que va a un buzón que nadie abre.
 
 ---
 

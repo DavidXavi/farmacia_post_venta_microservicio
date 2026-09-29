@@ -267,6 +267,21 @@ docker compose logs ms-ventas ms-inventario ms-facturacion | grep <traceId>
 **Kafka en el navegador:** http://localhost:8092 (Kafka UI, perfil `completo`). En Topics se
 ven los mensajes de cada tópico; en Consumers, cuánto le falta procesar a cada servicio.
 
+Mientras el cajero arma la venta, Kafka UI no muestra nada nuevo: eso es HTTP. Al
+confirmar, en Topics, Messages deberían aparecer tres mensajes con el mismo `ventaId`:
+
+1. `pos.ventas.confirmadas`, unos 200 ms después de la respuesta (lo que tarda el outbox)
+2. `pos.stock.lotes-asignados`, cuando inventario terminó el FEFO
+3. `pos.comprobantes.emitidos`, hasta 5 s después, cuando SUNAT acepta
+
+Si falta el tercero, SUNAT rechazó o facturación está caída: el comprobante sigue
+PENDIENTE y sale en el ciclo siguiente. En Consumers, el lag de cada grupo vuelve a 0 en
+segundos; si no baja, ese consumidor está atascado. Un tópico `.dlq` con mensajes quiere
+decir que un evento agotó los reintentos. La tabla completa de qué acción llena qué tópico
+está en [`ARQUITECTURA.md`](ARQUITECTURA.md#cuándo-aparece-cada-evento).
+
+Kafka UI muestra eventos, no logs. Los logs son los de `docker compose logs`.
+
 **Kafka por consola:**
 
 ```bash

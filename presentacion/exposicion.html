@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>POS Farmacia Exposición</title>
+<style>
+  :root {
+    --fondo: #f7f6f3;
+    --panel: #ffffff;
+    --tinta: #1a1a1a;
+    --tinta-suave: #5a5a5a;
+    --tinta-tenue: #8a8a8a;
+    --linea: #e2e0da;
+    --acento: #0f6e57;
+    --acento-suave: #e6f2ee;
+    --alerta: #9a3412;
+    --alerta-suave: #fdf0e8;
+    --aviso: #7c5e10;
+    --aviso-suave: #fbf5e3;
+    --info: #1d5fa8;
+    --info-suave: #e8f0fa;
+    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --fondo: #16181a;
+      --panel: #1e2124;
+      --tinta: #ececec;
+      --tinta-suave: #b0b0b0;
+      --tinta-tenue: #7c7c7c;
+      --linea: #32363a;
+      --acento: #5cc4a6;
+      --acento-suave: #17342c;
+      --alerta: #f0a37a;
+      --alerta-suave: #351f14;
+      --aviso: #e5c75f;
+      --aviso-suave: #302a14;
+      --info: #7fb2ec;
+      --info-suave: #16263a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --fondo: #16181a; --panel: #1e2124; --tinta: #ececec; --tinta-suave: #b0b0b0;
+    --tinta-tenue: #7c7c7c; --linea: #32363a; --acento: #5cc4a6; --acento-suave: #17342c;
+    --alerta: #f0a37a; --alerta-suave: #351f14; --aviso: #e5c75f; --aviso-suave: #302a14;
+    --info: #7fb2ec; --info-suave: #16263a;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--fondo);
+    color: var(--tinta);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.55;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ---------- barra superior ---------- */
+  header {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--linea);
+    background: var(--panel);
+    flex: 0 0 auto;
+  }
+  .marca { font-weight: 600; font-size: 14px; letter-spacing: .2px; }
+  .marca span { color: var(--tinta-tenue); font-weight: 400; }
+  .espacio { flex: 1; }
+  button {
+    font: inherit; font-size: 13px;
+    background: var(--panel); color: var(--tinta);
+    border: 1px solid var(--linea); border-radius: 7px;
+    padding: 5px 11px; cursor: pointer;
+  }
+  button:hover { border-color: var(--acento); color: var(--acento); }
+  button[aria-pressed="true"] { background: var(--acento-suave); border-color: var(--acento); color: var(--acento); }
+  .contador { font-family: var(--mono); font-size: 13px; color: var(--tinta-tenue); min-width: 56px; text-align: center; }
+
+  /* ---------- escenario ---------- */
+  .escenario { flex: 1 1 auto; position: relative; overflow: hidden; }
+  .lamina {
+    position: absolute; inset: 0;
+    padding: 34px 48px 26px;
+    overflow-y: auto;
+    display: none;
+    animation: entrar .22s ease-out;
+  }
+  .lamina.activa { display: block; }
+  @keyframes entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  @media (prefers-reduced-motion: reduce) { .lamina { animation: none; } }
+
+  .kicker {
+    font-size: 11px; letter-spacing: .13em; text-transform: uppercase;
+    color: var(--acento); font-weight: 600; margin-bottom: 8px;
+  }
+  h1 { font-size: 40px; line-height: 1.12; margin: 0 0 14px; letter-spacing: -.02em; font-weight: 650; }
+  h2 { font-size: 27px; line-height: 1.2; margin: 0 0 16px; letter-spacing: -.015em; font-weight: 640; }
+  h3 { font-size: 15px; margin: 22px 0 7px; font-weight: 640; }
+  p { margin: 0 0 11px; max-width: 78ch; color: var(--tinta-suave); }
+  .grande { font-size: 18px; color: var(--tinta); }
+  ul { margin: 0 0 12px; padding-left: 19px; max-width: 80ch; color: var(--tinta-suave); }
+  li { margin-bottom: 6px; }
+  strong { color: var(--tinta); font-weight: 620; }
+  code { font-family: var(--mono); font-size: .9em; background: var(--acento-suave); color: var(--acento); padding: 1px 5px; border-radius: 4px; }
+
+  table { border-collapse: collapse; width: 100%; max-width: 1080px; margin: 6px 0 14px; font-size: 14px; }
+  th, td { text-align: left; padding: 7px 11px; border-bottom: 1px solid var(--linea); vertical-align: top; }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--tinta-tenue); font-weight: 620; }
+  td { color: var(--tinta-suave); }
+  td.num { font-family: var(--mono); color: var(--tinta); white-space: nowrap; }
+  tr.total td { border-top: 2px solid var(--linea); border-bottom: none; color: var(--tinta); font-weight: 620; }
+
+  pre {
+    font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
+    background: var(--panel); border: 1px solid var(--linea); border-radius: 9px;
+    padding: 14px 16px; overflow-x: auto; margin: 6px 0 14px; color: var(--tinta);
+  }
+
+  .rejilla { display: grid; gap: 14px; margin: 6px 0 12px; }
+  .r2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .r3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .tarjeta { background: var(--panel); border: 1px solid var(--linea); border-radius: 10px; padding: 14px 16px; }
+  .tarjeta h4 { margin: 0 0 6px; font-size: 14px; font-weight: 640; }
+  .tarjeta p, .tarjeta ul { font-size: 13.5px; margin-bottom: 0; }
+  .tarjeta ul { padding-left: 17px; }
+
+  .cifra { font-family: var(--mono); font-size: 34px; font-weight: 600; color: var(--acento); line-height: 1; display: block; margin-bottom: 4px; }
+  .cifra.roja { color: var(--alerta); }
+  .cifra.ambar { color: var(--aviso); }
+  .pie { font-size: 12px; color: var(--tinta-tenue); }
+
+  .nota {
+    border-left: 3px solid var(--acento); background: var(--acento-suave);
+    padding: 11px 15px; border-radius: 0 8px 8px 0; margin: 12px 0; max-width: 78ch;
+  }
+  .nota p { margin: 0; color: var(--tinta); }
+  .nota.alerta { border-color: var(--alerta); background: var(--alerta-suave); }
+  .nota.aviso { border-color: var(--aviso); background: var(--aviso-suave); }
+
+  .etiqueta { display: inline-block; font-size: 11px; font-family: var(--mono); padding: 2px 7px; border-radius: 5px; background: var(--acento-suave); color: var(--acento); }
+  .etiqueta.roja { background: var(--alerta-suave); color: var(--alerta); }
+  .etiqueta.ambar { background: var(--aviso-suave); color: var(--aviso); }
+
+  /* ---------- mapa de contenedores ---------- */
+  /* Dos niveles a proposito: la caja gris es el CONTENEDOR (Docker), el bloque de color
+     adentro es lo que corre en el (nuestro microservicio, software de terceros o el
+     frontend). Si los dos niveles se ven iguales, nadie distingue uno del otro. */
+  .guia-mapa { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 12.5px; color: var(--tinta-suave); margin: 0 0 10px; }
+  .guia-mapa .muestra { display: inline-flex; align-items: center; gap: 7px; }
+  .guia-mapa i { display: inline-block; width: 22px; height: 14px; border-radius: 3px; }
+  .guia-mapa .m-cont { border: 1.5px solid var(--tinta-tenue); background: var(--fondo); }
+  .guia-mapa .m-ms { background: var(--acento-suave); border: 1px solid var(--acento); }
+  .guia-mapa .m-ter { background: var(--aviso-suave); border: 1px solid var(--aviso); }
+  .guia-mapa .m-web { background: var(--info-suave); border: 1px solid var(--info); }
+  .guia-mapa .m-comp { border: 1.5px dashed var(--tinta-tenue); }
+  .host {
+    border: 2px dashed var(--linea); border-radius: 14px;
+    padding: 10px 14px 14px; margin: 0 0 10px; max-width: 1180px;
+  }
+  .host-titulo { font-family: var(--mono); font-size: 11.5px; color: var(--tinta-tenue); margin-bottom: 6px; }
+  .capa-titulo {
+    font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
+    color: var(--tinta-tenue); font-weight: 620; margin: 2px 0 6px;
+  }
+  .fila { display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+  .fila.entrada { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 660px; margin: 0 auto; }
+  .fila.infra-fila { grid-template-columns: 1.6fr 1.3fr 1fr 1fr; }
+  /* el contenedor: caja gris, con su nombre de contenedor arriba */
+  .cont {
+    background: var(--fondo); border: 1.5px solid var(--tinta-tenue); border-radius: 10px;
+    padding: 0 7px 7px; font-size: 12.5px; line-height: 1.4;
+  }
+  .cont.completo { border-style: dashed; }
+  .cont-cab {
+    display: flex; align-items: baseline; gap: 6px; padding: 5px 2px 5px;
+    font-family: var(--mono); font-size: 11.5px; color: var(--tinta-suave);
+  }
+  .cont-cab .tipo {
+    font-family: var(--sans); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--tinta-tenue); font-weight: 620;
+  }
+  .cont-cab b { color: var(--tinta); font-weight: 600; }
+  .cont-cab .puerto { margin-left: auto; font-size: 10.5px; color: var(--tinta-tenue); }
+  /* lo que corre adentro */
+  .svc { border-radius: 7px; padding: 6px 8px 7px; border: 1px solid var(--acento); background: var(--acento-suave); color: var(--tinta-suave); }
+  .svc.ter { border-color: var(--aviso); background: var(--aviso-suave); }
+  .svc.web { border-color: var(--info); background: var(--info-suave); }
+  .svc-cab { display: block; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 650; color: var(--acento); }
+  .svc.ter .svc-cab { color: var(--aviso); }
+  .svc.web .svc-cab { color: var(--info); }
+  .svc-nombre { display: block; font-weight: 640; color: var(--tinta); margin-bottom: 2px; }
+  .svc ul { margin: 0; padding-left: 15px; font-size: 12px; }
+  .svc li { margin-bottom: 1px; }
+  .svc .pie { font-size: 11.5px; }
+  .base-de { margin-top: 5px; font-size: 11px; color: var(--tinta-tenue); }
+  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+  .chip {
+    font-family: var(--mono); font-size: 10.5px; padding: 1px 6px; border-radius: 5px;
+    background: var(--panel); border: 1px solid var(--linea); color: var(--tinta-suave);
+  }
+  .chip.base { border-color: var(--acento); color: var(--acento); }
+  .conector {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    height: 30px; font-size: 11.5px; color: var(--tinta-tenue);
+  }
+  .conector::before { content: ""; width: 0; height: 100%; border-left: 2px solid var(--linea); }
+  @media (max-width: 860px) {
+    .fila.entrada, .fila.infra-fila { grid-template-columns: 1fr; }
+  }
+  /* ---------- panel de notas del expositor ---------- */
+  .notas {
+    flex: 0 0 auto; max-height: 0; overflow: hidden;
+    border-top: 1px solid var(--linea); background: var(--panel);
+    transition: max-height .2s ease;
+  }
+  .notas.abierto { max-height: 46vh; overflow-y: auto; }
+  .notas-cuerpo { padding: 16px 22px 20px; }
+  .notas-cuerpo h4 { margin: 0 0 3px; font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--acento); }
+  .notas-cuerpo .guion { font-size: 15px; color: var(--tinta); max-width: 88ch; margin-bottom: 10px; }
+  .notas-cuerpo ul { font-size: 13.5px; }
+  .notas-cuerpo .tiempo { font-family: var(--mono); font-size: 12px; color: var(--tinta-tenue); }
+
+  .progreso { height: 2px; background: var(--linea); flex: 0 0 auto; }
+  .progreso div { height: 100%; background: var(--acento); transition: width .2s; }
+
+  @media (max-width: 860px) {
+    .lamina { padding: 22px 18px; }
+    h1 { font-size: 28px; } h2 { font-size: 21px; }
+    .r2, .r3 { grid-template-columns: 1fr; }
+    table { font-size: 12.5px; }
+    th, td { padding: 6px 7px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="marca">POS Farmacia <span>/ exposición, Juan y Javier</span></div>
+  <div class="espacio"></div>
+  <button id="btnNotas" aria-pressed="false" title="Muestra el guion de esta diapositiva (tecla N)">Cómo exponer</button>
+  <button id="btnTema" title="Claro u oscuro">Tema</button>
+  <button id="btnAnt" title="Anterior">&larr;</button>
+  <span class="contador" id="contador">1 / 12</span>
+  <button id="btnSig" title="Siguiente">&rarr;</button>
+</header>
+
+<div class="escenario" id="escenario">
+
+<!-- 1 -->
+<section class="lamina activa"
+  data-tiempo="1 min, Juan"
+  data-guion="Juan abre. Preséntense los dos en una frase y digan cómo se reparte la exposición: Juan cuenta por qué el sistema quedó así, Javier cuenta cómo funciona por dentro y cómo lo probamos. Después di los tres números y pasa. No leas la portada."
+  data-puntos="Presenten a los dos integrantes desde la primera lámina|Juan: el porqué. Javier: el cómo y la prueba|Deja claro que las reglas de negocio no cambiaron, cambió dónde vive cada cosa">
+  <div class="kicker">Arquitectura de software, trabajo 1</div>
+  <h1>POS Farmacia<br>en microservicios</h1>
+  <p class="grande">El mismo punto de venta para una cadena de boticas, partido en nueve servicios
+  para aguantar 500 locales sin que una caja se quede parada.</p>
+  <div class="rejilla r3" style="max-width:820px;margin-top:22px">
+    <div class="tarjeta"><span class="cifra">200</span><div class="pie">ventas por segundo en pico</div></div>
+    <div class="tarjeta"><span class="cifra">500</span><div class="pie">locales, 1500 cajas</div></div>
+    <div class="tarjeta"><span class="cifra">9</span><div class="pie">servicios, 9 bases de datos</div></div>
+  </div>
+  <div class="rejilla r2" style="max-width:820px">
+    <div class="tarjeta">
+      <h4>Bloque 1, expone Juan</h4>
+      <p>Por qué el sistema quedó así: de dónde venimos, cómo decidimos los cortes y qué cuesta
+      cada servicio que agregamos.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>Bloque 2, expone Javier</h4>
+      <p>Cómo funciona por dentro: el código de cada servicio, el camino de una venta, qué pasa
+      cuando algo se cae y cómo lo probamos.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="lamina"
+  data-tiempo="2 min, Juan"
+  data-guion="Cuenta de dónde partimos. El proyecto anterior funcionaba y estaba bien hecho: Clean Architecture, Kafka, Docker. El problema no era el código, era que todo compartía una sola base. Luego muestra los números. Son el contrato de toda la exposición: si alguien dice que es sobreingeniería, la respuesta es que para 20 locales sí, para 500 no."
+  data-puntos="El monolito no estaba mal hecho, estaba mal dimensionado para 500 locales|El síntoma más claro: un reporte de fin de mes le quita IO a las cajas|Todo lo que sigue se justifica contra esta tabla|La línea de SUNAT es la que más resuena con el jurado">
+  <div class="kicker">Bloque 1, Juan</div>
+  <h2>De dónde venimos y qué tiene que aguantar</h2>
+  <p>Partimos de un monolito bien construido: siete módulos Maven, unos 600 archivos Java, todo
+  contra una sola base de 35 tablas. Funcionaba. El problema aparece a fin de mes, cuando un
+  reporte gerencial escanea tres meses de ventas y le quita disco a las cajas justo cuando más
+  se vende.</p>
+  <table>
+    <tr><th>Lo que tiene que aguantar</th><th>Objetivo</th><th>Por qué</th></tr>
+    <tr><td>Ventas en pico</td><td class="num">200 / s</td><td>1500 cajas, 2 ventas por minuto cada una</td></tr>
+    <tr><td>Lecturas de catálogo</td><td class="num">5000 / s</td><td>Unas 5 líneas por venta, más búsquedas</td></tr>
+    <tr><td>Agregar un producto (p99)</td><td class="num">&lt; 200 ms</td><td>El cajero escanea sin esperar</td></tr>
+    <tr><td>Confirmar la venta (p99)</td><td class="num">&lt; 500 ms</td><td>El cliente está en el mostrador</td></tr>
+    <tr><td>Disponibilidad del cobro</td><td class="num">99.9%</td><td>Una caja parada es dinero perdido</td></tr>
+  </table>
+  <div class="nota aviso">
+    <p>SUNAT se cae, y seguido. Eso nunca puede impedir una venta.</p>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="lamina"
+  data-tiempo="3 min, Juan"
+  data-guion="La lámina más importante del bloque. Muestra que primero propusimos cuatro servicios y que no nos arrepentimos: cambió la pregunta. Con cuatro cortas por lo que cambia junto. Con 500 locales tienes que cortar también por lo que falla junto y por lo que escala distinto. Da los tres ejemplos y cierra con la tabla: más servicios no es mejor, hay un punto donde se vuelve peor."
+  data-puntos="Enseñar la versión descartada da credibilidad|Frase para recordar: con cuatro cortas por lo que cambia junto, con nueve además por lo que falla junto|El ejemplo de SUNAT es el más intuitivo|La columna de 15 o más es la que demuestra criterio">
+  <div class="kicker">Bloque 1, Juan</div>
+  <h2>De cuatro servicios a nueve: cambió el criterio</h2>
+  <p>La primera propuesta tenía cuatro servicios cortados por cohesión transaccional: identidad,
+  catálogo, clientes y ventas. Para una cadena chica era la respuesta correcta. Con 500 locales
+  hay que cortar también por <strong>cómo carga</strong> cada parte y por <strong>qué se cae junto</strong>.</p>
+  <div class="rejilla r3">
+    <div class="tarjeta">
+      <h4>Catálogo se separa de inventario</h4>
+      <p>Catálogo es pura lectura y se cachea. Inventario escribe sobre la misma fila todo el
+      tiempo. Juntos, los bloqueos de stock se comen las conexiones que atendían las lecturas.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>Facturación se separa de ventas</h4>
+      <p>Es lo único que habla con un tercero lento y que se cae. SUNAT caída tiene que dejar
+      comprobantes pendientes, no cajas paradas.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>Reportes se separa de ventas</h4>
+      <p>Un reporte de tres meses no puede tocar la base de las cajas. Tiene su propia base,
+      que se llena con eventos.</p>
+    </div>
+  </div>
+  <table>
+    <tr><th></th><th>4 servicios</th><th>9 servicios <span class="etiqueta">elegido</span></th><th>15 o más</th></tr>
+    <tr><td>Saltos para vender</td><td class="num">2</td><td class="num">3</td><td class="num">6 a 8</td></tr>
+    <tr><td>SUNAT aislada</td><td>No</td><td>Sí</td><td>Sí</td></tr>
+    <tr><td>Procesos que operar</td><td class="num">5</td><td class="num">10</td><td class="num">16 o más</td></tr>
+    <tr class="total"><td>Sirve para</td><td>20 locales</td><td>500 locales</td><td>Ningún tamaño de esta cadena</td></tr>
+  </table>
+</section>
+
+<!-- 4 -->
+<section class="lamina"
+  data-tiempo="2 min, Juan"
+  data-guion="Recorre el mapa siguiendo una venta, no servicio por servicio: la caja entra por el gateway, llega a ventas, ventas llama a cinco servicios de forma síncrona y el resto se entera por Kafka. Después señala la columna de la derecha: solo dos servicios pueden impedir una venta, inventario y ventas. Admite que promociones es el corte más discutible."
+  data-puntos="Sigue una venta por el mapa|Solo inventario y ventas pueden impedir una venta|Admite que promociones es discutible antes de que te lo pregunten|Si quieren más detalle: arquitectura.html es interactivo">
+  <div class="kicker">Bloque 1, Juan</div>
+  <h2>Los nueve servicios y qué pasa si cada uno se cae</h2>
+  <div class="rejilla r2">
+    <pre style="margin:0">          caja POS
+             │
+      ┌──────▼──────┐
+      │ api-gateway │  único puerto, valida el JWT
+      └──────┬──────┘
+      ┌──────▼──────┐   HTTP con timeout:
+      │  ms-ventas  │── catálogo, inventario,
+      │ (orquesta)  │   clientes, crédito,
+      └──────┬──────┘   promociones
+             │
+      ┌──────▼──────┐
+      │    Kafka    │  cuando la venta ya terminó
+      └──────┬──────┘
+   inventario, crédito,
+   facturación, reportes</pre>
+    <table style="margin:0">
+      <tr><th>Servicio</th><th>Si se cae</th></tr>
+      <tr><td>inventario</td><td><span class="etiqueta roja">no hay venta</span></td></tr>
+      <tr><td>ventas</td><td><span class="etiqueta roja">no hay venta</span></td></tr>
+      <tr><td>catálogo</td><td>Sirve precios del caché</td></tr>
+      <tr><td>clientes</td><td>Venta anónima</td></tr>
+      <tr><td>promociones <span class="etiqueta ambar">discutible</span></td><td>Venta sin descuento</td></tr>
+      <tr><td>crédito</td><td>Se ofrece efectivo</td></tr>
+      <tr><td>facturación</td><td>Comprobante pendiente, la caja sigue</td></tr>
+      <tr><td>reportes</td><td>Sin tablero, las cajas ni se enteran</td></tr>
+      <tr><td>identidad</td><td>No entra nadie nuevo, las sesiones siguen</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- 5 -->
+<section class="lamina"
+  data-tiempo="2 min, Juan"
+  data-guion="La cuenta que casi nadie hace. Cada llamada síncrona se paga dos veces: en latencia y en disponibilidad, porque las disponibilidades se multiplican. Con cinco saltos lo que era tu p99 pasa a ser tu p95. Después responde la pregunta de fondo: más servicios no dan más capacidad por sí solos. La capacidad la da repartir los datos y la caché, no repartir el código."
+  data-puntos="Frase clave: con cinco saltos tu p99 se vuelve tu p95|La disponibilidad se multiplica, no se promedia|Por eso vender tiene 3 saltos y no 8|Los microservicios no escalan, los datos repartidos sí">
+  <div class="kicker">Bloque 1, Juan</div>
+  <h2>Cada servicio que agregas se paga</h2>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>La disponibilidad se multiplica</h4>
+      <p class="pie" style="margin-bottom:8px">Servicios al 99.9% llamándose en cadena:</p>
+      <table style="margin:0">
+        <tr><th>Saltos</th><th>Disponible</th><th>Caído al mes</th></tr>
+        <tr><td class="num">1</td><td class="num">99.90%</td><td class="num">43 min</td></tr>
+        <tr><td class="num">3</td><td class="num">99.70%</td><td class="num">2.2 h</td></tr>
+        <tr><td class="num">9</td><td class="num">99.10%</td><td class="num">6.5 h</td></tr>
+      </table>
+    </div>
+    <div class="tarjeta">
+      <h4>La lentitud también</h4>
+      <p class="pie" style="margin-bottom:8px">Si cada servicio tiene 1% de llamadas lentas:</p>
+      <table style="margin:0">
+        <tr><th>Saltos</th><th>Al menos una lenta</th></tr>
+        <tr><td class="num">1</td><td class="num">1.0%</td></tr>
+        <tr><td class="num">3</td><td class="num">3.0%</td></tr>
+        <tr><td class="num">5</td><td class="num">4.9%</td></tr>
+      </table>
+    </div>
+  </div>
+  <p class="grande">Entonces, ¿más servicios aguantan más consultas? Solo si cada uno se lleva sus
+  datos. Lo que más mueve la aguja es la caché de catálogo en memoria (de 10 a 100 veces) y la base
+  aparte para reportes. Ninguna de las dos necesita más servicios.</p>
+</section>
+
+<!-- 6 -->
+<section class="lamina"
+  data-tiempo="2 min, Juan"
+  data-guion="Última de Juan. Las 35 tablas se repartieron en nueve bases. Lo que impresiona es que la regla la impone Postgres, no la buena voluntad del equipo: el usuario de catálogo ni siquiera puede conectarse a la base de ventas. Di qué se pierde, el JOIN entre contextos, y cómo se recupera: una llamada HTTP o una copia que llega por evento. Cierra pasándole la palabra a Javier: ya vimos por qué quedó así, ahora él cuenta cómo funciona."
+  data-puntos="La regla la impone el motor con REVOKE CONNECT|Lo que se pierde es el JOIN, y se recupera con eventos o HTTP|Transición: ya vimos el porqué, Javier sigue con el cómo">
+  <div class="kicker">Bloque 1, Juan</div>
+  <h2>Una base por servicio, y la regla la pone Postgres</h2>
+  <p>Las 35 tablas del monolito se repartieron en nueve bases. Si un servicio necesita un dato de
+  otro, lo pide por HTTP o se lo guarda cuando le llega un evento. Nunca un JOIN.</p>
+  <pre>CREATE DATABASE pg_ventas OWNER u_ventas;
+REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
+
+-- El usuario de ms-catalogo no puede ni conectarse a pg_ventas.
+-- No depende de que alguien se acuerde de la regla.</pre>
+  <div class="rejilla r3">
+    <div class="tarjeta"><h4>pg_inventario</h4><p class="pie">lotes, stock_local, reservas, asignaciones_lote</p></div>
+    <div class="tarjeta"><h4>pg_ventas</h4><p class="pie">ventas, detalles_venta, pagos, saga_venta, outbox</p></div>
+    <div class="tarjeta"><h4>pg_reportes</h4><p class="pie">rm_ventas, rm_ventas_diarias: se llenan solo con eventos</p></div>
+  </div>
+  <p class="pie">Y así con las nueve. En desarrollo es un contenedor Postgres con nueve bases; en
+  producción serían nueve instancias.</p>
+</section>
+
+<!-- 7 -->
+<section class="lamina"
+  data-tiempo="2 min, Javier"
+  data-guion="Javier toma la palabra. Empieza por adentro de un servicio: cuatro paquetes, y las dependencias apuntan hacia el dominio. El punto que vale la pena decir es que esa regla no la cuida la revisión de código, la cuida un test. Muestra el fragmento de ArchUnit y cuenta que ya nos atrapó una vez: un caso de uso de ventas importaba su cliente HTTP."
+  data-puntos="Cuatro paquetes, un solo módulo Maven por servicio|La regla la impone un test, no la buena voluntad|Ya atrapó un error real en ms-ventas|Si preguntan por qué no módulos Maven: serían 63 pom.xml para probar lo que prueba un test de 20 líneas">
+  <div class="kicker">Bloque 2, Javier</div>
+  <h2>Dentro de cada servicio: Clean Architecture con un test que la cuida</h2>
+  <div class="rejilla r2">
+    <pre style="margin:0">ms-ventas/
+├── domain/          reglas puras, sin Spring
+├── usecases/        confirmar, anular, pagar
+├── adapters/
+│   ├── web/         controladores REST
+│   ├── persistence/ SQL con JdbcClient
+│   ├── clientes/    llamadas HTTP a otros
+│   └── messaging/   consumidores de Kafka
+└── infrastructure/  configuración de Spring
+
+Las dependencias apuntan hacia adentro.</pre>
+    <pre style="margin:0">// ArquitecturaTest.java, en los nueve servicios
+layeredArchitecture()
+  .layer("dominio").definedBy("..domain..")
+  .layer("casos de uso").definedBy("..usecases..")
+  .layer("adaptadores").definedBy("..adapters..")
+  .whereLayer("adaptadores")
+      .mayOnlyBeAccessedByLayers("infraestructura")
+  .whereLayer("casos de uso")
+      .mayOnlyBeAccessedByLayers("adaptadores",
+                                 "infraestructura")
+  .check(clases);</pre>
+  </div>
+  <div class="nota">
+    <p>Este test encontró un caso de uso de ventas que importaba su cliente HTTP. Compilaba y
+    funcionaba, pero para probar una suma había que levantar timeouts y circuit breakers.</p>
+  </div>
+</section>
+
+<!-- 8 -->
+<section class="lamina"
+  data-tiempo="3 min, Javier"
+  data-guion="Cuéntalo como lo vive el cajero. Mientras arma la venta todo es HTTP y Kafka no se entera de nada. Confirmar es una transacción local: guarda la venta y escribe el evento en una tabla, no llama a nadie. Por eso responde en menos de 500 ms y por eso facturación caída no para la caja. Kafka entra después, cuando el cliente ya se fue. Si tienen el sistema levantado, confirma una venta y muestra los tres mensajes en Kafka UI."
+  data-puntos="Confirmar no llama a nadie: transacción local más un evento|Kafka entra después del commit, unos 200 ms más tarde|Una venta deja tres mensajes: confirmada, lotes asignados, comprobante emitido|Sé honesto: tres tópicos se publican y nadie los lee, uno toca SUNAT">
+  <div class="kicker">Bloque 2, Javier</div>
+  <h2>El camino de una venta, y en qué momento entra Kafka</h2>
+  <pre>1. Escanear producto     ventas llama por HTTP a catálogo, inventario y promociones
+2. Identificar cliente   ventas llama a clientes
+3. Confirmar             UNA transacción local, sin llamar a nadie:
+                           venta CONFIRMADA + saga abierta + evento en la tabla outbox
+                         ──► responde al cajero. Aquí termina lo que el cliente espera.
+
+4. Ya sin el cliente     cada 200 ms el outbox pasa el evento a Kafka
+                           pos.ventas.confirmadas    inventario, crédito, facturación, reportes
+                           pos.stock.lotes-asignados inventario aplicó FEFO, avisa a ventas
+                           pos.comprobantes.emitidos SUNAT aceptó, ventas cierra la saga</pre>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>Qué se ve en Kafka UI</h4>
+      <ul>
+        <li>Nada mientras se arma la venta: eso es HTTP</li>
+        <li>Tres mensajes por venta, en ese orden. El último tarda hasta 5 s porque espera a SUNAT</li>
+        <li>Un tópico <code>.dlq</code> con mensajes quiere decir que algo se rompió</li>
+      </ul>
+    </div>
+    <div class="tarjeta">
+      <h4>Lo que encontramos al revisarlo</h4>
+      <ul>
+        <li>El cambio de precio y los movimientos de stock se publican y nadie los lee</li>
+        <li>Facturación no escucha la anulación: la nota de crédito sale registrando la devolución</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 9 -->
+<section class="lamina"
+  data-tiempo="3 min, Javier"
+  data-guion="El momento técnico fuerte, ensáyalo. Tres problemas que aparecen al partir el sistema, cada uno con su código real. El stock: un solo UPDATE que reserva solo si alcanza, sin bloqueos explícitos. El evento: se guarda en la misma transacción que la venta, así que no puede quedar una venta sin evento. El consumidor: Kafka puede entregar dos veces, así que cada consumidor anota qué eventos ya procesó."
+  data-puntos="UPDATE condicional: 0 filas afectadas es no hay stock, en un solo viaje a la base|Outbox: la venta y su evento entran juntos o no entra ninguno|Kafka entrega al menos una vez: por eso unaVez(eventoId)|Si preguntan por qué no bloqueo optimista de JPA: a 200 ventas por segundo los reintentos se vuelven tormenta">
+  <div class="kicker">Bloque 2, Javier</div>
+  <h2>Tres problemas duros, en código</h2>
+  <h3>1. Dos cajas venden la última caja de paracetamol</h3>
+  <pre>UPDATE stock_local
+   SET reservado = reservado + ?
+ WHERE producto_id = ? AND local_id = ?
+   AND disponible - reservado >= ?      -- 0 filas afectadas: no hay stock</pre>
+  <h3>2. La venta se guardó pero el evento no salió</h3>
+  <pre>@Transactional
+public Venta confirmar(UUID ventaId, String tipoComprobante) {
+    venta.confirmar();
+    ventas.guardar(venta);
+    sagas.abrir(venta.id());
+    eventos.publicar("venta", venta.id(), Topicos.VENTAS_CONFIRMADAS, venta.localId(), evento);
+}   // publicar() escribe en la tabla outbox, dentro de la misma transacción</pre>
+  <h3>3. Kafka entrega el mismo evento dos veces</h3>
+  <pre>@KafkaListener(topics = Topicos.VENTAS_CONFIRMADAS, groupId = "ms-facturacion")
+public void recibir(String mensaje, Acknowledgment ack) {
+    idempotencia.unaVez(sobre.eventoId(), "ms-facturacion.venta-confirmada",
+            () -> emitir.registrar(sobre.datos()));   // la segunda vez no hace nada
+    ack.acknowledge();
+}</pre>
+</section>
+
+<!-- 10 -->
+<section class="lamina"
+  data-tiempo="2 min, Javier"
+  data-guion="La regla que ordena todo el sistema, léela tal cual: nada fuera de stock y pago puede impedir una venta. Recorre la tabla. El punto que tiene que quedar: un sistema que se niega a cobrar porque promociones está lento no es resiliente, le hizo perder la venta a la botica. Y sé honesto con crédito: el servicio existe, pero la venta todavía no lo consulta."
+  data-puntos="Lee la regla en voz alta|Negarse a cobrar por un descuento le hace perder la venta a la botica|Crédito: diseñado, pero la venta todavía no lo consulta. Dilo tal cual|Cada degradación queda en el log: callarla sería peor">
+  <div class="kicker">Bloque 2, Javier</div>
+  <h2>Qué se degrada y qué no</h2>
+  <div class="nota">
+    <p><strong>Nada fuera de stock y pago puede impedir una venta.</strong></p>
+  </div>
+  <table>
+    <tr><th>Si falla</th><th>Espera como máximo</th><th>Qué pasa</th></tr>
+    <tr><td>inventario</td><td class="num">500 ms</td><td>Falla la línea y el cajero lo ve</td></tr>
+    <tr><td>catálogo</td><td class="num">200 ms</td><td>Precio del caché aunque esté vencido</td></tr>
+    <tr><td>promociones</td><td class="num">300 ms</td><td>Venta sin descuento, queda en el log</td></tr>
+    <tr><td>clientes</td><td class="num">300 ms</td><td>Venta anónima</td></tr>
+    <tr><td>SUNAT</td><td class="num">15 s</td><td>Comprobante pendiente, se reintenta cada 5 s</td></tr>
+    <tr><td>Kafka</td><td>no se espera</td><td>La venta se confirma, el evento espera en el outbox</td></tr>
+    <tr><td>Redis</td><td class="num">200 ms</td><td>Sin límite de peticiones, la venta sigue</td></tr>
+    <tr><td>crédito</td><td class="num">800 ms</td><td>Diseñado para ofrecer efectivo. <span class="etiqueta ambar">hoy no se consulta</span></td></tr>
+  </table>
+  <p>Cada llamada tiene su timeout y su circuit breaker. No reintentamos entre servicios: el que
+  reintenta es la caja, con su <code>Idempotency-Key</code>, para no cobrar dos veces.</p>
+</section>
+
+<!-- 11 -->
+<section class="lamina"
+  data-tiempo="3 min, Javier"
+  data-guion="No es el diseño prometiéndolo, es una prueba que apaga piezas mientras se vende. Recorre los escenarios y termina en el cuadre. Después cuenta con honestidad lo que la prueba encontró la primera vez: los consumidores de Kafka descartaban eventos, o sea ventas sin comprobante. Compilar y pasar las pruebas no lo mostraba. Esa honestidad suma."
+  data-puntos="Una prueba que apaga piezas, no una promesa|El cuadre final es la frase: seis ventas, seis comprobantes, seis en reportes|Lo más caro que encontramos: Spring Kafka descartaba el evento tras diez reintentos|El navegador encontró doce contratos rotos que ninguna prueba veía">
+  <div class="kicker">Bloque 2, Javier</div>
+  <h2>Lo probamos rompiendo piezas</h2>
+  <table>
+    <tr><th>Qué apagamos mientras se vendía</th><th>Qué pasó</th><th></th></tr>
+    <tr><td>Facturación</td><td>Las cajas vendieron igual; al volver emitió los pendientes</td><td><span class="etiqueta">pasó</span></td></tr>
+    <tr><td>La base de facturación, 8 s</td><td>El consumidor esperó, reintentó y emitió</td><td><span class="etiqueta">pasó</span></td></tr>
+    <tr><td>Un evento corrupto</td><td>Quedó en la cola muerta; las demás ventas siguieron</td><td><span class="etiqueta">pasó</span></td></tr>
+    <tr><td>Kafka entero</td><td>La venta se confirmó; el evento salió al volver Kafka</td><td><span class="etiqueta">pasó</span></td></tr>
+    <tr class="total"><td>Cuadre final</td><td>6 ventas, 6 comprobantes, 6 en reportes, 6 sagas cerradas</td><td><span class="etiqueta">pasó</span></td></tr>
+  </table>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>Lo que encontró la primera vez</h4>
+      <p>Spring Kafka, sin configurar, reintenta diez veces seguidas y descarta el evento. Eran
+      ventas sin comprobante. Ahora reintenta con espera y, si igual falla, lo guarda en la cola
+      muerta.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>Cómo se repite</h4>
+      <pre style="margin:4px 0 0">./mvnw test                          # 49 pruebas
+./scripts/verificar.sh               # venta completa
+./scripts/verificar-resiliencia.sh   # apaga piezas</pre>
+    </div>
+  </div>
+</section>
+
+<!-- 12 -->
+<section class="lamina"
+  data-tiempo="2 min, Javier y Juan"
+  data-guion="Cierran los dos. Javier dice lo que falta sin maquillarlo. Juan cierra con la idea que ordena todo: para 20 locales esto sería un sobrecosto, para 500 se justifica. Saber cuándo no aplicar un patrón demuestra más criterio que aplicarlo. Terminen agradeciendo y abran preguntas; la presentación larga queda de respaldo."
+  data-puntos="Lo que falta se dice tal cual, sin maquillar|Frase final: la arquitectura correcta es la que la carga justifica, ni una pieza más|Para preguntas difíciles: diapositivas.html tiene costos, plan de migración y lo que no hicimos">
+  <div class="kicker">Cierre</div>
+  <h2>Lo que aprendimos y lo que falta</h2>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>Cuándo no hacer esto</h4>
+      <p>Con 20 locales esta arquitectura es una pérdida neta. Un monolito con réplicas y caché
+      aguanta ese volumen con un décimo del costo. Se justifica pasando de 50 a 80 ventas por
+      segundo, o cuando SUNAT empieza a costar ventas de verdad.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>Lo que falta</h4>
+      <ul>
+        <li>Pruebas de carga contra las 200 ventas por segundo</li>
+        <li>Que el pago a crédito consulte el límite</li>
+        <li>Nota de crédito automática al anular</li>
+        <li>Integración real con SUNAT, hoy simulada</li>
+      </ul>
+    </div>
+  </div>
+  <h3>Cómo nos repartimos</h3>
+  <table>
+    <tr><th>Integrante</th><th>Parte</th></tr>
+    <tr><td><strong>Juan</strong></td><td>Bloque 1: de dónde venimos, supuestos de carga, criterio de corte de los servicios, costo de cada salto y una base por servicio</td></tr>
+    <tr><td><strong>Javier</strong></td><td>Bloque 2: Clean Architecture dentro de cada servicio, camino de una venta y Kafka, código de los problemas duros, degradación y pruebas</td></tr>
+  </table>
+  <div class="nota">
+    <p>La arquitectura correcta es la que la carga justifica, ni una pieza más.</p>
+  </div>
+</section>
+
+</div>
+
+<div class="progreso"><div id="barra" style="width:8.3%"></div></div>
+
+<div class="notas" id="notas">
+  <div class="notas-cuerpo">
+    <h4>Cómo exponer esta diapositiva <span class="tiempo" id="tiempo"></span></h4>
+    <p class="guion" id="guion"></p>
+    <ul id="puntos"></ul>
+  </div>
+</div>
+
+<script>
+(function () {
+  var laminas = Array.prototype.slice.call(document.querySelectorAll('.lamina'));
+  var actual = 0;
+
+  var contador = document.getElementById('contador');
+  var barra = document.getElementById('barra');
+  var panelNotas = document.getElementById('notas');
+  var btnNotas = document.getElementById('btnNotas');
+  var guion = document.getElementById('guion');
+  var puntos = document.getElementById('puntos');
+  var tiempo = document.getElementById('tiempo');
+
+  function pintarNotas() {
+    var l = laminas[actual];
+    guion.textContent = l.dataset.guion || 'Sin guion para esta diapositiva.';
+    tiempo.textContent = l.dataset.tiempo ? '· ' + l.dataset.tiempo : '';
+    puntos.innerHTML = '';
+    (l.dataset.puntos || '').split('|').filter(Boolean).forEach(function (p) {
+      var li = document.createElement('li');
+      li.textContent = p;
+      puntos.appendChild(li);
+    });
+  }
+
+  function ir(n) {
+    actual = Math.max(0, Math.min(laminas.length - 1, n));
+    laminas.forEach(function (l, i) { l.classList.toggle('activa', i === actual); });
+    contador.textContent = (actual + 1) + ' / ' + laminas.length;
+    barra.style.width = ((actual + 1) / laminas.length * 100) + '%';
+    laminas[actual].scrollTop = 0;
+    pintarNotas();
+    // El hash permite abrir directo en una diapositiva (#8) y sobrevive a un F5
+    // en medio de la exposicion, que es cuando mas duele perder el sitio.
+    if (location.hash !== '#' + (actual + 1)) {
+      history.replaceState(null, '', '#' + (actual + 1));
+    }
+    try { localStorage.setItem('expo-lamina', String(actual)); } catch (e) { /* modo privado */ }
+  }
+
+  function alternarNotas() {
+    var abierto = panelNotas.classList.toggle('abierto');
+    btnNotas.setAttribute('aria-pressed', abierto ? 'true' : 'false');
+    try { localStorage.setItem('expo-notas', abierto ? '1' : '0'); } catch (e) { /* modo privado */ }
+  }
+
+  document.getElementById('btnSig').onclick = function () { ir(actual + 1); };
+  document.getElementById('btnAnt').onclick = function () { ir(actual - 1); };
+  btnNotas.onclick = alternarNotas;
+
+  document.getElementById('btnTema').onclick = function () {
+    var raiz = document.documentElement;
+    var oscuro = raiz.getAttribute('data-theme') === 'dark'
+      || (!raiz.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
+    raiz.setAttribute('data-theme', oscuro ? 'light' : 'dark');
+    try { localStorage.setItem('pos-tema', oscuro ? 'light' : 'dark'); } catch (e) { /* modo privado */ }
+  };
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); ir(actual + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); ir(actual - 1); }
+    else if (e.key === 'Home') { ir(0); }
+    else if (e.key === 'End') { ir(laminas.length - 1); }
+    else if (e.key === 'n' || e.key === 'N') { alternarNotas(); }
+  });
+
+  window.addEventListener('hashchange', function () {
+    var n = parseInt(location.hash.slice(1), 10);
+    if (!isNaN(n) && n - 1 !== actual) { ir(n - 1); }
+  });
+
+  // El hash manda sobre lo guardado: si alguien comparte el enlace de la
+  // diapositiva 8, tiene que abrir en la 8 aunque el navegador recuerde otra.
+  var inicial = parseInt(location.hash.slice(1), 10);
+  try {
+    var t = localStorage.getItem('pos-tema');
+    if (t) { document.documentElement.setAttribute('data-theme', t); }
+    if (localStorage.getItem('expo-notas') === '1') { alternarNotas(); }
+    if (isNaN(inicial)) {
+      inicial = parseInt(localStorage.getItem('expo-lamina') || '0', 10) + 1;
+    }
+  } catch (e) {
+    // Ventana privada o almacenamiento bloqueado: se arranca en la primera.
+  }
+  ir(isNaN(inicial) ? 0 : inicial - 1);
+})();
+</script>
+</body>
+</html>

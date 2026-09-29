@@ -129,15 +129,45 @@ Un solo broker: Kafka. El sistema anterior usaba también RabbitMQ; aquí se sac
 único trabajo ya lo hacía mejor una tabla. El porqué está en la decisión 12 de
 [`DECISIONES.md`](DECISIONES.md).
 
-| Tópico | Particiones | Lo consumen |
+| Tópico | Particiones | Lo publica | Lo consumen |
+|---|---|---|---|
+| `pos.ventas.confirmadas` | 12 | ventas | inventario, credito, facturacion, reportes |
+| `pos.ventas.anuladas` | 12 | ventas | inventario, credito, reportes |
+| `pos.stock.lotes-asignados` | 12 | inventario | ventas |
+| `pos.stock.movimientos` | 6 | inventario | nadie todavía |
+| `pos.catalogo.cambios` | 3 | catalogo | nadie todavía |
+| `pos.comprobantes.emitidos` | 6 | facturacion | ventas |
+| `pos.auditoria` | 12 | clientes, credito, facturacion, identidad, inventario, promociones | identidad |
+
+La columna de consumidores sale de los `@KafkaListener` del código, no del diseño. Tres
+huecos contra lo que se pensó:
+
+- `pos.catalogo.cambios` se publica al cambiar un precio y nadie lo lee. Los demás
+  servicios ven el precio nuevo cuando vence el TTL de 60 s de su caché.
+- `pos.stock.movimientos` se publica al ajustar lotes y reportes no lo proyecta.
+- Facturación no consume `pos.ventas.anuladas`. Anular una venta con comprobante ya
+  aceptado no emite nota de crédito sola: hay que registrar la devolución a mano.
+
+### Cuándo aparece cada evento
+
+Kafka no participa mientras el cajero arma la venta. Buscar, agregar líneas, evaluar
+promociones y confirmar son HTTP síncrono. Kafka entra después del commit: el caso de uso
+escribe en `outbox` y `PublicadorOutbox` lo manda al broker cada 200 ms. Por eso el
+mensaje aparece en Kafka UI unos 200 ms después de que la API respondió.
+
+| Acción en el POS | Tópico que se llena | Cuándo |
 |---|---|---|
-| `pos.ventas.confirmadas` | 12 | inventario, credito, facturacion, reportes |
-| `pos.ventas.anuladas` | 12 | inventario, credito, facturacion, reportes |
-| `pos.stock.lotes-asignados` | 12 | ventas |
-| `pos.stock.movimientos` | 6 | reportes |
-| `pos.catalogo.cambios` | 3 | todos, para invalidar caché |
-| `pos.comprobantes.emitidos` | 6 | ventas, reportes |
-| `pos.auditoria` | 12 | identidad |
+| Confirmar venta | `pos.ventas.confirmadas` | al instante |
+| (sigue sola) | `pos.stock.lotes-asignados` | cuando inventario aplicó FEFO, menos de un segundo |
+| (sigue sola) | `pos.comprobantes.emitidos` | hasta 5 s después, cuando SUNAT acepta. Con SUNAT caída, no aparece hasta que vuelva |
+| Anular venta | `pos.ventas.anuladas` | al instante |
+| Cambiar precio | `pos.catalogo.cambios` | al instante |
+| Ajustar lotes | `pos.stock.movimientos` y `pos.auditoria` | al instante |
+| Administrar usuarios, promociones, recetas, crédito, devoluciones | `pos.auditoria` | al instante |
+
+Una venta confirmada deja tres mensajes en orden: `ventas.confirmadas`,
+`lotes-asignados` y `comprobantes.emitidos`. Los tópicos `.dlq` solo aparecen cuando un
+consumidor agotó los reintentos; si hay uno, algo se rompió.
 
 Todos con `localId` como clave de partición: orden garantizado por local y paralelismo
 natural entre locales, que es el shard real del negocio. Los crea
@@ -204,10 +234,12 @@ POST /ventas/{id}/anular
   └─ outbox (VentaAnulada)
        ├─ ms-inventario   devuelve a los lotes EXACTOS de los que salió
        ├─ ms-credito      libera la reserva o registra abono
-       └─ ms-facturacion  emite nota de crédito si el comprobante ya salió
+       └─ ms-reportes     descuenta la venta del read model
 ```
 
 No hay transacción distribuida. Cada servicio compensa lo suyo cuando recibe el evento.
+Facturación no escucha la anulación: si el comprobante ya salió, la nota de crédito se
+emite registrando la devolución.
 
 ## Observabilidad
 

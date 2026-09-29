@@ -241,6 +241,21 @@ se verificaron corriendo contra el sistema levantado, no con pruebas que corran 
 - **Ids a mano en dos pantallas.** Recetas pide el id del producto y Venta el id del
   convenio, en vez de un selector. Funciona, pero un cajero no los tiene.
 
+### 8. Tres tópicos sin quien los lea
+
+Cruzando cada publicación del outbox con los `@KafkaListener`:
+
+- **`pos.catalogo.cambios`** se publica al cambiar un precio y ningún servicio lo consume.
+  El precio nuevo llega a los demás cuando vence el TTL de 60 s. Es tolerable, pero la
+  documentación decía que la caché se invalidaba al instante.
+- **`pos.stock.movimientos`** se publica al ajustar lotes y reportes no lo proyecta.
+- **Facturación no consume `pos.ventas.anuladas`.** Anular una venta con comprobante ya
+  aceptado por SUNAT no emite la nota de crédito: queda a cargo de registrar la
+  devolución. Es el único de los tres que toca dinero y SUNAT.
+
+En Kafka UI se nota: los mensajes aparecen, pero la pestaña Consumers de esos tópicos está
+vacía (o sin el grupo `ms-facturacion`, en el caso de las anulaciones).
+
 ---
 
 ## Los fallos que ya se encontraron
@@ -519,6 +534,8 @@ fallado en cada comprobante aceptado. Se separó en `RegistrarEnvioUseCase`.
 2. **Pruebas de carga** contra los 200 ventas/s, ahora que los tópicos sí tienen doce
    particiones y el paralelismo es real.
 3. **Las decisiones del punto 7**, sobre todo la devolución con convenio, que es dinero.
-4. **Reconstruir el read model de reportes** reproduciendo los tópicos desde el principio,
+4. **Nota de crédito al anular** (punto 8): que facturación consuma `pos.ventas.anuladas`
+   cuando `comprobanteEmitido` es verdadero.
+5. **Reconstruir el read model de reportes** reproduciendo los tópicos desde el principio,
    para que los datos anteriores al 28 de setiembre queden con el día de Lima y sin
    anuladas.
