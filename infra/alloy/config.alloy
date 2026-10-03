@@ -1,0 +1,36 @@
+// Lee los logs de los contenedores de este compose y los manda a Loki.
+// Los servicios no saben que existe: escriben a stdout como siempre.
+
+discovery.docker "contenedores" {
+  host = "unix:///var/run/docker.sock"
+
+  // Solo los contenedores de este proyecto, no cualquier otro que corra en la maquina.
+  // Filtrar aqui y no con un keep en el relabel: el keep deja los otros sin etiquetas
+  // y Loki rechaza cada lote con 400.
+  filter {
+    name   = "label"
+    values = ["com.docker.compose.project=pos-farmacia-micro"]
+  }
+}
+
+discovery.relabel "contenedores" {
+  targets = []
+
+  rule {
+    source_labels = ["__meta_docker_container_label_com_docker_compose_service"]
+    target_label  = "servicio"
+  }
+}
+
+loki.source.docker "contenedores" {
+  host          = "unix:///var/run/docker.sock"
+  targets       = discovery.docker.contenedores.targets
+  relabel_rules = discovery.relabel.contenedores.rules
+  forward_to    = [loki.write.local.receiver]
+}
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}

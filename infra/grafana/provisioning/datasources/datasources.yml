@@ -1,0 +1,23 @@
+# Fuentes de Grafana. Sin este archivo Grafana arranca vacio y no hay nada que graficar.
+# Los logs llegan a Loki por Alloy (infra/alloy), no por el OTel Collector.
+apiVersion: 1
+
+datasources:
+  - name: Prometheus
+    uid: prometheus
+    type: prometheus
+    url: http://prometheus:9090
+    access: proxy
+    isDefault: true
+
+  - name: Tempo
+    uid: tempo
+    type: tempo
+    url: http://tempo:3200
+    access: proxy
+
+  - name: Loki
+    uid: loki
+    type: loki
+    url: http://loki:3100
+    access: proxy

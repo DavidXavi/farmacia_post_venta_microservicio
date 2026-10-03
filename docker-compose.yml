@@ -402,6 +402,21 @@ services:
         limits:
           memory: 320M
 
+  # Lleva los logs de los contenedores a Loki leyendo el socket de Docker.
+  alloy:
+    image: grafana/alloy:v1.5.1
+    profiles: [observabilidad]
+    command: ["run", "/etc/alloy/config.alloy", "--storage.path=/var/lib/alloy/data"]
+    volumes:
+      - ./infra/alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    depends_on:
+      - loki
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
   grafana:
     image: grafana/grafana:11.1.0
     profiles: [observabilidad]
