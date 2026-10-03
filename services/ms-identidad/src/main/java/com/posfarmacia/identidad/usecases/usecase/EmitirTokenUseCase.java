@@ -4,6 +4,7 @@ import com.nimbusds.jose.JOSEObjectType;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
 import com.nimbusds.jose.crypto.RSASSASigner;
+import com.nimbusds.jose.crypto.RSASSAVerifier;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jwt.JWTClaimsSet;
 import com.nimbusds.jwt.SignedJWT;
@@ -12,6 +13,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -55,6 +58,32 @@ public class EmitirTokenUseCase {
     /** Token intermedio: solo habilita POST /api/auth/mfa/verificar. */
     public String tokenMfaPendiente(UsuarioPort.Cuenta cuenta) {
         return firmar(cuenta, SCOPE_MFA_PENDIENTE, List.of(), Duration.ofMinutes(5));
+    }
+
+    /**
+     * Usuario de un token de MFA pendiente, solo si lo firmo este servicio.
+     *
+     * <p>Sin verificar la firma, cualquiera podria armar un token con el id de otro
+     * usuario y saltarse la contrasena: solo le faltaria el codigo TOTP.
+     */
+    public Optional<UUID> usuarioDeTokenMfaPendiente(String token) {
+        try {
+            var jwt = SignedJWT.parse(token);
+            if (!JWSAlgorithm.RS256.equals(jwt.getHeader().getAlgorithm())
+                    || !jwt.verify(new RSASSAVerifier(clave.toRSAPublicKey()))) {
+                return Optional.empty();
+            }
+            var claims = jwt.getJWTClaimsSet();
+            if (!emisor.equals(claims.getIssuer())
+                    || !SCOPE_MFA_PENDIENTE.equals(claims.getStringClaim("scope"))
+                    || claims.getExpirationTime() == null
+                    || claims.getExpirationTime().toInstant().isBefore(Instant.now())) {
+                return Optional.empty();
+            }
+            return Optional.of(UUID.fromString(claims.getSubject()));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 
     private String firmar(UsuarioPort.Cuenta cuenta, String scope, List<String> roles,

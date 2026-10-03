@@ -84,18 +84,6 @@ public class AuthController {
     }
 
     private UsuarioPort.Cuenta usuarioDeTokenPendiente(String token) {
-        try {
-            var jwt = com.nimbusds.jwt.SignedJWT.parse(token);
-            var claims = jwt.getJWTClaimsSet();
-            if (!EmitirTokenUseCase.SCOPE_MFA_PENDIENTE.equals(claims.getStringClaim("scope"))) {
-                return null;
-            }
-            if (claims.getExpirationTime().toInstant().isBefore(Instant.now())) {
-                return null;
-            }
-            return usuarios.porId(UUID.fromString(claims.getSubject())).orElse(null);
-        } catch (Exception e) {
-            return null;
-        }
+        return tokens.usuarioDeTokenMfaPendiente(token).flatMap(usuarios::porId).orElse(null);
     }
 }
