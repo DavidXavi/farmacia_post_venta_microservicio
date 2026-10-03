@@ -210,7 +210,9 @@ fuera de tu propia cuenta.
 
 `ClientesDeServicios.reservarCredito()` está escrito y ningún caso de uso lo invoca. Pagar
 con la forma de pago "Crédito de farmacia" no reserva crédito ni verifica el límite:
-registra el pago y ya. Es la mitad de la regla "solo stock y crédito pueden impedir una
+registra el pago y ya. Tampoco se descuenta el saldo después: `ms-credito` escucha
+`pos.ventas.confirmadas`, pero solo actúa si la venta trae `lineaCreditoId`, y
+`Venta.asociarCredito()` no lo llama nadie. Es la mitad de la regla "solo stock y crédito pueden impedir una
 venta", así que conviene cablearlo o decir en voz alta que está de muestra.
 
 Promociones sí quedó cableado: al agregar una línea, ms-ventas evalúa las promociones y
@@ -259,11 +261,31 @@ Cruzando cada publicación del outbox con los `@KafkaListener`:
 En Kafka UI se nota: los mensajes aparecen, pero la pestaña Consumers de esos tópicos está
 vacía (o sin el grupo `ms-facturacion`, en el caso de las anulaciones).
 
+### 9. Idempotency-Key no distingue quién la usa
+
+`FiltroIdempotencyKey` arma la llave con `idem:<ruta>:<clave>`, sin el usuario ni el
+cuerpo. Quien repita una clave ya usada en la misma ruta recibe la respuesta guardada,
+aunque sea otro usuario o mande otros datos. Comprobado el 02/10/2026: un POST a
+`/api/auth/login` con una clave ya usada y la contraseña "MALA" devolvió el token de admin.
+Hace falta conocer la clave (el frontend no la manda en el login), pero el hueco existe.
+Arreglo propuesto: incluir en la llave el hash del `Authorization` y del cuerpo, y no
+aplicar el filtro a `/api/auth/**`.
+
 ---
 
 ## Los fallos que ya se encontraron
 
 Están anotados para que nadie los vuelva a descubrir. Ninguno se veía al compilar.
+
+### El token de MFA pendiente no se verificaba (02/10/2026)
+
+`AuthController.usuarioDeTokenPendiente` hacía `SignedJWT.parse` y leía el `sub` sin
+verificar la firma. Con un token inventado (firma basura, scope `MFA_PENDIENTE`, el id de
+un usuario con MFA) y solo el código TOTP, sin contraseña, se obtenía un token completo:
+comprobado contra el contenedor con el código viejo (200, scope COMPLETO). Ahora lo valida
+`EmitirTokenUseCase.usuarioDeTokenMfaPendiente`: algoritmo RS256, firma con la clave de
+identidad, emisor, scope y expiración. El mismo token falso recibe 401, y el login con MFA
+legítimo sigue funcionando en el navegador. Lo cubre `TokenMfaPendienteTest` (5 casos).
 
 ### Cuarta tanda: CRUD en el navegador y ventas que no se pierden
 

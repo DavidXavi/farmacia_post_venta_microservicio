@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Demo de una venta</title>
+<style>
+:root{
+  --bg:#f7f6f2; --card:#ffffff; --ink:#1d1d1b; --muted:#5f5e58; --line:#e3e1d9;
+  --accent:#0f6b5c; --accent-soft:#e3f1ed; --warn:#9a5b00; --warn-soft:#fbf0dc;
+  --code:#f1efe8; --term:#1e1f1c; --term-ink:#e6e4dc;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151614; --card:#1e1f1c; --ink:#ecebe6; --muted:#a3a29b; --line:#33342f;
+    --accent:#5cc5ac; --accent-soft:#1d332d; --warn:#e4a64a; --warn-soft:#3a2e1a;
+    --code:#262723; --term:#0f100e;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151614; --card:#1e1f1c; --ink:#ecebe6; --muted:#a3a29b; --line:#33342f;
+  --accent:#5cc5ac; --accent-soft:#1d332d; --warn:#e4a64a; --warn-soft:#3a2e1a;
+  --code:#262723; --term:#0f100e;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{display:grid;grid-template-columns:230px 1fr;max-width:1180px;margin:0 auto}
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:24px 16px;border-right:1px solid var(--line);font-size:14px}
+nav h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+nav a{display:block;color:var(--ink);text-decoration:none;padding:3px 8px;border-radius:6px}
+nav a:hover{background:var(--accent-soft)}
+main{padding:32px 40px 80px;min-width:0}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px}
+.lead{color:var(--muted);font-size:17px;max-width:72ch}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px 28px;margin:22px 0;scroll-margin-top:16px}
+.tag{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}
+h3{font-size:22px;margin:0 0 10px;line-height:1.3}
+h4{font-size:15px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+p,li{max-width:76ch}
+.idea{background:var(--accent-soft);border-radius:8px;padding:12px 16px;margin:12px 0}
+.say{background:var(--warn-soft);border-radius:8px;padding:12px 16px;margin:12px 0}
+.say b{color:var(--warn)}
+pre{background:var(--term);color:var(--term-ink);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:13.5px;line-height:1.5;position:relative}
+pre.out{background:var(--code);color:var(--ink)}
+code{font-family:ui-monospace,Consolas,monospace;font-size:.92em}
+p code,li code,td code{background:var(--code);padding:1px 5px;border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:10px 0}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.copy{position:absolute;top:6px;right:6px;background:#3a3b36;color:#e6e4dc;border:0;border-radius:5px;padding:2px 8px;font-size:12px;cursor:pointer}
+.toggle{float:right;background:none;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px}
+.win{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:12px 0}
+.win div{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px}
+.win b{display:block;color:var(--accent)}
+@media (max-width:820px){
+  .wrap{display:block}
+  nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:16px}
+  main{padding:20px 16px 60px}
+  section{padding:18px 16px}
+}
+@media print{nav,.toggle,.copy{display:none}.wrap{display:block}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <h2>Antes de clase</h2>
+  <a href="#levantar">1. Levantar el sistema</a>
+  <a href="#calentar">2. Calentar</a>
+  <a href="#ventanas">3. Las cuatro ventanas</a>
+  <h2>En clase</h2>
+  <a href="#p1">Paso 1. Iniciar venta</a>
+  <a href="#p2">Paso 2. Agregar producto</a>
+  <a href="#p3">Paso 3. Pagar</a>
+  <a href="#p4">Paso 4. Confirmar</a>
+  <a href="#p5">Paso 5. La outbox</a>
+  <a href="#p6">Paso 6. Kafka UI</a>
+  <a href="#p7">Paso 7. La saga</a>
+  <a href="#p8">Paso 8. Cada servicio hizo lo suyo</a>
+  <a href="#p9">Paso 9. Redis</a>
+  <a href="#p10">Paso 10. Idempotencia en vivo</a>
+  <a href="#p11">Paso 11. Apagar facturación</a>
+  <h2>Al final</h2>
+  <a href="#problemas">Si algo falla</a>
+  <a href="#resumen">Resumen de una línea</a>
+</nav>
+
+<main>
+<button class="toggle" onclick="var r=document.documentElement;r.dataset.theme=(r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches))?'light':'dark'">Tema</button>
+<h1>Demo en clase: una venta, Kafka y Redis</h1>
+<p class="lead">Guía para hacer una venta en vivo y mostrar qué pasa por dentro. Cada paso dice qué hacer, qué mostrar y qué decir. Probé todo el recorrido el 02/10/2026 en esta máquina; las salidas de ejemplo son reales.</p>
+<div class="idea">La idea que tiene que quedar: <b>mientras el cliente espera, todo es HTTP y Kafka no se entera. Al confirmar, la venta y el aviso se guardan juntos en la base. Después, Kafka reparte el aviso y cada servicio hace lo suyo.</b> Redis no participa del negocio: guarda la respuesta para que un reintento no cobre dos veces, y cuenta peticiones para el límite.</div>
+
+<section id="levantar">
+  <span class="tag">Antes de clase, 15 minutos antes</span>
+  <h3>1. Levantar el sistema completo</h3>
+  <p>Hace falta el perfil <code>completo</code>: trae facturación, reportes, clientes, crédito, promociones y Kafka UI. El perfil por defecto no los incluye y la saga nunca cerraría. Abre una terminal en la carpeta del proyecto:</p>
+<pre><code>docker compose --profile completo up -d</code></pre>
+  <p>Espera un minuto a que los servicios terminen de arrancar y reinicia el gateway (si no, algunas rutas devuelven 404 con el servicio sano):</p>
+<pre><code>docker compose restart api-gateway
+docker compose ps</code></pre>
+  <p>Deberías ver 15 contenedores arriba, entre ellos <code>kafka-ui</code>, <code>ms-facturacion</code> y <code>ms-reportes</code>. Gasta unos 6.3 GB de RAM: cierra lo que no uses.</p>
+</section>
+
+<section id="calentar">
+  <span class="tag">Antes de clase</span>
+  <h3>2. Calentar con una venta de prueba</h3>
+  <p>La primera llamada entre servicios después de arrancar es lenta (la JVM todavía está "fría") y se pasa del presupuesto de 500 ms. En la prueba, la primera línea de venta falló con <i>"Inventario no responde: no se puede apartar stock"</i>; la segunda pasó sin problema. Que eso no te pase frente a la clase: corre el script de verificación <b>dos veces</b> desde Git Bash.</p>
+<pre><code>GW=http://localhost:8095 bash scripts/verificar.sh</code></pre>
+  <p>La segunda vez tiene que terminar en <code>Todo pasó.</code>. En PowerShell sería <code>$env:GW="http://localhost:8095"; bash scripts/verificar.sh</code>.</p>
+</section>
+
+<section id="ventanas">
+  <span class="tag">Antes de clase</span>
+  <h3>3. Las cuatro ventanas que vas a tener abiertas</h3>
+  <div class="win">
+    <div><b>A. El POS</b><a href="http://localhost:5175">localhost:5175</a><br>Usuario <code>admin</code>, clave <code>Admin123!</code></div>
+    <div><b>B. Kafka UI</b><a href="http://localhost:8092/ui/clusters/pos-farmacia/all-topics/pos.ventas.confirmadas/messages">localhost:8092</a><br>Topics, <code>pos.ventas.confirmadas</code>, pestaña Messages</div>
+    <div><b>C. Terminal con Redis en vivo</b><code>docker compose exec redis redis-cli monitor</code><br>Muestra cada comando que llega a Redis.</div>
+    <div><b>D. Terminal para consultas</b>Aquí pegas los comandos <code>psql</code> de cada paso.</div>
+  </div>
+  <p>Inicia sesión en el POS antes de empezar. El token dura 15 minutos: si la clase se alarga y algo responde 401, cierra sesión y vuelve a entrar.</p>
+  <p>La terminal C se llena rápido. Para que se lea en el proyector, aumenta el tamaño de letra y, antes de cada paso, limpia la pantalla con <code>Ctrl+L</code> o con unos Enter.</p>
+</section>
+
+<section id="p1">
+  <span class="tag">Paso 1</span>
+  <h3>Iniciar la venta</h3>
+  <p><b>Haz:</b> en el POS, caja <i>Sede Principal, Caja 1</i>, y clic en <i>Iniciar venta</i>. Queda en estado BORRADOR.</p>
+  <p><b>Muestra:</b> la terminal C. Aparece algo así por cada petición:</p>
+<pre class="out"><code>"EVALSHA" ... "request_rate_limiter.{ventas.cb2ea947-...}.tokens" ...
+"setex" "request_rate_limiter.{ventas.cb2ea947-...}.tokens" "4" "99"</code></pre>
+  <div class="say"><b>Qué decir:</b> "Antes de llegar a ventas, la petición pasa por el gateway, que lleva la cuenta en Redis: 50 peticiones por segundo por usuario, con picos de 100. Esa llave es la ruta más el id del usuario que viene en el JWT. El 99 son las fichas que me quedan, y el 4 son los segundos que dura la llave. Por eso casi nunca ven llaves de límite si miran Redis después."</div>
+</section>
+
+<section id="p2">
+  <span class="tag">Paso 2</span>
+  <h3>Agregar un producto</h3>
+  <p><b>Haz:</b> producto <i>Paracetamol 500mg</i>, cantidad 2, clic en <i>Agregar</i>. Total: S/ 29.50 (25.00 más 4.50 de IGV).</p>
+  <p><b>Muestra:</b> en la terminal D, que el stock ya quedó apartado:</p>
+<pre><code>docker compose exec postgres psql -U postgres -d pg_inventario -c "SELECT r.cantidad, r.estado, r.expira_en - r.creada_en AS vida, s.disponible, s.reservado FROM reservas r JOIN stock_local s ON s.producto_id = r.producto_id AND s.local_id = r.local_id ORDER BY r.creada_en DESC LIMIT 1;"</code></pre>
+  <p>Sale una reserva de 2 unidades con estado <code>ACTIVA</code> y 15 minutos de vida. Si nadie confirma en ese tiempo, un proceso la libera. Cuando la venta se confirme e inventario asigne el lote, el estado pasa a <code>CONFIRMADA</code>.</p>
+  <p>Después, en Kafka UI, haz clic en <i>Submit</i> para recargar los mensajes: <b>no apareció nada nuevo</b>.</p>
+  <div class="say"><b>Qué decir:</b> "Ventas le preguntó el precio a catálogo y le pidió a inventario que aparte dos unidades. Todo por HTTP, con el cliente presente. Kafka no se enteró de nada: no hay mensaje nuevo. Si dos cajas van por la última unidad, el UPDATE condicional deja pasar solo a una."</div>
+</section>
+
+<section id="p3">
+  <span class="tag">Paso 3</span>
+  <h3>Registrar el pago</h3>
+  <p><b>Haz:</b> forma de pago <i>Efectivo</i>, monto <code>29.5</code>, clic en <i>Registrar pago</i>. Arriba debe decir <i>Pagado: S/ 29.5</i>.</p>
+  <p>No hace falta mostrar nada aquí. Sirve para limpiar la terminal C antes del paso importante.</p>
+</section>
+
+<section id="p4">
+  <span class="tag">Paso 4, el momento clave</span>
+  <h3>Confirmar la venta</h3>
+  <p><b>Haz:</b> tipo de comprobante <i>Boleta</i>, clic en <i>Confirmar venta</i>. Mira la terminal C mientras haces clic.</p>
+  <p><b>Muestra:</b> en Redis aparecen un <code>GET</code> y luego un <code>SET</code> de la llave de idempotencia:</p>
+<pre class="out"><code>"GET" "idem:/api/ventas/2ad603dd-.../confirmar:confirmar-2ad603dd-..."
+"SET" "idem:/api/ventas/2ad603dd-.../confirmar:confirmar-2ad603dd-..." "{\"id\":...,\"estado\":\"CONFIRMADA\",...}" ...</code></pre>
+  <p>En el POS, el mensaje dice <i>"Venta confirmada. El comprobante se está emitiendo."</i>, todavía sin número.</p>
+  <div class="say"><b>Qué decir:</b> "Al confirmar pasan dos cosas. Primero, ventas busca en Redis si esta confirmación ya se hizo; no estaba, así que confirma y guarda la respuesta 24 horas. Segundo, y esto es lo importante: confirmar <b>no llamó a ningún otro servicio</b>. Guardó la venta, abrió la saga y dejó el aviso en una tabla, todo en una transacción. Por eso el comprobante todavía no existe: se emite después. Respondió al toque aunque SUNAT se demore."</div>
+</section>
+
+<section id="p5">
+  <span class="tag">Paso 5</span>
+  <h3>La outbox: el aviso salió de la base hacia Kafka</h3>
+<pre><code>docker compose exec postgres psql -U postgres -d pg_ventas -c "SELECT tipo, clave AS local, publicado_en - creado_en AS demora_outbox FROM outbox ORDER BY creado_en DESC LIMIT 1;"</code></pre>
+<pre class="out"><code>          tipo          |                local                 |  demora_outbox
+------------------------+--------------------------------------+-----------------
+ pos.ventas.confirmadas | f99e9244-d5a2-58bb-8757-787813be14f3 | 00:00:00.136564</code></pre>
+  <div class="say"><b>Qué decir:</b> "Esta es la bandeja de salida. El aviso se escribió en la misma transacción que la venta, así que o se guardan los dos o ninguno. Un publicador pasa cada 200 milisegundos, lo manda a Kafka y lo marca como publicado. Aquí tardó 0.14 segundos. Si Kafka estuviera caído, la fila se quedaría esperando, y la venta ya estaría cobrada igual."</div>
+</section>
+
+<section id="p6">
+  <span class="tag">Paso 6</span>
+  <h3>Kafka UI: el mensaje y quién lo leyó</h3>
+  <p><b>Haz:</b> en Kafka UI, pestaña <i>Messages</i> de <code>pos.ventas.confirmadas</code>, clic en <i>Submit</i>. El mensaje nuevo aparece arriba. Haz clic en el <i>+</i> de la fila para ver el contenido.</p>
+  <table>
+    <tr><th>Columna</th><th>Qué señalar</th></tr>
+    <tr><td>Partition</td><td>Siempre 10 para las ventas de Sede Principal. El tópico tiene 12 particiones.</td></tr>
+    <tr><td>Key</td><td><code>f99e9244-...</code>, el id del local. Por eso caen todas en la misma partición: las ventas de un local se procesan en orden, y 12 locales avanzan en paralelo.</td></tr>
+    <tr><td>Value</td><td>El evento en JSON: tipo, venta, total, líneas. Trae un <code>eventoId</code> único, que se usa en el paso 10.</td></tr>
+  </table>
+  <p>Luego pasa a la pestaña <i>Consumers</i>:</p>
+<pre class="out"><code>ms-credito      3  0  1  STABLE
+ms-facturacion  3  0  1  STABLE
+ms-reportes     3  0  1  STABLE
+ms-inventario   3  0  1  STABLE</code></pre>
+  <div class="say"><b>Qué decir:</b> "Un solo mensaje, cuatro servicios que lo leen, cada uno a su ritmo. El segundo número es el lag, los mensajes que les falta leer: cero, todos al día. Ventas no sabe quiénes son ni cuántos; solo publicó. Si mañana agregamos un servicio de fidelización, se suscribe aquí sin tocar ventas."</div>
+  <p>Si te preguntan por las filas <i>"esto no es un evento"</i> con clave <code>clave-veneno</code>: son mensajes basura que metió la prueba de resiliencia. Fueron a la cola muerta y no frenaron a nadie.</p>
+  <p>También puedes mostrar la pantalla <i>Actividad (Kafka)</i> del POS (<code>localhost:5175/actividad-reciente</code>): lista las ventas que los consumidores ya procesaron, en palabras.</p>
+</section>
+
+<section id="p7">
+  <span class="tag">Paso 7</span>
+  <h3>La saga: la ficha de la venta</h3>
+<pre><code>docker compose exec postgres psql -U postgres -d pg_ventas -c "SELECT estado, stock_confirmado, comprobante_emitido, cerrada_en - iniciada_en AS duracion FROM saga_venta ORDER BY iniciada_en DESC LIMIT 1;"</code></pre>
+<pre class="out"><code>   estado   | stock_confirmado | comprobante_emitido |    duracion
+------------+------------------+---------------------+-----------------
+ COMPLETADA | t                | t                   | 00:00:11.254483</code></pre>
+  <p>Si la corres apenas confirmaste, puede salir <code>EN_CURSO</code> con el stock en <code>t</code> y el comprobante en <code>f</code>. Mejor todavía: muéstralo así, espera unos segundos y córrela otra vez.</p>
+  <div class="say"><b>Qué decir:</b> "Ya no hay una sola base, así que ventas lleva una ficha. Inventario marcó su casilla al asignar lotes; facturación marcó la suya cuando SUNAT aceptó. Con las dos, COMPLETADA. Tardó 11 segundos, y el cajero no esperó ninguno: ya estaba atendiendo al siguiente cliente."</div>
+</section>
+
+<section id="p8">
+  <span class="tag">Paso 8</span>
+  <h3>Cada servicio hizo lo suyo, en su propia base</h3>
+  <h4>Inventario eligió el lote por FEFO</h4>
+<pre><code>docker compose exec postgres psql -U postgres -d pg_inventario -c "SELECT a.cantidad, l.codigo AS lote, l.fecha_vencimiento FROM asignaciones_lote a JOIN lotes l ON l.id = a.lote_id ORDER BY a.fecha DESC LIMIT 1;"</code></pre>
+<pre class="out"><code> cantidad | lote  | fecha_vencimiento
+----------+-------+-------------------
+        2 | L0002 | 2027-09-01</code></pre>
+  <p>Dato para lucirte: el Paracetamol también tiene el lote L0001, que vence el 11/09/2026, antes que L0002. FEFO no lo eligió porque <b>ya venció</b>: el dominio (<code>Lote.despachable</code>) descarta los vencidos aunque el contador todavía los sume.</p>
+
+  <h4>Facturación emitió el comprobante</h4>
+<pre><code>docker compose exec postgres psql -U postgres -d pg_facturacion -c "SELECT serie || '-' || correlativo AS comprobante, tipo, monto_total, estado_sunat FROM comprobantes ORDER BY fecha_emision DESC LIMIT 1;"</code></pre>
+<pre class="out"><code> comprobante |  tipo  | monto_total | estado_sunat
+-------------+--------+-------------+--------------
+ B001-55     | BOLETA |       29.50 | ACEPTADO</code></pre>
+  <p>SUNAT está simulada: tarda entre 800 y 1200 ms y rechaza el 15 % de los envíos, para probar los reintentos. Si sale <code>PENDIENTE</code>, se reintenta cada 5 s.</p>
+
+  <h4>Reportes armó su copia</h4>
+<pre><code>docker compose exec postgres psql -U postgres -d pg_reportes -c "SELECT total, estado, local_nombre FROM rm_ventas ORDER BY fecha DESC LIMIT 1;"</code></pre>
+  <div class="say"><b>Qué decir:</b> "Tres bases distintas, y ninguna consulta cruzó a la base de ventas. Reportes tiene su propia copia, armada con el evento. Por eso un reporte de tres meses no frena a las cajas."</div>
+</section>
+
+<section id="p9">
+  <span class="tag">Paso 9</span>
+  <h3>Redis: qué quedó guardado</h3>
+  <p>Detén el <code>monitor</code> de la terminal C con <code>Ctrl+C</code> y lista las llaves de idempotencia:</p>
+<pre><code>docker compose exec redis redis-cli --scan --pattern "idem:*"</code></pre>
+  <p>Copia la llave de tu venta (la que termina en <code>confirmar-&lt;id&gt;</code>) y mira cuánto le queda y qué guarda:</p>
+<pre><code>docker compose exec redis redis-cli ttl "idem:/api/ventas/&lt;id&gt;/confirmar:confirmar-&lt;id&gt;"
+docker compose exec redis redis-cli get "idem:/api/ventas/&lt;id&gt;/confirmar:confirmar-&lt;id&gt;"</code></pre>
+<pre class="out"><code>86372
+{"id":"2ad603dd-...","estado":"CONFIRMADA","subtotal":25.00,"impuesto":4.50,"total":29.50,"totalPagado":29.50,...}</code></pre>
+  <table>
+    <tr><th>Llave</th><th>La pone</th><th>Dura</th><th>Para qué</th></tr>
+    <tr><td><code>idem:&lt;ruta&gt;:&lt;clave&gt;</code></td><td>Cada servicio (filtro de plataforma)</td><td>24 h</td><td>Que un reintento reciba la misma respuesta y no cobre dos veces.</td></tr>
+    <tr><td><code>request_rate_limiter.{ruta.usuario}.tokens</code></td><td>El gateway</td><td>4 s</td><td>Contar peticiones: 50 por segundo, picos de 100.</td></tr>
+  </table>
+  <div class="say"><b>Qué decir:</b> "Ese número son los segundos que le quedan: unas 24 horas. Lo guardado es la respuesta exacta que recibió la caja. La clave la pone el frontend, <code>confirmar-</code> más el id de la venta: así, un doble clic recibe la primera respuesta en vez de emitir un segundo comprobante. Si Redis se cae, la venta sigue; solo se pierde esta protección."</div>
+</section>
+
+<section id="p10">
+  <span class="tag">Paso 10, opcional</span>
+  <h3>Idempotencia en vivo: confirmar otra vez</h3>
+  <p>Vuelve a abrir el <code>monitor</code> en la terminal C. En la terminal D, desde <b>Git Bash</b>, reemplaza <code>&lt;id&gt;</code> por el id de tu venta:</p>
+<pre><code>V=&lt;id&gt;
+T=$(curl -s -X POST localhost:8095/api/auth/login -H 'Content-Type: application/json' \
+  -d '{"nombreUsuario":"admin","password":"Admin123!"}' | grep -o '"token":"[^"]*"' | cut -d'"' -f4)
+curl -s -X POST localhost:8095/api/ventas/$V/confirmar \
+  -H "Authorization: Bearer $T" -H 'Content-Type: application/json' \
+  -H "Idempotency-Key: confirmar-$V" -d '{"tipoComprobante":"BOLETA"}'</code></pre>
+  <p><b>Muestra:</b> en Redis aparece solo el <code>GET</code>, sin <code>SET</code>: encontró la respuesta y la devolvió. Luego cuenta los comprobantes:</p>
+<pre><code>docker compose exec postgres psql -U postgres -d pg_facturacion -c "SELECT count(*) FROM comprobantes WHERE venta_id = '&lt;id&gt;';"</code></pre>
+  <p>Sigue en 1.</p>
+  <div class="say"><b>Qué decir:</b> "Simulé que la caja perdió la respuesta y reintentó. Redis tenía guardada la primera respuesta y la devolvió tal cual: ni siquiera llegó al caso de uso. Sigue habiendo un solo comprobante. En Kafka pasa lo mismo con otro mecanismo: cada consumidor anota el <code>eventoId</code> en <code>evento_procesado</code>, y si llega repetido, lo ignora."</div>
+  <p>Para mostrar ese segundo mecanismo:</p>
+<pre><code>docker compose exec postgres psql -U postgres -d pg_facturacion -c "SELECT evento_id, consumidor, procesado_en FROM evento_procesado ORDER BY procesado_en DESC LIMIT 1;"</code></pre>
+</section>
+
+<section id="p11">
+  <span class="tag">Paso 11, el cierre fuerte</span>
+  <h3>Apagar facturación y seguir vendiendo</h3>
+  <p>Es la demostración que más impacta, y la probé así:</p>
+  <ol>
+    <li>Apaga facturación:
+<pre><code>docker compose stop ms-facturacion</code></pre></li>
+    <li>Haz otra venta completa en el POS (pasos 1 a 4). <b>Se confirma igual.</b></li>
+    <li>La saga queda a medias, con el stock listo y el comprobante pendiente:
+<pre class="out"><code>  estado  | stock_confirmado | comprobante_emitido
+----------+------------------+---------------------
+ EN_CURSO | t                | f</code></pre></li>
+    <li>En Kafka UI, pestaña <i>Consumers</i>: <code>ms-facturacion</code> sale sin miembros activos y con <b>lag 1</b>. El mensaje está ahí, esperándolo. Los otros tres siguen con lag 0.</li>
+    <li>Enciéndelo:
+<pre><code>docker compose start ms-facturacion</code></pre></li>
+    <li>En unos 20 segundos (lo que tarda en arrancar, más SUNAT) la saga pasa a COMPLETADA, el lag vuelve a 0 y aparece el comprobante siguiente (en la prueba, B001-56 ACEPTADO).</li>
+  </ol>
+  <div class="say"><b>Qué decir:</b> "Facturación estaba caída y la botica siguió vendiendo. El aviso no se perdió: Kafka lo guardó hasta que facturación volvió, y la saga se cerró sola. Eso es lo que significa que SUNAT caída no pare la caja."</div>
+</section>
+
+<section id="problemas">
+  <span class="tag">Si algo falla</span>
+  <h3>Problemas que pueden aparecer</h3>
+  <table>
+    <tr><th>Síntoma</th><th>Causa</th><th>Qué hacer</th></tr>
+    <tr><td>"Inventario no responde" al agregar la primera línea.</td><td>Servicio recién arrancado, primera llamada lenta.</td><td>Vuelve a hacer clic en Agregar. Para evitarlo, calienta antes (sección 2).</td></tr>
+    <tr><td>Error 404 en una pantalla, con el servicio arriba.</td><td>El gateway perdió la ruta tras reiniciar un servicio.</td><td><code>docker compose restart api-gateway</code></td></tr>
+    <tr><td>Error 401 en todo.</td><td>El token venció (dura 15 min).</td><td>Cierra sesión y vuelve a entrar.</td></tr>
+    <tr><td>La saga no pasa de EN_CURSO.</td><td>Facturación apagada, o el perfil <code>completo</code> no se levantó.</td><td><code>docker compose ps</code> y revisa que <code>ms-facturacion</code> esté arriba.</td></tr>
+    <tr><td>Kafka UI no abre.</td><td>Solo se levantó el perfil por defecto.</td><td><code>docker compose --profile completo up -d</code></td></tr>
+    <tr><td>Redis no muestra llaves de límite.</td><td>Duran 4 s.</td><td>Usa <code>monitor</code> en vez de <code>--scan</code>.</td></tr>
+    <tr><td>Una consulta <code>psql</code> no trae tu venta.</td><td>Hiciste otras ventas después (por ejemplo el script).</td><td>Todas ordenan por fecha: la primera fila es la más reciente.</td></tr>
+  </table>
+</section>
+
+<section id="resumen">
+  <span class="tag">Para cerrar</span>
+  <h3>El recorrido en una línea</h3>
+  <p>Caja, gateway (Redis cuenta la petición), ventas pregunta por HTTP a catálogo e inventario, confirmar guarda venta, saga y aviso juntos (Redis guarda la respuesta), la outbox publica en 0.14 s, Kafka reparte a cuatro servicios, inventario elige el lote, facturación emite ante SUNAT, reportes arma su copia y la saga cierra en unos 11 s.</p>
+</section>
+
+</main>
+</div>
+<script>
+document.querySelectorAll('pre:not(.out)').forEach(function(pre){
+  var b=document.createElement('button');b.className='copy';b.textContent='Copiar';
+  b.onclick=function(){
+    var t=pre.querySelector('code').innerText;
+    try{navigator.clipboard.writeText(t).then(function(){b.textContent='Copiado';setTimeout(function(){b.textContent='Copiar'},1200)})}catch(e){}
+  };
+  pre.appendChild(b);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guía de láminas</title>
+<style>
+:root{
+  --bg:#f7f6f2; --card:#ffffff; --ink:#1d1d1b; --muted:#5f5e58; --line:#e3e1d9;
+  --accent:#0f6b5c; --accent-soft:#e3f1ed; --warn:#9a5b00; --warn-soft:#fbf0dc;
+  --red:#a8322a; --red-soft:#f8e4e1; --code:#f1efe8;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#151614; --card:#1e1f1c; --ink:#ecebe6; --muted:#a3a29b; --line:#33342f;
+    --accent:#5cc5ac; --accent-soft:#1d332d; --warn:#e4a64a; --warn-soft:#3a2e1a;
+    --red:#ec8077; --red-soft:#3b2220; --code:#262723;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#151614; --card:#1e1f1c; --ink:#ecebe6; --muted:#a3a29b; --line:#33342f;
+  --accent:#5cc5ac; --accent-soft:#1d332d; --warn:#e4a64a; --warn-soft:#3a2e1a;
+  --red:#ec8077; --red-soft:#3b2220; --code:#262723;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+.wrap{display:grid;grid-template-columns:240px 1fr;max-width:1180px;margin:0 auto}
+nav{position:sticky;top:0;height:100vh;overflow:auto;padding:24px 16px;border-right:1px solid var(--line);font-size:14px}
+nav h2{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:18px 0 6px}
+nav a{display:block;color:var(--ink);text-decoration:none;padding:3px 8px;border-radius:6px}
+nav a:hover{background:var(--accent-soft)}
+nav a.javier{font-weight:600}
+main{padding:32px 40px 80px;min-width:0}
+h1{font-size:30px;line-height:1.2;margin:0 0 8px}
+.lead{color:var(--muted);font-size:17px;max-width:70ch}
+section{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:24px 28px;margin:22px 0;scroll-margin-top:16px}
+section.mine{border-left:4px solid var(--accent)}
+.tag{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+section.mine .tag{color:var(--accent)}
+h3{font-size:22px;margin:0 0 10px;line-height:1.3}
+h4{font-size:15px;margin:20px 0 6px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+p,li{max-width:75ch}
+.idea{background:var(--accent-soft);border-radius:8px;padding:12px 16px;margin:12px 0;font-size:17px}
+.say{background:var(--warn-soft);border-radius:8px;padding:12px 16px;margin:12px 0}
+.say b{color:var(--warn)}
+pre{background:var(--code);border-radius:8px;padding:12px 14px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,Consolas,monospace;font-size:.92em}
+p code,li code{background:var(--code);padding:1px 5px;border-radius:4px}
+dl.qa dt{font-weight:600;margin-top:10px}
+dl.qa dd{margin:2px 0 0 0;color:var(--ink)}
+table{border-collapse:collapse;width:100%;font-size:14.5px;margin:10px 0}
+th,td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left;vertical-align:top}
+th{color:var(--muted);font-weight:600}
+.r{color:var(--red);font-weight:600}.a{color:var(--warn);font-weight:600}.g{color:var(--muted);font-weight:600}
+.rings{display:flex;justify-content:center;margin:14px 0}
+.ring{border:2px solid var(--accent);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-direction:column;padding:16px;text-align:center;font-size:13px}
+.ring>span{display:block;margin-bottom:4px}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:12px 0}
+.step{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px}
+.step b{display:block;color:var(--accent)}
+.step.late b{color:var(--muted)}
+.saga{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0}
+.ficha{border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px}
+.ficha .st{font-weight:700;margin-top:6px}
+.ok{color:var(--accent);font-weight:700}
+.toggle{float:right;background:none;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:4px 10px;cursor:pointer;font-size:13px}
+@media (max-width:820px){
+  .wrap{display:block}
+  nav{position:static;height:auto;border-right:0;border-bottom:1px solid var(--line);padding:16px}
+  main{padding:20px 16px 60px}
+  section{padding:18px 16px}
+  .saga{grid-template-columns:1fr}
+}
+@media print{nav,.toggle{display:none}.wrap{display:block}section{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <h2>Inicio</h2>
+  <a href="#resumen">Tu parte en un minuto</a>
+  <a href="#erratas">Lo que el PPT dice y el código no</a>
+  <h2>Bloque 1, Juan</h2>
+  <a href="#l1">1. Portada</a>
+  <a href="#l2">2. De dónde venimos</a>
+  <a href="#l3">3. Lo que tiene que aguantar</a>
+  <a href="#l4">4. De cuatro a nueve</a>
+  <a href="#l5">5. Quiénes son los nueve</a>
+  <a href="#l6">6. Qué pasa si cada uno cae</a>
+  <a href="#l7">7. Cada servicio se paga</a>
+  <a href="#l8">8. Una base por servicio</a>
+  <h2>Bloque 2, Javier</h2>
+  <a class="javier" href="#l9">9. Capas con un guardia</a>
+  <a class="javier" href="#l10">10. El viaje de una venta</a>
+  <a class="javier" href="#l11">11. Problema 1: la última caja</a>
+  <a class="javier" href="#l12">12. Problema 2: el aviso perdido</a>
+  <a class="javier" href="#l13">13. Problema 3: aviso doble</a>
+  <a class="javier" href="#l14">14. La saga</a>
+  <a class="javier" href="#l15">15. Si algo se cae</a>
+  <a class="javier" href="#l16">16. Lo probamos rompiendo</a>
+  <h2>Final</h2>
+  <a href="#l17">17. Glosario</a>
+  <a class="javier" href="#l18">18. Lo que falta</a>
+</nav>
+
+<main>
+<button class="toggle" onclick="var r=document.documentElement;r.dataset.theme=(r.dataset.theme==='dark'||(!r.dataset.theme&&matchMedia('(prefers-color-scheme: dark)').matches))?'light':'dark'">Tema</button>
+<h1>POS Farmacia en microservicios: guía lámina por lámina</h1>
+<p class="lead">Las láminas de Juan van explicadas en corto, para que sepas de qué viene hablando cuando te pase la palabra. Las tuyas (9 a 16 y el cierre) van a fondo: la idea en una frase, la explicación paso a paso, qué decir y qué responder si te preguntan.</p>
+
+<section id="resumen" class="mine">
+  <span class="tag">Antes de empezar</span>
+  <h3>Tu parte en un minuto</h3>
+  <p>Juan explica <em>por qué</em> partimos el sistema en nueve servicios. Tú explicas <em>cómo funciona por dentro</em> y <em>cómo sabemos que funciona</em>. Todo tu bloque sigue una sola historia:</p>
+  <ol>
+    <li><b>Lámina 9.</b> Cada servicio está ordenado en capas, y una prueba automática vigila que nadie rompa ese orden.</li>
+    <li><b>Lámina 10.</b> Una venta tiene dos tiempos: lo que pasa con el cliente en el mostrador (rápido, por HTTP) y lo que pasa después (por Kafka).</li>
+    <li><b>Láminas 11, 12 y 13.</b> Partir el sistema trae tres problemas nuevos, y cada uno tiene su solución:
+      <ul>
+        <li>Dos cajas venden lo mismo: lo evita un <code>UPDATE</code> condicional.</li>
+        <li>Se cobra y el aviso se pierde: lo evita la outbox.</li>
+        <li>El aviso llega dos veces: lo evita la idempotencia.</li>
+      </ul></li>
+    <li><b>Lámina 14.</b> Como ya no hay una sola base, ventas lleva una ficha (la saga) para saber cuándo la venta terminó del todo.</li>
+    <li><b>Lámina 15.</b> Si un servicio se cae, la venta sigue con menos (sin descuento, venta anónima). Solo catálogo e inventario la detienen.</li>
+    <li><b>Lámina 16.</b> Lo probamos apagando piezas de verdad, y el cuadre final dio 6 de 6.</li>
+  </ol>
+  <div class="idea">Si te quedas en blanco, vuelve a esta frase: <b>confirmar la venta no llama a nadie</b>. Guarda la venta y el aviso en la misma base y responde. Todo lo demás pasa después. De ahí salen la rapidez, la resiliencia y las láminas 12, 13 y 14.</div>
+</section>
+
+<section id="erratas">
+  <span class="tag">Versión 2, revisada contra el código</span>
+  <h3>Lo que el PPT dice y el código no</h3>
+  <p>Revisamos 19 datos técnicos de las láminas contra el código. La mayoría cuadra. Estos no, y conviene corregirlos en el PPT o no decirlos así:</p>
+  <table>
+    <tr><th>Lámina</th><th>El PPT dice</th><th>Lo que hace el código</th></tr>
+    <tr><td>6 (Juan)</td><td>"El token de renovación dura 8 horas."</td><td>No hay token de renovación. La propiedad de 8 h existe y la tabla <code>refresh_tokens</code> también, pero ningún código las usa y no hay endpoint <code>/api/auth/refresh</code>. Solo existe el token de acceso de 15 min.</td></tr>
+    <tr><td>15</td><td>SUNAT espera 15 s.</td><td>No hay ese tope en el código: SUNAT es un simulador dentro de facturación.</td></tr>
+    <tr><td>16</td><td>"49 pruebas de dominio y casos de uso."</td><td>Son 49 en total, pero 27 son de ArchUnit. De dominio y casos de uso son 16; otras 6 son de plataforma.</td></tr>
+    <tr><td>14</td><td>La casilla de crédito "existe pero no se usa".</td><td>Correcto, y además nadie la marca nunca. COMPENSADA tampoco se asigna. Ya está bien dicho en la lámina.</td></tr>
+    <tr><td>10</td><td>"Los tópicos de ventas tienen 12 particiones."</td><td>Correcto para ventas y lotes. Comprobantes tiene 6. No digas "todos los tópicos".</td></tr>
+  </table>
+  <p>Todo lo demás está verificado: las capas y ArchUnit, el puerto <code>ServiciosExternosPort</code>, la transacción de confirmar, el publicador de la outbox (200 ms, lotes de 200, <code>SKIP LOCKED</code>, 5 s), la idempotencia con <code>evento_procesado</code> y ack manual, los 6 reintentos con cola muerta, los timeouts y el circuit breaker, el <code>UPDATE</code> condicional del stock, la reserva de 15 min, la saga y el script de resiliencia.</p>
+</section>
+
+<!-- ================= BLOQUE 1 ================= -->
+
+<section id="l1">
+  <span class="tag">Lámina 1, Juan</span>
+  <h3>Portada</h3>
+  <p>Presenta el sistema: un punto de venta para una cadena de boticas, con tres números que importan: 200 ventas por segundo en hora punta, 500 locales con 1500 cajas, y 9 servicios, cada uno con su propia base. Aquí se presentan los dos y dicen cómo se reparten.</p>
+  <p>La frase clave: <b>las reglas de negocio no cambiaron, cambió dónde vive cada cosa.</b> Es el mismo sistema del trabajo anterior, pero repartido.</p>
+</section>
+
+<section id="l2">
+  <span class="tag">Lámina 2, Juan</span>
+  <h3>De dónde venimos: un monolito bien hecho</h3>
+  <p>El trabajo anterior era un solo backend con 35 tablas en una sola base. Estaba bien hecho (ya tenía Clean Architecture y Kafka), pero todo compartía la misma base. Un reporte de tres meses frenaba a las cajas, y un problema con SUNAT podía acaparar las conexiones del cobro.</p>
+  <p>La analogía: el contador y los cajeros usan la misma calculadora.</p>
+</section>
+
+<section id="l3">
+  <span class="tag">Lámina 3, Juan</span>
+  <h3>Lo que tiene que aguantar</h3>
+  <p>Los números que justifican todo: 200 ventas por segundo, 5000 lecturas de catálogo por segundo, agregar un producto en menos de 200 ms, confirmar en menos de 500 ms y 99.9 % de disponibilidad (unos 43 minutos caído al mes como máximo).</p>
+  <p><b>p99</b> quiere decir que 99 de cada 100 peticiones responden por debajo de ese tiempo. Y lo que más te sirve en tu bloque: <b>SUNAT se cae seguido y eso nunca puede impedir una venta.</b></p>
+</section>
+
+<section id="l4">
+  <span class="tag">Lámina 4, Juan</span>
+  <h3>De cuatro servicios a nueve</h3>
+  <p>Primero eran cuatro servicios. Se partió más por tres razones: catálogo carga distinto que inventario (uno se lee, el otro se escribe), facturación falla junto con SUNAT, y reportes molesta a las cajas. Más de nueve sería peor: cada venta pasaría por 6 a 8 servicios en cadena.</p>
+</section>
+
+<section id="l5">
+  <span class="tag">Lámina 5, Juan</span>
+  <h3>Quiénes son los nueve, y quién los acompaña</h3>
+  <p>Los nueve servicios de negocio (identidad, catálogo, inventario, ventas, clientes, promociones, crédito, facturación, reportes) y la infraestructura que no tiene reglas de negocio: gateway (la recepción), Kafka (el correo interno), Redis, PostgreSQL, el frontend y la observabilidad.</p>
+  <p>Ojo con estos dos nombres porque aparecen en tu bloque: <b>plataforma</b> es la librería compartida donde vive el código de la outbox y la idempotencia; <b>contracts</b> tiene los eventos y tópicos.</p>
+</section>
+
+<section id="l6">
+  <span class="tag">Lámina 6, Juan</span>
+  <h3>Los nueve servicios y qué pasa si cada uno se cae</h3>
+  <p>El mapa de una venta. La caja entra por el gateway, llega a ventas, y ventas pregunta a catálogo, inventario, promociones, clientes y crédito mientras el cliente espera. Facturación y reportes se enteran después, por Kafka. Los bordes rojos (ventas, inventario, catálogo) son los que, si se caen, no dejan vender.</p>
+  <p>Tu lámina 15 es la versión detallada de este mapa.</p>
+</section>
+
+<section id="l7">
+  <span class="tag">Lámina 7, Juan</span>
+  <h3>Cada servicio que agregas se paga</h3>
+  <p>Las disponibilidades se multiplican: 99.9 % por 99.9 % por 99.9 % da 99.7 %. Con nueve en cadena serían más de seis horas caído al mes. Por eso vender pasa por 3 servicios y no por 8. Es como las luces de Navidad en serie.</p>
+</section>
+
+<section id="l8">
+  <span class="tag">Lámina 8, Juan</span>
+  <h3>Una base por servicio, y la regla la pone Postgres</h3>
+  <p>Cada servicio tiene su base y su usuario. El usuario de inventario ni siquiera puede conectarse a la base de ventas: lo impide Postgres con <code>REVOKE CONNECT</code>. Se pierde el JOIN entre servicios; se recupera con una llamada HTTP o con una copia que llega por evento.</p>
+  <div class="say"><b>Aquí Juan te pasa la palabra.</b> El puente natural: "Juan les contó cómo se repartió el sistema. Yo les cuento cómo está ordenado cada servicio por dentro, cómo viaja una venta y cómo comprobamos que no se pierde nada."</div>
+</section>
+
+<!-- ================= BLOQUE 2 ================= -->
+
+<section id="l9" class="mine">
+  <span class="tag">Lámina 9, tu parte</span>
+  <h3>Dentro de cada servicio: capas con un guardia</h3>
+  <div class="idea">Cada servicio se ordena en cuatro capas, de afuera hacia adentro. Las de afuera pueden usar a las de adentro, nunca al revés. Y eso no lo vigila una persona: lo vigila una prueba automática llamada ArchUnit.</div>
+
+  <div class="rings">
+    <div class="ring" style="width:330px;height:330px"><span>infrastructure</span>
+      <div class="ring" style="width:250px;height:250px"><span>adapters</span>
+        <div class="ring" style="width:170px;height:170px"><span>usecases</span>
+          <div class="ring" style="width:90px;height:90px;background:var(--accent-soft)"><span><b>domain</b></span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h4>Qué es cada capa, con ejemplos de ms-ventas</h4>
+  <table>
+    <tr><th>Capa</th><th>Qué guarda</th><th>Ejemplo</th></tr>
+    <tr><td><b>domain</b></td><td>Las reglas del negocio puras. No sabe que existe Spring, ni Postgres, ni HTTP.</td><td>La clase <code>Venta</code> con su método <code>confirmar()</code>, que decide si una venta se puede confirmar.</td></tr>
+    <tr><td><b>usecases</b></td><td>Los pasos de cada operación ("confirmar venta", "anular venta"). Dice qué necesita de afuera mediante <b>puertos</b>, que son interfaces.</td><td><code>ArmarVentaUseCase</code> y el puerto <code>ServiciosExternosPort</code> ("necesito alguien que me dé precios y stock").</td></tr>
+    <tr><td><b>adapters</b></td><td>El código que habla con el mundo: controladores REST, SQL, clientes HTTP, listeners de Kafka. Implementan los puertos.</td><td><code>ClientesDeServicios</code>, que llama por HTTP a catálogo e inventario.</td></tr>
+    <tr><td><b>infrastructure</b></td><td>La configuración de Spring que conecta todo al arrancar.</td><td>Beans, timeouts, circuit breakers.</td></tr>
+  </table>
+
+  <h4>Por qué importa que apunten hacia adentro</h4>
+  <p>Si el caso de uso "confirmar venta" dependiera directo del cliente HTTP, no podrías probarlo sin levantar los otros servicios, y cambiar de HTTP a otra cosa obligaría a tocar la lógica del negocio. Con el puerto en medio, el caso de uso solo dice "necesito precios" y no le importa de dónde salen. Piensa en un enchufe: el artefacto no sabe de qué central viene la electricidad.</p>
+
+  <h4>Qué hace ArchUnit</h4>
+  <p>Es una prueba que corre con <code>./mvnw test</code>. Lee las clases compiladas y revisa quién importa a quién. Si una clase de <code>usecases</code> importa algo de <code>adapters</code>, la prueba falla y el build no pasa. Java no lo detecta solo porque, para el compilador, ese import es válido: la regla es de arquitectura, no del lenguaje.</p>
+  <p>El archivo se llama <code>ArquitecturaTest.java</code> y está en los nueve servicios. Cada uno tiene tres reglas (capas, dominio sin Spring ni JPA, casos de uso sin adaptadores): 27 pruebas en total.</p>
+
+  <h4>La anécdota que cuentas</h4>
+  <p>La primera vez que corrió, <b>falló</b>: un caso de uso de ventas importaba directo <code>ClientesDeServicios</code> (un adaptador). Se corrigió creando el puerto <code>ServiciosExternosPort</code> en <code>usecases</code>; el adaptador lo implementa. Esto muestra que la prueba sirve: encontró un error real que la revisión a ojo había dejado pasar.</p>
+
+  <div class="say"><b>Qué decir:</b> "Por dentro, cada servicio tiene cuatro capas y las dependencias apuntan hacia el dominio. Lo interesante es que esa regla no depende de que alguien revise el código: la vigila una prueba. Si mañana alguien importa un cliente HTTP desde un caso de uso, el build falla antes de llegar a producción. De hecho, la primera vez que la corrimos, encontró una violación real."</div>
+
+  <h4>Si te preguntan</h4>
+  <dl class="qa">
+    <dt>¿Por qué no separar las capas en módulos Maven, como en el monolito?</dt>
+    <dd>Serían 9 servicios por 7 módulos: 63 <code>pom.xml</code>. Una prueba de 20 líneas garantiza lo mismo con mucho menos.</dd>
+    <dt>¿Todos los servicios tienen las cuatro capas?</dt>
+    <dd>No. Cinco (catálogo, clientes, crédito, facturación, reportes) no tienen <code>domain</code> porque son consultas y altas, sin reglas que modelar. La prueba usa <code>withOptionalLayers</code> para no obligarlos a inventar un dominio vacío.</dd>
+    <dt>¿Lo puedes mostrar?</dt>
+    <dd>Sí: crear en <code>usecases/usecase</code> una clase <code>DemoViolacion</code> con un campo de tipo <code>ClientesDeServicios</code> y correr <code>./mvnw -pl services/ms-ventas -am test -Dtest=ArquitecturaTest -Dsurefire.failIfNoSpecifiedTests=false</code> (unos 8 s). Falla con "Architecture Violation" en 2 de las 3 reglas. Borras el archivo y vuelve a verde.</dd>
+  </dl>
+</section>
+
+<section id="l10" class="mine">
+  <span class="tag">Lámina 10, tu parte</span>
+  <h3>El viaje de una venta, en dos tiempos</h3>
+  <div class="idea">Una venta tiene dos momentos. Mientras el cliente está en el mostrador, todo es HTTP y rápido. Cuando el cliente ya se fue, Kafka reparte el aviso y los demás servicios hacen su parte. Confirmar está justo en medio y no espera a nadie.</div>
+
+  <h4>Mientras el cliente espera (HTTP)</h4>
+  <div class="steps">
+    <div class="step"><b>1. Escanear</b>Ventas pide a catálogo el precio, a inventario que aparte el stock y a promociones el descuento.</div>
+    <div class="step"><b>2. Identificar cliente</b>Ventas pide a clientes sus datos y su convenio.</div>
+    <div class="step"><b>3. Confirmar</b>Una sola transacción en la base de ventas. No llama a ningún otro servicio.</div>
+  </div>
+  <h4>Cuando el cliente ya se fue (Kafka)</h4>
+  <div class="steps">
+    <div class="step late"><b>4. Publicador</b>Cada 200 ms revisa la tabla outbox y saca los avisos pendientes.</div>
+    <div class="step late"><b>5. Kafka</b>Reparte el aviso a todos los que lo escuchan.</div>
+    <div class="step late"><b>6. Inventario y facturación</b>Inventario elige los lotes (FEFO). Facturación emite el comprobante ante SUNAT.</div>
+  </div>
+
+  <h4>Qué pasa exactamente en el paso 3</h4>
+  <p>En una sola transacción de <code>pg_ventas</code> pasan tres cosas: la venta queda CONFIRMADA, se abre su ficha de saga (lámina 14) y se escribe el aviso en la outbox (lámina 12). Como no hay ninguna llamada de red, responde en menos de 500 ms aunque facturación, SUNAT o Kafka estén caídos.</p>
+
+  <h4>Los tres mensajes que deja una venta en Kafka</h4>
+  <ol>
+    <li><code>pos.ventas.confirmadas</code>: lo publica ventas al confirmar.</li>
+    <li><code>pos.stock.lotes-asignados</code>: lo publica inventario cuando eligió los lotes.</li>
+    <li><code>pos.comprobantes.emitidos</code>: lo publica facturación. Es el último porque espera a SUNAT.</li>
+  </ol>
+
+  <div class="say"><b>Qué decir:</b> "Cuéntenlo como lo vive el cajero. Mientras arma la venta, todo es HTTP y Kafka no se entera de nada. Al confirmar, guardamos la venta y dejamos el aviso en una tabla, sin llamar a nadie. Por eso responde en menos de medio segundo, y por eso si facturación está caída la caja sigue vendiendo. Es como el mozo que anota en la comanda y te atiende al toque: la cocina lo prepara después."</div>
+
+  <h4>Si te preguntan</h4>
+  <dl class="qa">
+    <dt>¿Por qué no mandar a Kafka directo al confirmar?</dt>
+    <dd>Porque la base y Kafka son dos sistemas distintos. Si Kafka falla después de guardar la venta, queda una venta sin aviso. Eso es justo el problema 2 (lámina 12).</dd>
+    <dt>¿Cómo se mantiene el orden si hay muchas ventas a la vez?</dt>
+    <dd>Los tópicos de ventas (confirmadas, anuladas) y el de lotes asignados tienen 12 particiones y la clave es el local. Las ventas de un mismo local van en orden, y 12 locales avanzan en paralelo. Comprobantes tiene 6 particiones, también con clave de local.</dd>
+    <dt>¿Hay algo que no esté bien?</dt>
+    <dd>Sí, y es bueno decirlo: dos tópicos se publican y nadie los lee (<code>pos.catalogo.cambios</code> y <code>pos.stock.movimientos</code>), y facturación no escucha la anulación. La anulación sí la escuchan inventario, crédito y reportes.</dd>
+  </dl>
+</section>
+
+<section id="l11" class="mine">
+  <span class="tag">Lámina 11, tu parte: problema 1 de 3</span>
+  <h3>Dos cajas venden la última caja de paracetamol</h3>
+  <div class="idea">El riesgo es vender algo que no existe. Lo evitamos haciendo que la pregunta "¿alcanza?" y la resta vayan en una sola sentencia SQL. Así nadie puede meterse en medio.</div>
+
+  <h4>El problema, paso a paso</h4>
+  <table>
+    <tr><th>Momento</th><th>Caja A</th><th>Caja B</th></tr>
+    <tr><td>1</td><td>Lee: queda 1</td><td>Lee: queda 1</td></tr>
+    <tr><td>2</td><td>Resta 1: queda 0</td><td>Resta 1: queda menos 1</td></tr>
+  </table>
+  <p>Si "leer" y "restar" son dos pasos separados, las dos cajas ven "queda 1" antes de que cualquiera reste.</p>
+
+  <h4>La solución</h4>
+<pre><code>UPDATE stock_local
+   SET reservado = reservado + ?
+ WHERE producto_id = ? AND local_id = ?
+   AND disponible - reservado >= ?   -- si no alcanza, no cambia ninguna fila</code></pre>
+  <p>La condición está dentro del <code>WHERE</code>. Postgres bloquea la fila mientras hace el <code>UPDATE</code>, así que las dos sentencias se ejecutan una detrás de otra, nunca a la vez. La primera encuentra stock y reserva. La segunda vuelve a evaluar la condición, ya no alcanza, y el resultado es "0 filas afectadas". El código ve ese 0 y le dice al cajero "Solo quedan 0". Está en <code>StockJdbcAdapter.java</code> de ms-inventario.</p>
+
+  <h4>Detalles que te sirven</h4>
+  <ul>
+    <li>El stock se <b>aparta al escanear</b>, no al confirmar. Es una reserva que vive 15 minutos; cada 30 s un proceso libera las vencidas.</li>
+    <li>Al confirmar no se toca el stock otra vez. Después, por Kafka, inventario convierte la reserva en salida y elige los lotes por FEFO (primero vence, primero sale).</li>
+    <li>La reserva es idempotente: si la caja reintenta, recibe la misma reserva, no aparta el doble.</li>
+  </ul>
+
+  <div class="say"><b>Qué decir:</b> "Dos cajas van por el último paracetamol. Si primero preguntamos y después restamos, las dos ven que queda uno y vendemos algo que no existe. La solución es que la pregunta y la resta vayan en la misma sentencia. Es como un anaquel que solo deja sacar a una mano: la otra encuentra el espacio vacío."</div>
+
+  <h4>Si te preguntan</h4>
+  <dl class="qa">
+    <dt>¿Por qué no usar el bloqueo optimista de JPA (<code>@Version</code>)?</dt>
+    <dd>A 200 ventas por segundo los choques generan reintentos, y los reintentos generan más choques. El <code>UPDATE</code> condicional resuelve todo en un solo viaje a la base.</dd>
+    <dt>¿Y si al final no había stock y el cliente ya se fue?</dt>
+    <dd>En el caso normal no pasa, porque el "no hay" se decide al escanear. Hay dos casos borde: lotes vencidos que el contador todavía suma, o una reserva que venció porque el cajero tardó más de 15 minutos. Hoy la venta queda cobrada, el evento va a la cola muerta y la saga queda EN_CURSO. Se corrige con un ajuste de inventario; falta una alerta.</dd>
+  </dl>
+</section>
+
+<section id="l12" class="mine">
+  <span class="tag">Lámina 12, tu parte: problema 2 de 3</span>
+  <h3>Se cobró, pero el aviso nunca salió</h3>
+  <div class="idea">Guardar en la base y avisar a Kafka son dos sistemas distintos, y no hay forma de que los dos confirmen juntos. La outbox lo convierte en un solo sistema: el aviso se guarda en la misma base, en la misma transacción que la venta.</div>
+
+  <h4>El problema</h4>
+  <p>Imagina este orden: (1) se guarda la venta en Postgres, (2) el servidor se reinicia, (3) nunca se manda el aviso a Kafka. Resultado: una venta cobrada que nunca tendrá comprobante, y nadie se entera. Si lo haces al revés (primero Kafka, después la base) es peor: facturación emite un comprobante de una venta que no se guardó.</p>
+
+  <h4>La solución: la tabla outbox</h4>
+<pre><code>@Transactional
+public Venta confirmar(UUID ventaId, String tipoComprobante) {
+    venta.confirmar();
+    ventas.guardar(venta);
+    sagas.abrir(venta.id());
+    eventos.publicar(..., Topicos.VENTAS_CONFIRMADAS, ...); // escribe en outbox, no en Kafka
+}</code></pre>
+  <p>Todo va dentro de <code>@Transactional</code>: o se guardan la venta, la saga y el aviso, o no se guarda nada. Fíjate que <code>eventos.publicar</code> no manda nada a Kafka, solo inserta una fila en la tabla <code>outbox</code>.</p>
+  <p>Después, un proceso aparte (<code>PublicadorOutbox</code>, en la librería plataforma) pasa cada 200 ms, toma hasta 200 filas pendientes, las manda a Kafka y solo las marca como publicadas cuando Kafka confirmó que las recibió (espera hasta 5 s). Si Kafka falla, la fila sigue pendiente y sale en la siguiente vuelta.</p>
+
+  <div class="say"><b>Qué decir:</b> "Es la bandeja de salida de una oficina. La carta se deja en la bandeja junto con el expediente, en el mismo momento. El mensajero pasa cada 200 milisegundos a recogerla. Si el mensajero no llega, la carta sigue ahí; no se pierde."</div>
+
+  <h4>Si te preguntan</h4>
+  <dl class="qa">
+    <dt>¿Y si Kafka está caído?</dt>
+    <dd>La venta se confirma igual y el aviso espera en la tabla. Lo probamos apagando Kafka (lámina 16).</dd>
+    <dt>¿Qué pasa si hay varias copias de ms-ventas leyendo la misma outbox?</dt>
+    <dd>Usa <code>SELECT ... FOR UPDATE SKIP LOCKED</code>: cada copia toma filas distintas sin esperar a las otras.</dd>
+    <dt>¿El aviso puede salir dos veces?</dt>
+    <dd>Sí: si el publicador manda a Kafka y se cae antes de marcar la fila, en la siguiente vuelta la manda otra vez. Por eso existe el problema 3. Buen puente a la siguiente lámina.</dd>
+    <dt>¿Cómo saben si la outbox se atrasa?</dt>
+    <dd>Hay una métrica, <code>outbox.antiguedad.segundos</code>, con la edad del aviso más viejo. Si crece, el siguiente paso sería Debezium, que lee el log de Postgres.</dd>
+  </dl>
+</section>
+
+<section id="l13" class="mine">
+  <span class="tag">Lámina 13, tu parte: problema 3 de 3</span>
+  <h3>Kafka entrega el mismo aviso dos veces</h3>
+  <div class="idea">Kafka garantiza que el mensaje llega, pero no que llegue una sola vez ("al menos una vez"). La solución es que procesarlo dos veces dé el mismo resultado que procesarlo una. Eso es idempotencia.</div>
+
+  <h4>El problema</h4>
+  <p>Facturación recibe dos veces "la venta 0042 se confirmó" y emite dos comprobantes ante SUNAT por un solo cobro. El duplicado puede venir del publicador (lámina 12) o de Kafka mismo, si el consumidor procesó pero se cayó antes de avisar que terminó.</p>
+
+  <h4>La solución</h4>
+<pre><code>@KafkaListener(topics = Topicos.VENTAS_CONFIRMADAS, groupId = "ms-facturacion")
+public void recibir(String mensaje, Acknowledgment ack) {
+    idempotencia.unaVez(sobre.eventoId(), "ms-facturacion.venta-confirmada",
+            () -> emitir.registrar(sobre.datos()));  // la segunda vez no hace nada
+    ack.acknowledge();
+}</code></pre>
+  <p>Cada aviso trae un <code>evento_id</code> único. <code>unaVez</code> intenta anotarlo en la tabla <code>evento_procesado</code>. Si es nuevo, ejecuta el efecto (emitir el comprobante). Si ya estaba anotado, no hace nada. La anotación y el efecto van en la misma transacción: si emitir falla, la anotación se revierte y Kafka lo vuelve a entregar.</p>
+  <p><code>ack.acknowledge()</code> es el "ya terminé" que se le dice a Kafka. Va al final, a mano. Si fuera automático, un servicio que muere justo en medio perdería la venta.</p>
+
+  <h4>Y si un aviso falla una y otra vez</h4>
+  <p>Se reintenta 6 veces con espera creciente (1, 2, 4, 8, 16 y 30 s, cerca de un minuto). Si sigue fallando, va a la <b>cola muerta</b>, un tópico <code>&lt;nombre&gt;.dlq</code> donde queda guardado con el error. No se pierde y se puede reprocesar. Antes de configurarlo, Spring Kafka reintentaba 10 veces sin espera y botaba el evento (eso lo encontró la prueba de la lámina 16).</p>
+
+  <h4>Lo mismo en las APIs</h4>
+  <p>Toda operación que cambia datos acepta la cabecera <code>Idempotency-Key</code>. Si la caja reintenta "confirmar" porque se cortó la red, Redis devuelve la misma respuesta guardada (24 h) en vez de cobrar dos veces.</p>
+
+  <div class="say"><b>Qué decir:</b> "Es el sello de recibido en mesa de partes. Si llega el mismo documento otra vez, ven el sello y no lo tramitan de nuevo. Cada aviso trae un número único; el consumidor lo anota, y si ya estaba anotado, lo ignora."</div>
+
+  <h4>Si te preguntan</h4>
+  <dl class="qa">
+    <dt>¿Por qué no usar el "exactly once" de Kafka?</dt>
+    <dd>Solo cubre de Kafka a Kafka. Aquí el efecto es escribir en Postgres y llamar a SUNAT, que están fuera de Kafka. La idempotencia la tiene que poner el consumidor.</dd>
+  </dl>
+</section>
+
+<section id="l14" class="mine">
+  <span class="tag">Lámina 14, tu parte</span>
+  <h3>La saga: una ficha con casillas por cada venta</h3>
+  <div class="idea">Antes, con una sola base, una transacción cubría todo. Ahora cada servicio tiene su base, así que ventas necesita otra forma de saber cuándo la venta terminó del todo. Esa forma es una ficha con casillas: la saga.</div>
+
+  <div class="saga">
+    <div class="ficha"><b>Al cobrar</b><br>venta 0042<br>[ ] stock listo<br>[ ] comprobante emitido<div class="st">EN_CURSO</div></div>
+    <div class="ficha"><b>Inventario avisa</b><br>venta 0042<br><span class="ok">[X]</span> stock listo<br>[ ] comprobante emitido<div class="st">EN_CURSO</div></div>
+    <div class="ficha"><b>Facturación avisa</b><br>venta 0042<br><span class="ok">[X]</span> stock listo<br><span class="ok">[X]</span> comprobante emitido<div class="st ok">COMPLETADA</div></div>
+  </div>
+
+  <h4>Cómo funciona</h4>
+  <ol>
+    <li>Al confirmar, ventas crea una fila en <code>saga_venta</code> con las casillas vacías y estado EN_CURSO (es parte de la transacción de la lámina 12).</li>
+    <li>Inventario escucha <code>pos.ventas.confirmadas</code>, asigna lotes y publica <code>pos.stock.lotes-asignados</code>. Ventas escucha eso y marca "stock listo".</li>
+    <li>Facturación escucha la misma venta, emite y publica <code>pos.comprobantes.emitidos</code>. Ventas marca "comprobante emitido".</li>
+    <li>Con las dos casillas marcadas, la ficha pasa a COMPLETADA. No importa en qué orden lleguen.</li>
+  </ol>
+
+  <h4>Coreografía, no orquestación</h4>
+  <p>Nadie da órdenes. Ventas no le dice a inventario "asigna lotes": inventario escucha el aviso y trabaja solo. Ventas solo lleva la ficha. A eso se le llama <b>saga coreografiada</b>. Lo bueno: menos acoplamiento y una pieza menos que se pueda caer. Lo malo: el flujo completo no está escrito en un solo lugar.</p>
+
+  <h4>Si se anula</h4>
+  <p>La ficha pasa a COMPENSANDO y se publica <code>pos.ventas.anuladas</code>. Inventario devuelve el stock y crédito libera la reserva si hubiera. El estado COMPENSADA existe pero nadie lo marca todavía, y la nota de crédito automática falta. Dilo así, sin esconderlo.</p>
+
+  <div class="say"><b>Qué decir:</b> "Esta lámina responde una pregunta: si ya no hay una sola base, ¿cómo sabe ventas que todo terminó bien? Con una ficha. Nace con las casillas vacías; inventario marca la suya, facturación marca la suya, y con las dos la venta queda completada. Es como un trámite con firmas de varias áreas: cada área firma cuando termina, en cualquier orden."</div>
+
+  <h4>Si te preguntan</h4>
+  <dl class="qa">
+    <dt>¿Por qué coreografía y no un orquestador?</dt>
+    <dd>Después del cobro hay solo dos pasos. Un orquestador sería una pieza más que operar y que puede caerse. Si el flujo creciera, se reconsidera.</dd>
+    <dt>¿Y la casilla de crédito?</dt>
+    <dd>La tabla tiene <code>credito_confirmado</code>, pero ningún código la marca y no se exige para cerrar, porque crédito no está conectado todavía.</dd>
+    <dt>¿Qué pasa si un paso falla del todo?</dt>
+    <dd>El evento termina en la cola muerta y la ficha queda EN_CURSO. Hoy nadie alerta de fichas estancadas: es un pendiente de la lámina 18.</dd>
+  </dl>
+</section>
+
+<section id="l15" class="mine">
+  <span class="tag">Lámina 15, tu parte</span>
+  <h3>Si algo se cae, ¿la venta sigue?</h3>
+  <div class="idea">Regla del proyecto: nada fuera de stock y pago puede impedir una venta. Cada llamada tiene un tiempo máximo de espera y un plan B. Hoy la cumplimos en todo menos en catálogo.</div>
+
+  <table>
+    <tr><th>Momento</th><th>Servicio</th><th>Espera máxima</th><th>Si no responde</th></tr>
+    <tr><td>Al escanear</td><td>catálogo</td><td>200 ms</td><td class="r">Sin precio: la línea no entra</td></tr>
+    <tr><td>Al escanear</td><td>inventario</td><td>500 ms</td><td class="r">Sin stock apartado: la línea no entra</td></tr>
+    <tr><td>Al escanear</td><td>promociones</td><td>300 ms</td><td class="a">Venta sin descuento</td></tr>
+    <tr><td>Al pagar</td><td>clientes</td><td>300 ms</td><td class="a">Venta anónima</td></tr>
+    <tr><td>Al pagar</td><td>crédito</td><td>800 ms</td><td class="a">Otra forma de pago (hoy no se consulta)</td></tr>
+    <tr><td>Siempre</td><td>Redis</td><td>200 ms</td><td class="a">Se pierde el límite de peticiones, no la venta</td></tr>
+    <tr><td>Ya cobrado</td><td>SUNAT</td><td>15 s (solo en la lámina)</td><td class="g">Comprobante pendiente, reintenta cada 5 s</td></tr>
+  </table>
+  <p>Ojo con la fila de SUNAT: el código no tiene un tope de 15 s, porque SUNAT está simulada y no hay cliente HTTP real. Si te preguntan, el "15 s" es el tope pensado para la integración real. Hay además un timeout que no sale en la lámina: identidad, 300 ms.</p>
+  <p>Rojo: impide la venta. Ámbar: sigue con menos. Gris: pasa después de cobrar. Los tiempos no son mediciones: son el tope que ventas espera antes de ir al plan B. Están en <code>ClientesDeServicios.java</code>.</p>
+  <p>Fíjate que todas las esperas están al escanear o al pagar. Confirmar no llama a nadie, por eso cumple sus 500 ms aunque todo lo demás esté caído.</p>
+
+  <h4>El circuit breaker, explicado</h4>
+  <p>Es como la llave térmica de la casa. Si promociones empieza a fallar, no tiene sentido que cada venta espere 300 ms para enterarse. El breaker se "baja" y va directo al plan B.</p>
+  <table>
+    <tr><th>Estado</th><th>Qué hace</th></tr>
+    <tr><td><b>CERRADO</b></td><td>Todo normal, llama al servicio.</td></tr>
+    <tr><td><b>ABIERTO</b></td><td>De las últimas 20 llamadas falló la mitad (con mínimo 10). Durante 10 s ni siquiera llama: usa el plan B al instante.</td></tr>
+    <tr><td><b>MEDIO ABIERTO</b></td><td>Pasados los 10 s, deja pasar 3 llamadas de prueba. Si salen bien, vuelve a CERRADO; si fallan, vuelve a ABIERTO.</td></tr>
+  </table>
+  <p>Se implementa con Resilience4j (Spring Cloud CircuitBreaker), en <code>ClientesHttpConfig.java</code>.</p>
+
+  <h4>Redis, explicado</h4>
+  <p>Redis es una base en memoria, rápida, para datos que duran poco. Aquí hace dos trabajos y ninguno es indispensable para vender:</p>
+  <table>
+    <tr><th></th><th>Idempotencia de las APIs</th><th>Límite de peticiones</th></tr>
+    <tr><td>Dónde</td><td>Dentro de cada uno de los nueve servicios, con el filtro <code>FiltroIdempotencyKey</code> de la librería plataforma. No está en el gateway.</td><td>En el gateway, con <code>RequestRateLimiter</code> de Spring Cloud Gateway.</td></tr>
+    <tr><td>Qué hace</td><td>En cada POST, PUT o PATCH con cabecera <code>Idempotency-Key</code>, guarda la respuesta exitosa (2xx) 24 h con la llave <code>idem:&lt;ruta&gt;:&lt;key&gt;</code>. Si la caja reintenta con la misma llave, recibe la misma respuesta y no se cobra dos veces.</td><td>50 peticiones por segundo, con picos de 100. Se cuenta por usuario (el <code>sub</code> del JWT); si no hay usuario, por IP.</td></tr>
+    <tr><td>Si Redis cae</td><td>Deja pasar: la venta sigue, pero un reintento ya no está protegido. Espera como máximo 200 ms antes de darse por vencido.</td><td>Deja pasar todo: se pierde el límite, no la venta. Es el comportamiento por defecto del framework; no hay código propio que lo fuerce.</td></tr>
+  </table>
+  <div class="say"><b>Si te preguntan por Redis:</b> "Redis guarda lo efímero: las respuestas para que un reintento de la caja no cobre dos veces, y los contadores del límite de peticiones. Si se cae, perdemos esas dos protecciones, pero la venta sigue. Por eso cumple la regla."</div>
+  <p>Dos cosas que no conviene afirmar: que la idempotencia la hace el gateway (la hace cada servicio) y que el límite es por local (es por usuario, aunque un comentario del código diga local). Si falta la cabecera <code>Idempotency-Key</code>, el filtro no rechaza la petición: la deja pasar sin protección.</p>
+
+  <div class="say"><b>Qué decir:</b> "Lean la regla: nada fuera de stock y pago puede impedir una venta. Cada barra es cuánto espera ventas antes de pasar al plan B. Si promociones no responde, se vende sin descuento: negarse a cobrar porque el descuento no responde le hace perder la venta a la botica. Y somos honestos: catálogo todavía impide vender, y crédito todavía no se consulta."</div>
+
+  <h4>Si te preguntan</h4>
+  <dl class="qa">
+    <dt>¿Por qué catálogo impide vender?</dt>
+    <dd>Sin precio no se puede cotizar. El caché de precios vive dentro de ms-catalogo; si el servicio entero se cae, no ayuda. Lo siguiente es guardar en ventas el último precio conocido.</dd>
+    <dt>¿Por qué no reintentan entre servicios?</dt>
+    <dd>Porque un reintento puede duplicar un cobro. El que reintenta es la caja, con su <code>Idempotency-Key</code>.</dd>
+    <dt>¿SUNAT es real?</dt>
+    <dd>Está simulada: entre 800 y 1200 ms de demora y 15 % de rechazos, para probar los reintentos. Manda los pendientes cada 5 s en lotes de 50.</dd>
+    <dt>¿El catálogo no sirve del caché si se cae?</dt>
+    <dd>No. Un comentario en <code>ClientesDeServicios</code> dice que sí, pero el código lanza el error. No lo afirmes.</dd>
+  </dl>
+</section>
+
+<section id="l16" class="mine">
+  <span class="tag">Lámina 16, tu parte</span>
+  <h3>Lo probamos rompiendo piezas mientras se vendía</h3>
+  <div class="idea">No es el diseño prometiendo que funciona. Es un script que apaga piezas de verdad mientras vende, y al final cuenta que no se perdió nada.</div>
+
+  <h4>Los cuatro escenarios</h4>
+  <table>
+    <tr><th>Qué rompimos</th><th>Qué pasó</th><th>Qué demuestra</th></tr>
+    <tr><td>1. Apagamos facturación</td><td>Las cajas vendieron igual. Al volver, emitió los pendientes.</td><td>La outbox y Kafka guardan el aviso (lámina 12).</td></tr>
+    <tr><td>2. La base de facturación falló 8 s</td><td>El consumidor esperó, reintentó y emitió.</td><td>Los reintentos con espera creciente (lámina 13).</td></tr>
+    <tr><td>3. Metimos un mensaje basura</td><td>Quedó en la cola muerta; las demás ventas siguieron.</td><td>Un mensaje malo no tapa la cola (lámina 13).</td></tr>
+    <tr><td>4. Apagamos Kafka entero</td><td>La venta se confirmó. El aviso salió al volver Kafka.</td><td>Confirmar no depende de Kafka (láminas 10 y 12).</td></tr>
+  </table>
+
+  <h4>El cuadre final: 6, 6, 6, 6</h4>
+  <p>Seis ventas, seis comprobantes, seis en reportes, seis sagas cerradas. El 6 no es una muestra: son <b>todas</b> las ventas que hizo la prueba (3 en el primer escenario y 1 en cada uno de los otros). Si algo se hubiera perdido, algún número no cuadraría.</p>
+
+  <h4>Cómo se hizo</h4>
+  <p>Un script de bash, <code>scripts/verificar-resiliencia.sh</code>, contra el sistema levantado con Docker Compose. Rompe con <code>docker compose stop</code>, vende con <code>curl</code> contra el gateway (puerto 8095) igual que la caja, y cuenta con <code>psql</code> en cada base. El mensaje basura se mete con <code>kafka-console-producer</code>, y la falla de base se simula renombrando la tabla <code>comprobantes</code> 8 segundos. Tarda unos cuatro minutos.</p>
+
+  <h4>Lo que encontró la primera vez (cuéntalo, suma)</h4>
+  <p>Spring Kafka, sin configurar, reintentaba diez veces seguidas y botaba el evento. Eran ventas sin comprobante. Compilaba y las pruebas pasaban; solo apagando piezas se vio. Por eso hoy hay 6 reintentos con espera y cola muerta.</p>
+
+  <div class="say"><b>Qué decir:</b> "Esto no es el diseño prometiéndolo: es una prueba que apaga piezas mientras se vende. Cuatro escenarios, y al final el cuadre: seis ventas, seis comprobantes, seis en reportes, seis sagas cerradas. Y les cuento lo que encontró la primera vez: Spring Kafka, por defecto, botaba los eventos que fallaban. Compilar y pasar las pruebas no lo mostraba."</div>
+
+  <h4>Si te preguntan</h4>
+  <dl class="qa">
+    <dt>¿Hicieron prueba de carga?</dt>
+    <dd>Todavía no. Esta prueba demuestra que nada se pierde, no que aguante 200 ventas por segundo. Es el primer pendiente.</dd>
+    <dt>¿Qué otras pruebas hay?</dt>
+    <dd>Tres scripts (<code>verificar.sh</code> para la venta completa, <code>verificar-reglas.sh</code> y <code>verificar-resiliencia.sh</code>), más 49 pruebas con <code>./mvnw test</code>, sin Docker. Ojo: las notas dicen "49 pruebas de dominio y casos de uso", pero el reparto real es 27 de arquitectura (ArchUnit), 16 de dominio y casos de uso (FEFO, promociones, tipo de comprobante) y 6 de plataforma (idempotencia y Kafka). Además, probar en el navegador encontró doce contratos rotos entre frontend y servicios que ninguna prueba veía.</dd>
+  </dl>
+</section>
+
+<section id="l17">
+  <span class="tag">Lámina 17, respaldo</span>
+  <h3>Glosario de bolsillo</h3>
+  <p>No se expone: se usa si el jurado pregunta un término. Repaso rápido:</p>
+  <table>
+    <tr><th>Término</th><th>Analogía</th><th>Qué es</th></tr>
+    <tr><td>Outbox</td><td>La bandeja de salida</td><td>Tabla donde se anota el aviso en la misma transacción que la venta.</td></tr>
+    <tr><td>Saga</td><td>La ficha con firmas</td><td>Una fila por venta con casillas que cada servicio marca al terminar.</td></tr>
+    <tr><td>Idempotencia</td><td>El sello de recibido</td><td>Repetir la operación da el mismo resultado. Por <code>evento_id</code> o <code>Idempotency-Key</code>.</td></tr>
+    <tr><td>Circuit breaker</td><td>La llave térmica</td><td>Si un servicio falla mucho, deja de llamarlo y usa el plan B al instante.</td></tr>
+    <tr><td>FEFO</td><td>Primero vence, primero sale</td><td>Se despacha el lote que vence antes. Obligatorio en botica (DIGEMID).</td></tr>
+    <tr><td>Redis</td><td>La libreta compartida</td><td>Guarda lo efímero: respuestas para reintentos (en cada servicio) y contadores del límite (en el gateway). Detalle en la lámina 15.</td></tr>
+    <tr><td>Cola muerta (DLQ)</td><td>La bandeja de reclamos</td><td>Tópico donde va un evento que falló seis veces. No se pierde, se puede reprocesar.</td></tr>
+    <tr><td>Consistencia eventual</td><td>El reporte llega después</td><td>Entre servicios, los datos coinciden unos segundos después, no al instante.</td></tr>
+  </table>
+</section>
+
+<section id="l18" class="mine">
+  <span class="tag">Lámina 18, cierran los dos</span>
+  <h3>Lo que falta, dicho por nosotros</h3>
+  <div class="idea">Tú dices los pendientes sin maquillarlos. Juan cierra con cuándo no conviene esta arquitectura. Decir lo que falta antes de que lo pregunten demuestra criterio.</div>
+  <ol>
+    <li><b>Prueba de carga</b> contra las 200 ventas por segundo. Lo de la lámina 16 prueba que nada se pierde, no la velocidad.</li>
+    <li><b>Conectar crédito.</b> El código para reservar crédito existe (<code>ClientesDeServicios.reservarCredito()</code>), pero ningún caso de uso lo llama. Hoy pagar con crédito no mira el límite ni descuenta el saldo.</li>
+    <li><b>Que catálogo caído no impida vender:</b> guardar en ventas el último precio conocido.</li>
+    <li><b>Alerta de sagas estancadas</b> (fichas que se quedan EN_CURSO) y nota de crédito automática al anular.</li>
+    <li><b>Integración real con SUNAT</b>, hoy simulada.</li>
+  </ol>
+  <div class="say"><b>Qué decir:</b> "Esto es lo que falta, dicho por nosotros. Lo primero que haríamos es conectar crédito, porque es la mitad de la regla: solo stock y crédito pueden impedir una venta." Luego Juan cierra: con 20 locales esto sería un sobrecosto; con 500 se justifica.</div>
+</section>
+
+</main>
+</div>
+</body>
+</html>

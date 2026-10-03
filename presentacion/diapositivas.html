@@ -406,10 +406,10 @@
   <table>
     <tr><th>Servicio</th><th>Razón del corte</th><th>Qué pasa si se cae</th></tr>
     <tr><td><strong>identidad</strong></td><td>No comparte tablas con nadie. Emite el JWT y publica JWKS</td><td>No se puede iniciar sesión nueva. Las cajas siguen vendiendo</td></tr>
-    <tr><td><strong>catálogo</strong></td><td>Lectura masiva cacheable, cero contención</td><td>Se sirve del caché aunque esté vencido</td></tr>
+    <tr><td><strong>catálogo</strong></td><td>Lectura masiva cacheable, cero contención</td><td>La línea no entra: sin precio no se cotiza. El caché vive en ms-catalogo y no cubre su caída</td></tr>
     <tr><td><strong>inventario</strong></td><td>Contención de escritura sobre la fila de stock</td><td class="num">No hay venta</td></tr>
     <tr><td><strong>clientes</strong></td><td>Cliente, seguro y receta son el mismo agregado extendido</td><td>La venta entra como anónima</td></tr>
-    <tr><td><strong>crédito</strong></td><td>Es dinero: ledger append-only, auditoría, conciliación</td><td>No hay pago a crédito, se ofrece efectivo</td></tr>
+    <tr><td><strong>crédito</strong></td><td>Es dinero: ledger append-only, auditoría, conciliación</td><td>No hay pago a crédito, se ofrece efectivo. <span class="etiqueta ambar">hoy no se consulta</span></td></tr>
     <tr><td><strong>promociones</strong></td><td>CPU pura en el camino más caliente <span class="etiqueta ambar">discutible</span></td><td>La venta entra sin descuento</td></tr>
     <tr><td><strong>ventas</strong></td><td>El orquestador de la saga</td><td class="num">No hay venta</td></tr>
     <tr><td><strong>facturación</strong></td><td>Único que habla con un tercero lento y caído</td><td>Comprobante encolado, la caja sigue</td></tr>
@@ -745,7 +745,7 @@ REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
 
 6. Asíncrono, el cliente ya se fue:
    outbox ──► Kafka ──┬─► inventario   confirma reservas, aplica FEFO
-                      ├─► credito      convierte reserva en cargo firme
+                      ├─► credito      convertiría la reserva en cargo (hoy no ocurre)
                       ├─► facturacion  emite CPE, reintenta contra SUNAT
                       └─► reportes     actualiza el read model</pre>
 </section>
@@ -935,7 +935,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
     <tr><th>Llamada</th><th>Timeout</th><th>Si falla</th></tr>
     <tr><td>ventas → inventario</td><td class="num">500 ms</td><td class="num">Falla la línea, el cajero lo ve</td></tr>
     <tr><td>ventas → crédito</td><td class="num">800 ms</td><td>Diseñado: falla el pago a crédito, ofrece efectivo. <span class="etiqueta ambar">hoy no se consulta</span></td></tr>
-    <tr><td>ventas → catálogo</td><td class="num">200 ms</td><td>Sirve del caché aunque esté vencido</td></tr>
+    <tr><td>ventas → catálogo</td><td class="num">200 ms</td><td>La línea no entra: sin precio no se cotiza <span class="etiqueta roja">impide la venta</span></td></tr>
     <tr><td>ventas → promociones</td><td class="num">300 ms</td><td>Venta sin promoción, degradación registrada</td></tr>
     <tr><td>ventas → clientes</td><td class="num">300 ms</td><td>Venta anónima</td></tr>
     <tr><td>facturación → SUNAT</td><td class="num">15 s</td><td>Queda pendiente y se reintenta cada 5 s, la venta ya terminó</td></tr>
@@ -1181,7 +1181,7 @@ La tabla ya es la cola, y es además el registro que SUNAT exige llevar.</pre>
       <h4>Lo que falta</h4>
       <ul>
         <li>Pruebas de carga contra los 200 ventas/s proyectados</li>
-        <li>Cablear crédito: hoy el pago a crédito no mira el límite</li>
+        <li>Cablear crédito: hoy el pago a crédito no mira el límite ni descuenta el saldo</li>
         <li>Medir promociones para decidir si sigue separado</li>
         <li>Integración real con SUNAT, hoy simulada</li>
       </ul>

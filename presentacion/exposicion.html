@@ -4,249 +4,19 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>POS Farmacia Exposición</title>
-<style>
-  :root {
-    --fondo: #f7f6f3;
-    --panel: #ffffff;
-    --tinta: #1a1a1a;
-    --tinta-suave: #5a5a5a;
-    --tinta-tenue: #8a8a8a;
-    --linea: #e2e0da;
-    --acento: #0f6e57;
-    --acento-suave: #e6f2ee;
-    --alerta: #9a3412;
-    --alerta-suave: #fdf0e8;
-    --aviso: #7c5e10;
-    --aviso-suave: #fbf5e3;
-    --info: #1d5fa8;
-    --info-suave: #e8f0fa;
-    --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
-    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --fondo: #16181a;
-      --panel: #1e2124;
-      --tinta: #ececec;
-      --tinta-suave: #b0b0b0;
-      --tinta-tenue: #7c7c7c;
-      --linea: #32363a;
-      --acento: #5cc4a6;
-      --acento-suave: #17342c;
-      --alerta: #f0a37a;
-      --alerta-suave: #351f14;
-      --aviso: #e5c75f;
-      --aviso-suave: #302a14;
-      --info: #7fb2ec;
-      --info-suave: #16263a;
-    }
-  }
-  :root[data-theme="dark"] {
-    --fondo: #16181a; --panel: #1e2124; --tinta: #ececec; --tinta-suave: #b0b0b0;
-    --tinta-tenue: #7c7c7c; --linea: #32363a; --acento: #5cc4a6; --acento-suave: #17342c;
-    --alerta: #f0a37a; --alerta-suave: #351f14; --aviso: #e5c75f; --aviso-suave: #302a14;
-    --info: #7fb2ec; --info-suave: #16263a;
-  }
-
-  * { box-sizing: border-box; }
-  html, body { height: 100%; margin: 0; }
-  body {
-    background: var(--fondo);
-    color: var(--tinta);
-    font-family: var(--sans);
-    font-size: 16px;
-    line-height: 1.55;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-
-  /* ---------- barra superior ---------- */
-  header {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--linea);
-    background: var(--panel);
-    flex: 0 0 auto;
-  }
-  .marca { font-weight: 600; font-size: 14px; letter-spacing: .2px; }
-  .marca span { color: var(--tinta-tenue); font-weight: 400; }
-  .espacio { flex: 1; }
-  button {
-    font: inherit; font-size: 13px;
-    background: var(--panel); color: var(--tinta);
-    border: 1px solid var(--linea); border-radius: 7px;
-    padding: 5px 11px; cursor: pointer;
-  }
-  button:hover { border-color: var(--acento); color: var(--acento); }
-  button[aria-pressed="true"] { background: var(--acento-suave); border-color: var(--acento); color: var(--acento); }
-  .contador { font-family: var(--mono); font-size: 13px; color: var(--tinta-tenue); min-width: 56px; text-align: center; }
-
-  /* ---------- escenario ---------- */
-  .escenario { flex: 1 1 auto; position: relative; overflow: hidden; }
-  .lamina {
-    position: absolute; inset: 0;
-    padding: 34px 48px 26px;
-    overflow-y: auto;
-    display: none;
-    animation: entrar .22s ease-out;
-  }
-  .lamina.activa { display: block; }
-  @keyframes entrar { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
-  @media (prefers-reduced-motion: reduce) { .lamina { animation: none; } }
-
-  .kicker {
-    font-size: 11px; letter-spacing: .13em; text-transform: uppercase;
-    color: var(--acento); font-weight: 600; margin-bottom: 8px;
-  }
-  h1 { font-size: 40px; line-height: 1.12; margin: 0 0 14px; letter-spacing: -.02em; font-weight: 650; }
-  h2 { font-size: 27px; line-height: 1.2; margin: 0 0 16px; letter-spacing: -.015em; font-weight: 640; }
-  h3 { font-size: 15px; margin: 22px 0 7px; font-weight: 640; }
-  p { margin: 0 0 11px; max-width: 78ch; color: var(--tinta-suave); }
-  .grande { font-size: 18px; color: var(--tinta); }
-  ul { margin: 0 0 12px; padding-left: 19px; max-width: 80ch; color: var(--tinta-suave); }
-  li { margin-bottom: 6px; }
-  strong { color: var(--tinta); font-weight: 620; }
-  code { font-family: var(--mono); font-size: .9em; background: var(--acento-suave); color: var(--acento); padding: 1px 5px; border-radius: 4px; }
-
-  table { border-collapse: collapse; width: 100%; max-width: 1080px; margin: 6px 0 14px; font-size: 14px; }
-  th, td { text-align: left; padding: 7px 11px; border-bottom: 1px solid var(--linea); vertical-align: top; }
-  th { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--tinta-tenue); font-weight: 620; }
-  td { color: var(--tinta-suave); }
-  td.num { font-family: var(--mono); color: var(--tinta); white-space: nowrap; }
-  tr.total td { border-top: 2px solid var(--linea); border-bottom: none; color: var(--tinta); font-weight: 620; }
-
-  pre {
-    font-family: var(--mono); font-size: 12.5px; line-height: 1.5;
-    background: var(--panel); border: 1px solid var(--linea); border-radius: 9px;
-    padding: 14px 16px; overflow-x: auto; margin: 6px 0 14px; color: var(--tinta);
-  }
-
-  .rejilla { display: grid; gap: 14px; margin: 6px 0 12px; }
-  .r2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .r3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .tarjeta { background: var(--panel); border: 1px solid var(--linea); border-radius: 10px; padding: 14px 16px; }
-  .tarjeta h4 { margin: 0 0 6px; font-size: 14px; font-weight: 640; }
-  .tarjeta p, .tarjeta ul { font-size: 13.5px; margin-bottom: 0; }
-  .tarjeta ul { padding-left: 17px; }
-
-  .cifra { font-family: var(--mono); font-size: 34px; font-weight: 600; color: var(--acento); line-height: 1; display: block; margin-bottom: 4px; }
-  .cifra.roja { color: var(--alerta); }
-  .cifra.ambar { color: var(--aviso); }
-  .pie { font-size: 12px; color: var(--tinta-tenue); }
-
-  .nota {
-    border-left: 3px solid var(--acento); background: var(--acento-suave);
-    padding: 11px 15px; border-radius: 0 8px 8px 0; margin: 12px 0; max-width: 78ch;
-  }
-  .nota p { margin: 0; color: var(--tinta); }
-  .nota.alerta { border-color: var(--alerta); background: var(--alerta-suave); }
-  .nota.aviso { border-color: var(--aviso); background: var(--aviso-suave); }
-
-  .etiqueta { display: inline-block; font-size: 11px; font-family: var(--mono); padding: 2px 7px; border-radius: 5px; background: var(--acento-suave); color: var(--acento); }
-  .etiqueta.roja { background: var(--alerta-suave); color: var(--alerta); }
-  .etiqueta.ambar { background: var(--aviso-suave); color: var(--aviso); }
-
-  /* ---------- mapa de contenedores ---------- */
-  /* Dos niveles a proposito: la caja gris es el CONTENEDOR (Docker), el bloque de color
-     adentro es lo que corre en el (nuestro microservicio, software de terceros o el
-     frontend). Si los dos niveles se ven iguales, nadie distingue uno del otro. */
-  .guia-mapa { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; font-size: 12.5px; color: var(--tinta-suave); margin: 0 0 10px; }
-  .guia-mapa .muestra { display: inline-flex; align-items: center; gap: 7px; }
-  .guia-mapa i { display: inline-block; width: 22px; height: 14px; border-radius: 3px; }
-  .guia-mapa .m-cont { border: 1.5px solid var(--tinta-tenue); background: var(--fondo); }
-  .guia-mapa .m-ms { background: var(--acento-suave); border: 1px solid var(--acento); }
-  .guia-mapa .m-ter { background: var(--aviso-suave); border: 1px solid var(--aviso); }
-  .guia-mapa .m-web { background: var(--info-suave); border: 1px solid var(--info); }
-  .guia-mapa .m-comp { border: 1.5px dashed var(--tinta-tenue); }
-  .host {
-    border: 2px dashed var(--linea); border-radius: 14px;
-    padding: 10px 14px 14px; margin: 0 0 10px; max-width: 1180px;
-  }
-  .host-titulo { font-family: var(--mono); font-size: 11.5px; color: var(--tinta-tenue); margin-bottom: 6px; }
-  .capa-titulo {
-    font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase;
-    color: var(--tinta-tenue); font-weight: 620; margin: 2px 0 6px;
-  }
-  .fila { display: grid; gap: 9px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
-  .fila.entrada { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 660px; margin: 0 auto; }
-  .fila.infra-fila { grid-template-columns: 1.6fr 1.3fr 1fr 1fr; }
-  /* el contenedor: caja gris, con su nombre de contenedor arriba */
-  .cont {
-    background: var(--fondo); border: 1.5px solid var(--tinta-tenue); border-radius: 10px;
-    padding: 0 7px 7px; font-size: 12.5px; line-height: 1.4;
-  }
-  .cont.completo { border-style: dashed; }
-  .cont-cab {
-    display: flex; align-items: baseline; gap: 6px; padding: 5px 2px 5px;
-    font-family: var(--mono); font-size: 11.5px; color: var(--tinta-suave);
-  }
-  .cont-cab .tipo {
-    font-family: var(--sans); font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
-    color: var(--tinta-tenue); font-weight: 620;
-  }
-  .cont-cab b { color: var(--tinta); font-weight: 600; }
-  .cont-cab .puerto { margin-left: auto; font-size: 10.5px; color: var(--tinta-tenue); }
-  /* lo que corre adentro */
-  .svc { border-radius: 7px; padding: 6px 8px 7px; border: 1px solid var(--acento); background: var(--acento-suave); color: var(--tinta-suave); }
-  .svc.ter { border-color: var(--aviso); background: var(--aviso-suave); }
-  .svc.web { border-color: var(--info); background: var(--info-suave); }
-  .svc-cab { display: block; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; font-weight: 650; color: var(--acento); }
-  .svc.ter .svc-cab { color: var(--aviso); }
-  .svc.web .svc-cab { color: var(--info); }
-  .svc-nombre { display: block; font-weight: 640; color: var(--tinta); margin-bottom: 2px; }
-  .svc ul { margin: 0; padding-left: 15px; font-size: 12px; }
-  .svc li { margin-bottom: 1px; }
-  .svc .pie { font-size: 11.5px; }
-  .base-de { margin-top: 5px; font-size: 11px; color: var(--tinta-tenue); }
-  .chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
-  .chip {
-    font-family: var(--mono); font-size: 10.5px; padding: 1px 6px; border-radius: 5px;
-    background: var(--panel); border: 1px solid var(--linea); color: var(--tinta-suave);
-  }
-  .chip.base { border-color: var(--acento); color: var(--acento); }
-  .conector {
-    display: flex; align-items: center; justify-content: center; gap: 8px;
-    height: 30px; font-size: 11.5px; color: var(--tinta-tenue);
-  }
-  .conector::before { content: ""; width: 0; height: 100%; border-left: 2px solid var(--linea); }
-  @media (max-width: 860px) {
-    .fila.entrada, .fila.infra-fila { grid-template-columns: 1fr; }
-  }
-  /* ---------- panel de notas del expositor ---------- */
-  .notas {
-    flex: 0 0 auto; max-height: 0; overflow: hidden;
-    border-top: 1px solid var(--linea); background: var(--panel);
-    transition: max-height .2s ease;
-  }
-  .notas.abierto { max-height: 46vh; overflow-y: auto; }
-  .notas-cuerpo { padding: 16px 22px 20px; }
-  .notas-cuerpo h4 { margin: 0 0 3px; font-size: 11px; letter-spacing: .13em; text-transform: uppercase; color: var(--acento); }
-  .notas-cuerpo .guion { font-size: 15px; color: var(--tinta); max-width: 88ch; margin-bottom: 10px; }
-  .notas-cuerpo ul { font-size: 13.5px; }
-  .notas-cuerpo .tiempo { font-family: var(--mono); font-size: 12px; color: var(--tinta-tenue); }
-
-  .progreso { height: 2px; background: var(--linea); flex: 0 0 auto; }
-  .progreso div { height: 100%; background: var(--acento); transition: width .2s; }
-
-  @media (max-width: 860px) {
-    .lamina { padding: 22px 18px; }
-    h1 { font-size: 28px; } h2 { font-size: 21px; }
-    .r2, .r3 { grid-template-columns: 1fr; }
-    table { font-size: 12.5px; }
-    th, td { padding: 6px 7px; }
-  }
-</style>
+<link rel="stylesheet" href="exposicion.css">
 </head>
 <body>
 
 <header>
   <div class="marca">POS Farmacia <span>/ exposición, Juan y Javier</span></div>
   <div class="espacio"></div>
-  <button id="btnNotas" aria-pressed="false" title="Muestra el guion de esta diapositiva (tecla N)">Cómo exponer</button>
+  <button id="btnNotas" class="btn-icono" aria-pressed="false" aria-label="Notas del expositor" title="Notas (tecla N)">
+    <svg viewBox="0 0 16 16" width="15" height="15" aria-hidden="true"><path d="M3.5 1.5h6l3 3v10h-9z M9.5 1.5v3h3 M5.5 8h5 M5.5 10.5h5 M5.5 13h3" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/></svg>
+  </button>
   <button id="btnTema" title="Claro u oscuro">Tema</button>
   <button id="btnAnt" title="Anterior">&larr;</button>
-  <span class="contador" id="contador">1 / 12</span>
+  <span class="contador" id="contador">1 / 15</span>
   <button id="btnSig" title="Siguiente">&rarr;</button>
 </header>
 
@@ -282,15 +52,36 @@
 
 <!-- 2 -->
 <section class="lamina"
-  data-tiempo="2 min, Juan"
-  data-guion="Cuenta de dónde partimos. El proyecto anterior funcionaba y estaba bien hecho: Clean Architecture, Kafka, Docker. El problema no era el código, era que todo compartía una sola base. Luego muestra los números. Son el contrato de toda la exposición: si alguien dice que es sobreingeniería, la respuesta es que para 20 locales sí, para 500 no."
-  data-puntos="El monolito no estaba mal hecho, estaba mal dimensionado para 500 locales|El síntoma más claro: un reporte de fin de mes le quita IO a las cajas|Todo lo que sigue se justifica contra esta tabla|La línea de SUNAT es la que más resuena con el jurado">
+  data-tiempo="1 min, Juan"
+  data-guion="Muestra el diagrama del trabajo anterior y señala dos cosas: la columna del centro, un solo backend con siete módulos, y la caja de PostgreSQL de la derecha, una sola base de 35 tablas. El proyecto funcionaba y estaba bien hecho. El problema no era el código, era que todo compartía esa base."
+  data-puntos="Es nuestro propio trabajo anterior, no un hombre de paja|Un backend, siete módulos Maven, una base de 35 tablas|Clean Architecture ya estaba: eso no cambió|El cuello de botella es la base compartida">
   <div class="kicker">Bloque 1, Juan</div>
-  <h2>De dónde venimos y qué tiene que aguantar</h2>
-  <p>Partimos de un monolito bien construido: siete módulos Maven, unos 600 archivos Java, todo
-  contra una sola base de 35 tablas. Funcionaba. El problema aparece a fin de mes, cuando un
-  reporte gerencial escanea tres meses de ventas y le quita disco a las cajas justo cuando más
-  se vende.</p>
+  <h2>De dónde venimos: un monolito bien hecho</h2>
+  <div class="rejilla" style="grid-template-columns:minmax(0,1.9fr) minmax(0,1fr);align-items:start">
+    <img class="figura-antes" src="imagenes/monolito_t5.png"
+      alt="Diagrama del trabajo anterior: frontend React, un backend Spring Boot con siete módulos Maven, una base PostgreSQL de 35 tablas, Kafka y RabbitMQ">
+    <div>
+      <div class="tarjeta" style="margin-bottom:12px">
+        <span class="cifra">1</span><div class="pie">backend con siete módulos Maven, unos 600 archivos Java</div>
+      </div>
+      <div class="tarjeta" style="margin-bottom:12px">
+        <span class="cifra roja">35</span><div class="pie">tablas en una sola base, compartida por cajas y reportes</div>
+      </div>
+      <div class="nota alerta">
+        <p>A fin de mes un reporte escanea tres meses de ventas y le quita disco a las cajas justo
+        cuando más se vende.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="lamina"
+  data-tiempo="1 min, Juan"
+  data-guion="Muestra los números. Son el contrato de toda la exposición: si alguien dice que es sobreingeniería, la respuesta es que para 20 locales sí, para 500 no."
+  data-puntos="Todo lo que sigue se justifica contra esta tabla|El monolito no estaba mal hecho, estaba mal dimensionado para 500 locales|La línea de SUNAT es la que más resuena con el jurado">
+  <div class="kicker">Bloque 1, Juan</div>
+  <h2>Lo que tiene que aguantar</h2>
   <table>
     <tr><th>Lo que tiene que aguantar</th><th>Objetivo</th><th>Por qué</th></tr>
     <tr><td>Ventas en pico</td><td class="num">200 / s</td><td>1500 cajas, 2 ventas por minuto cada una</td></tr>
@@ -304,7 +95,7 @@
   </div>
 </section>
 
-<!-- 3 -->
+<!-- 4 -->
 <section class="lamina"
   data-tiempo="3 min, Juan"
   data-guion="La lámina más importante del bloque. Muestra que primero propusimos cuatro servicios y que no nos arrepentimos: cambió la pregunta. Con cuatro cortas por lo que cambia junto. Con 500 locales tienes que cortar también por lo que falla junto y por lo que escala distinto. Da los tres ejemplos y cierra con la tabla: más servicios no es mejor, hay un punto donde se vuelve peor."
@@ -340,45 +131,172 @@
   </table>
 </section>
 
-<!-- 4 -->
+<!-- 5 -->
 <section class="lamina"
-  data-tiempo="2 min, Juan"
-  data-guion="Recorre el mapa siguiendo una venta, no servicio por servicio: la caja entra por el gateway, llega a ventas, ventas llama a cinco servicios de forma síncrona y el resto se entera por Kafka. Después señala la columna de la derecha: solo dos servicios pueden impedir una venta, inventario y ventas. Admite que promociones es el corte más discutible."
-  data-puntos="Sigue una venta por el mapa|Solo inventario y ventas pueden impedir una venta|Admite que promociones es discutible antes de que te lo pregunten|Si quieren más detalle: arquitectura.html es interactivo">
+  data-tiempo="1 min, Juan"
+  data-guion="Antes del mapa, presenta a los actores. A la izquierda, los nueve servicios de negocio: cada uno es dueño de una parte del negocio y de su propia base. A la derecha, la infraestructura: piezas indispensables que no tienen reglas de negocio. El gateway es un servicio, corre como proceso propio, pero es de infraestructura. Por eso la cuenta de procesos da diez."
+  data-puntos="Servicio de negocio: dueño de un contexto, con su propia base y prefijo ms-|El gateway es Spring Cloud Gateway: sin base, solo usa Redis para el límite. Es el único puerto que ven las cajas, el 8095 en local|Borde rojo: ventas, catálogo e inventario; sin cualquiera de los tres no hay venta|plataforma y contracts no son servicios: son librerías que comparten los nueve, sin reglas de negocio|Kafka UI y la observabilidad van en perfiles aparte de Docker Compose|Si preguntan si el gateway es un microservicio: es un servicio de infraestructura, no de negocio, porque no es dueño de ningún dato ni regla">
   <div class="kicker">Bloque 1, Juan</div>
-  <h2>Los nueve servicios y qué pasa si cada uno se cae</h2>
-  <div class="rejilla r2">
-    <pre style="margin:0">          caja POS
-             │
-      ┌──────▼──────┐
-      │ api-gateway │  único puerto, valida el JWT
-      └──────┬──────┘
-      ┌──────▼──────┐   HTTP con timeout:
-      │  ms-ventas  │── catálogo, inventario,
-      │ (orquesta)  │   clientes, crédito,
-      └──────┬──────┘   promociones
-             │
-      ┌──────▼──────┐
-      │    Kafka    │  cuando la venta ya terminó
-      └──────┬──────┘
-   inventario, crédito,
-   facturación, reportes</pre>
-    <table style="margin:0">
-      <tr><th>Servicio</th><th>Si se cae</th></tr>
-      <tr><td>inventario</td><td><span class="etiqueta roja">no hay venta</span></td></tr>
-      <tr><td>ventas</td><td><span class="etiqueta roja">no hay venta</span></td></tr>
-      <tr><td>catálogo</td><td>Sirve precios del caché</td></tr>
-      <tr><td>clientes</td><td>Venta anónima</td></tr>
-      <tr><td>promociones <span class="etiqueta ambar">discutible</span></td><td>Venta sin descuento</td></tr>
-      <tr><td>crédito</td><td>Se ofrece efectivo</td></tr>
-      <tr><td>facturación</td><td>Comprobante pendiente, la caja sigue</td></tr>
-      <tr><td>reportes</td><td>Sin tablero, las cajas ni se enteran</td></tr>
-      <tr><td>identidad</td><td>No entra nadie nuevo, las sesiones siguen</td></tr>
-    </table>
+  <h2>Quiénes son los nueve, y quién los acompaña</h2>
+  <div class="rejilla" style="grid-template-columns:minmax(0,2.4fr) minmax(0,1fr);align-items:start">
+    <div>
+      <div class="capa-titulo">Servicios de negocio: cada uno con su base</div>
+      <div class="rejilla r3" style="margin:0">
+        <div class="tarjeta"><h4><code>ms-identidad</code></h4><p>usuarios, login y JWT</p><p class="pie">usuarios, roles, locales, cajas</p></div>
+        <div class="tarjeta" style="border:2px solid var(--alerta)"><h4><code>ms-catalogo</code></h4><p>productos y precios</p><p class="pie">productos, categorías, laboratorios</p></div>
+        <div class="tarjeta" style="border:2px solid var(--alerta)"><h4><code>ms-inventario</code></h4><p>stock y lotes (FEFO)</p><p class="pie">stock_local, lotes, reservas</p></div>
+        <div class="tarjeta" style="border:2px solid var(--alerta)"><h4><code>ms-ventas</code></h4><p>arma, cobra y orquesta</p><p class="pie">ventas, pagos, saga, outbox</p></div>
+        <div class="tarjeta"><h4><code>ms-clientes</code></h4><p>padrón, convenios, recetas</p><p class="pie">clientes, convenios, recetas</p></div>
+        <div class="tarjeta"><h4><code>ms-promociones</code></h4><p>descuentos</p><p class="pie">promociones y sus condiciones</p></div>
+        <div class="tarjeta"><h4><code>ms-credito</code></h4><p>venta al fiado con límite</p><p class="pie">líneas, movimientos, reservas</p></div>
+        <div class="tarjeta"><h4><code>ms-facturacion</code></h4><p>comprobantes ante SUNAT</p><p class="pie">comprobantes, envíos, notas de crédito</p></div>
+        <div class="tarjeta"><h4><code>ms-reportes</code></h4><p>tableros sin tocar ventas</p><p class="pie">rm_ventas, se llena con eventos</p></div>
+      </div>
+      <p class="pie" style="margin-top:6px">Borde rojo: sin él no hay venta.</p>
+    </div>
+    <div>
+      <div class="capa-titulo">Infraestructura: sin reglas de negocio</div>
+      <div class="tarjeta">
+        <ul style="list-style:none;padding:0">
+          <li><strong><code>api-gateway</code></strong><br>la puerta: valida el JWT, limita y enruta</li>
+          <li><strong>Kafka</strong><br>el correo entre servicios</li>
+          <li><strong>Redis</strong><br>idempotencia y límite de peticiones</li>
+          <li><strong>PostgreSQL</strong><br>un motor, nueve bases aisladas</li>
+          <li><strong>frontend</strong><br>la pantalla de la caja: React y Nginx</li>
+          <li><strong>observabilidad</strong><br>Prometheus, Grafana, Tempo y Loki</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="rejilla" style="grid-template-columns:minmax(0,1fr) minmax(0,2fr);align-items:center">
+    <div class="tarjeta"><span class="cifra">9 + 1 = 10</span><div class="pie">procesos que operar: nueve de negocio más el gateway</div></div>
+    <div class="nota aviso" style="margin:0;max-width:none"><p>En un edificio, los nueve son las oficinas. El gateway es la
+    recepción, Kafka el correo interno y PostgreSQL el archivo, con un estante con llave por oficina.</p></div>
   </div>
 </section>
 
-<!-- 5 -->
+<!-- 6 -->
+<section class="lamina"
+  data-tiempo="2 min, Juan"
+  data-guion="Recorre el mapa siguiendo una venta, no servicio por servicio: la caja entra por el gateway, llega a ventas, ventas llama a cinco servicios de forma síncrona y el resto se entera por Kafka. Después señala los tres bordes rojos: ventas, inventario y catálogo pueden impedir una venta. Catálogo es rojo porque sin él no hay precio; el caché de precios vive dentro de ms-catalogo, así que protege la base de catálogo pero no protege a la caja si el servicio entero se cae. Todo lo demás tiene escrito en su caja cuánto se le espera y qué pasa si no responde. Admite que promociones es el corte más discutible."
+  data-puntos="Sigue una venta por el mapa: línea continua mientras el cliente espera, punteada cuando ya se fue|Tres pueden impedir una venta: ventas, inventario y catálogo|Catálogo caído: la caja no puede poner precio. Es lo siguiente por mejorar|Admite que promociones es discutible antes de que te lo pregunten|Si quieren más detalle: arquitectura.html es interactivo">
+  <div class="kicker">Bloque 1, Juan</div>
+  <h2>Los nueve servicios y qué pasa si cada uno se cae</h2>
+  <div class="leyenda">
+    <span><i></i>HTTP síncrono, con timeout y circuit breaker</span>
+    <span><i class="asinc"></i>Kafka, después de responder al cajero</span>
+    <span><i class="critico"></i>si se cae, no hay venta</span>
+    <span><i class="ter"></i>software de terceros</span>
+  </div>
+  <svg class="diagrama" viewBox="0 0 1100 640" role="img"
+    aria-label="Mapa de los nueve servicios: la caja entra por el gateway a ms-ventas, que llama por HTTP a catálogo, inventario, promociones, clientes y crédito, y publica por outbox a Kafka, de donde consumen facturación y reportes">
+    <defs>
+      <marker id="fs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="m-sinc"/></marker>
+      <marker id="fa" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="m-asinc"/></marker>
+    </defs>
+
+    <!-- conexiones primero, para que las cajas queden encima -->
+    <path class="d-sinc" d="M150 282H186" marker-end="url(#fs)"/>
+    <text class="t-flecha" x="152" y="272">HTTPS</text>
+    <path class="d-sinc" d="M270 250V138" marker-end="url(#fs)"/>
+    <text class="t-flecha" x="278" y="200">login</text>
+    <path class="d-sinc" d="M270 314V426" marker-end="url(#fs)"/>
+    <text class="t-flecha" x="278" y="376">límite por caja</text>
+    <path class="d-sinc" d="M350 282H406" marker-end="url(#fs)"/>
+    <text class="t-flecha" x="380" y="272" text-anchor="middle" style="font-size:10px">/api/ventas</text>
+
+    <path class="d-sinc" d="M590 282H635V60H676" marker-end="url(#fs)"/>
+    <path class="d-sinc" d="M635 150H676" marker-end="url(#fs)"/>
+    <path class="d-sinc" d="M635 240H676" marker-end="url(#fs)"/>
+    <path class="d-sinc" d="M635 282V330H676" marker-end="url(#fs)"/>
+    <path class="d-sinc" d="M635 330V420H676" marker-end="url(#fs)"/>
+
+    <path class="d-asinc" d="M500 328V466" marker-end="url(#fa)"/>
+    <text class="t-flecha" x="510" y="390">outbox,</text>
+    <text class="t-flecha" x="510" y="404">cada 200 ms</text>
+    <path class="d-asinc" d="M590 502H635V530H676" marker-end="url(#fa)"/>
+    <path class="d-asinc" d="M635 530V606H676" marker-end="url(#fa)"/>
+    <path class="d-sinc" d="M880 530H926" marker-end="url(#fs)"/>
+
+    <!-- entrada -->
+    <rect class="d-web" x="20" y="250" width="130" height="64" rx="9"/>
+    <text class="t-nombre" x="34" y="276">Caja POS</text>
+    <text class="t-sub" x="34" y="296">React, 1500 cajas</text>
+
+    <rect class="d-ms" x="190" y="70" width="160" height="64" rx="9"/>
+    <text class="t-nombre" x="204" y="95">ms-identidad</text>
+    <text class="t-sub" x="204" y="114">firma el JWT, publica JWKS</text>
+
+    <rect class="d-ms" x="190" y="250" width="160" height="64" rx="9"/>
+    <text class="t-nombre" x="204" y="275">api-gateway</text>
+    <text class="t-sub" x="204" y="294">valida el JWT, un puerto</text>
+
+    <rect class="d-ter" x="190" y="430" width="160" height="56" rx="9"/>
+    <text class="t-nombre" x="204" y="454">Redis</text>
+    <text class="t-sub" x="204" y="472">200 ms, si cae: sin límite</text>
+
+    <!-- el que orquesta -->
+    <rect class="d-ms d-critico" x="410" y="236" width="180" height="92" rx="10"/>
+    <text class="t-nombre" x="426" y="262">ms-ventas</text>
+    <text class="t-sub" x="426" y="282">orquesta la venta</text>
+    <text class="t-mono" x="426" y="302">pg_ventas + outbox</text>
+    <text class="t-roja" x="426" y="319">si cae: no hay venta</text>
+
+    <!-- llamadas sincronas -->
+    <rect class="d-ms d-critico" x="680" y="30" width="200" height="60" rx="9"/>
+    <text class="t-nombre" x="694" y="54">ms-catalogo</text>
+    <text class="t-roja" x="694" y="74">200 ms, si cae: no hay precio</text>
+
+    <rect class="d-ms d-critico" x="680" y="120" width="200" height="60" rx="9"/>
+    <text class="t-nombre" x="694" y="144">ms-inventario</text>
+    <text class="t-roja" x="694" y="164">500 ms, si cae: no hay venta</text>
+
+    <rect class="d-ms" x="680" y="210" width="200" height="60" rx="9"/>
+    <text class="t-nombre" x="694" y="234">ms-promociones</text>
+    <text class="t-sub" x="694" y="254">300 ms, si cae: sin descuento</text>
+
+    <rect class="d-ms" x="680" y="300" width="200" height="60" rx="9"/>
+    <text class="t-nombre" x="694" y="324">ms-clientes</text>
+    <text class="t-sub" x="694" y="344">300 ms, si cae: venta anónima</text>
+
+    <rect class="d-ms" x="680" y="390" width="200" height="60" rx="9"/>
+    <text class="t-nombre" x="694" y="414">ms-credito</text>
+    <text class="t-sub" x="694" y="434">800 ms, si cae: efectivo</text>
+
+    <text class="t-titulo" x="900" y="60">Cada uno con</text>
+    <text class="t-titulo" x="900" y="76">su propia base</text>
+    <text class="t-sub" x="900" y="150">inventario también</text>
+    <text class="t-sub" x="900" y="166">lee Kafka y asigna</text>
+    <text class="t-sub" x="900" y="182">lotes. Crédito escucha,</text>
+    <text class="t-sub" x="900" y="198">pero hoy no descuenta</text>
+    <text class="t-sub" x="900" y="214">nada: ninguna venta</text>
+    <text class="t-sub" x="900" y="230">lleva línea de crédito</text>
+
+    <!-- asincrono -->
+    <rect class="d-ter" x="410" y="470" width="180" height="64" rx="9"/>
+    <text class="t-nombre" x="426" y="496">Apache Kafka</text>
+    <text class="t-sub" x="426" y="516">la venta ya terminó</text>
+
+    <rect class="d-ms" x="680" y="500" width="200" height="60" rx="9"/>
+    <text class="t-nombre" x="694" y="524">ms-facturacion</text>
+    <text class="t-sub" x="694" y="544">si cae: comprobante pendiente</text>
+
+    <rect class="d-ter" x="930" y="500" width="150" height="60" rx="9"/>
+    <text class="t-nombre" x="944" y="524">SUNAT / OSE</text>
+    <text class="t-sub" x="944" y="544">15 s, reintenta cada 5 s</text>
+
+    <rect class="d-ms" x="680" y="580" width="200" height="52" rx="9"/>
+    <text class="t-nombre" x="694" y="602">ms-reportes</text>
+    <text class="t-sub" x="694" y="620">si cae: sin tablero</text>
+
+    <text class="t-sub" x="20" y="560">Si cae ms-identidad, no entra</text>
+    <text class="t-sub" x="20" y="576">nadie nuevo; las sesiones siguen,</text>
+    <text class="t-sub" x="20" y="592">porque el gateway valida el JWT</text>
+    <text class="t-sub" x="20" y="608">con la llave pública en caché.</text>
+  </svg>
+</section>
+
+<!-- 7 -->
 <section class="lamina"
   data-tiempo="2 min, Juan"
   data-guion="La cuenta que casi nadie hace. Cada llamada síncrona se paga dos veces: en latencia y en disponibilidad, porque las disponibilidades se multiplican. Con cinco saltos lo que era tu p99 pasa a ser tu p95. Después responde la pregunta de fondo: más servicios no dan más capacidad por sí solos. La capacidad la da repartir los datos y la caché, no repartir el código."
@@ -391,9 +309,9 @@
       <p class="pie" style="margin-bottom:8px">Servicios al 99.9% llamándose en cadena:</p>
       <table style="margin:0">
         <tr><th>Saltos</th><th>Disponible</th><th>Caído al mes</th></tr>
-        <tr><td class="num">1</td><td class="num">99.90%</td><td class="num">43 min</td></tr>
-        <tr><td class="num">3</td><td class="num">99.70%</td><td class="num">2.2 h</td></tr>
-        <tr><td class="num">9</td><td class="num">99.10%</td><td class="num">6.5 h</td></tr>
+        <tr><td class="num">1</td><td class="num">99.90%</td><td class="num"><span class="barra-dato" style="width:13px"></span>43 min</td></tr>
+        <tr><td class="num">3</td><td class="num">99.70%</td><td class="num"><span class="barra-dato" style="width:40px"></span>2.2 h</td></tr>
+        <tr><td class="num">9</td><td class="num">99.10%</td><td class="num"><span class="barra-dato" style="width:120px"></span>6.5 h</td></tr>
       </table>
     </div>
     <div class="tarjeta">
@@ -401,9 +319,9 @@
       <p class="pie" style="margin-bottom:8px">Si cada servicio tiene 1% de llamadas lentas:</p>
       <table style="margin:0">
         <tr><th>Saltos</th><th>Al menos una lenta</th></tr>
-        <tr><td class="num">1</td><td class="num">1.0%</td></tr>
-        <tr><td class="num">3</td><td class="num">3.0%</td></tr>
-        <tr><td class="num">5</td><td class="num">4.9%</td></tr>
+        <tr><td class="num">1</td><td class="num"><span class="barra-dato" style="width:24px"></span>1.0%</td></tr>
+        <tr><td class="num">3</td><td class="num"><span class="barra-dato" style="width:72px"></span>3.0%</td></tr>
+        <tr><td class="num">5</td><td class="num"><span class="barra-dato" style="width:118px"></span>4.9%</td></tr>
       </table>
     </div>
   </div>
@@ -412,10 +330,10 @@
   aparte para reportes. Ninguna de las dos necesita más servicios.</p>
 </section>
 
-<!-- 6 -->
+<!-- 8 -->
 <section class="lamina"
   data-tiempo="2 min, Juan"
-  data-guion="Última de Juan. Las 35 tablas se repartieron en nueve bases. Lo que impresiona es que la regla la impone Postgres, no la buena voluntad del equipo: el usuario de catálogo ni siquiera puede conectarse a la base de ventas. Di qué se pierde, el JOIN entre contextos, y cómo se recupera: una llamada HTTP o una copia que llega por evento. Cierra pasándole la palabra a Javier: ya vimos por qué quedó así, ahora él cuenta cómo funciona."
+  data-guion="Última de Juan. Las 35 tablas se repartieron en nueve bases. Lo que impresiona es que la regla la impone Postgres, no la buena voluntad del equipo: el usuario de inventario ni siquiera puede conectarse a la base de ventas. Di qué se pierde, el JOIN entre contextos, y cómo se recupera: una llamada HTTP o una copia que llega por evento. Cierra pasándole la palabra a Javier: ya vimos por qué quedó así, ahora él cuenta cómo funciona."
   data-puntos="La regla la impone el motor con REVOKE CONNECT|Lo que se pierde es el JOIN, y se recupera con eventos o HTTP|Transición: ya vimos el porqué, Javier sigue con el cómo">
   <div class="kicker">Bloque 1, Juan</div>
   <h2>Una base por servicio, y la regla la pone Postgres</h2>
@@ -424,71 +342,227 @@
   <pre>CREATE DATABASE pg_ventas OWNER u_ventas;
 REVOKE CONNECT ON DATABASE pg_ventas FROM PUBLIC;
 
--- El usuario de ms-catalogo no puede ni conectarse a pg_ventas.
+-- El usuario de ms-inventario no puede ni conectarse a pg_ventas.
 -- No depende de que alguien se acuerde de la regla.</pre>
-  <div class="rejilla r3">
-    <div class="tarjeta"><h4>pg_inventario</h4><p class="pie">lotes, stock_local, reservas, asignaciones_lote</p></div>
-    <div class="tarjeta"><h4>pg_ventas</h4><p class="pie">ventas, detalles_venta, pagos, saga_venta, outbox</p></div>
-    <div class="tarjeta"><h4>pg_reportes</h4><p class="pie">rm_ventas, rm_ventas_diarias: se llenan solo con eventos</p></div>
-  </div>
+  <svg class="diagrama" viewBox="0 0 1100 240" role="img"
+    aria-label="Nueve servicios, cada uno con su base; ms-inventario no puede conectarse a pg_ventas">
+    <defs><marker id="fr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="m-roja"/></marker></defs>
+    <rect class="d-ms" x="4" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="60" y="39" text-anchor="middle">ms-identidad</text>
+    <path class="d-sinc" d="M60 54V96"/>
+    <path class="d-caja" d="M12 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="60" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="60" y="136" text-anchor="middle">pg_identidad</text>
+    <rect class="d-ms" x="126" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="182" y="39" text-anchor="middle">ms-catalogo</text>
+    <path class="d-sinc" d="M182 54V96"/>
+    <path class="d-caja" d="M134 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="182" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="182" y="136" text-anchor="middle">pg_catalogo</text>
+    <rect class="d-ms" x="248" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="304" y="39" text-anchor="middle">ms-inventario</text>
+    <path class="d-sinc" d="M304 54V96"/>
+    <path class="d-caja" d="M256 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="304" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="304" y="136" text-anchor="middle">pg_inventario</text>
+    <text class="t-sub" x="304" y="182" text-anchor="middle">lotes, stock_local</text>
+    <rect class="d-ms" x="370" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="426" y="39" text-anchor="middle">ms-ventas</text>
+    <path class="d-sinc" d="M426 54V96"/>
+    <path class="d-caja" d="M378 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="426" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="426" y="136" text-anchor="middle">pg_ventas</text>
+    <text class="t-sub" x="426" y="182" text-anchor="middle">ventas, pagos,</text>
+    <text class="t-sub" x="426" y="197" text-anchor="middle">saga_venta, outbox</text>
+    <rect class="d-ms" x="492" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="548" y="39" text-anchor="middle">ms-clientes</text>
+    <path class="d-sinc" d="M548 54V96"/>
+    <path class="d-caja" d="M500 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="548" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="548" y="136" text-anchor="middle">pg_clientes</text>
+    <rect class="d-ms" x="614" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="670" y="39" text-anchor="middle">ms-promociones</text>
+    <path class="d-sinc" d="M670 54V96"/>
+    <path class="d-caja" d="M622 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="670" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="670" y="136" text-anchor="middle">pg_promociones</text>
+    <rect class="d-ms" x="736" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="792" y="39" text-anchor="middle">ms-credito</text>
+    <path class="d-sinc" d="M792 54V96"/>
+    <path class="d-caja" d="M744 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="792" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="792" y="136" text-anchor="middle">pg_credito</text>
+    <rect class="d-ms" x="858" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="914" y="39" text-anchor="middle">ms-facturacion</text>
+    <path class="d-sinc" d="M914 54V96"/>
+    <path class="d-caja" d="M866 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="914" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="914" y="136" text-anchor="middle">pg_facturacion</text>
+    <rect class="d-ms" x="980" y="14" width="112" height="40" rx="8"/>
+    <text class="t-nombre" style="font-size:11px" x="1036" y="39" text-anchor="middle">ms-reportes</text>
+    <path class="d-sinc" d="M1036 54V96"/>
+    <path class="d-caja" d="M988 104v46a48 8 0 0 0 96 0v-46"/>
+    <ellipse class="d-caja" cx="1036" cy="104" rx="48" ry="8"/>
+    <text class="t-mono" x="1036" y="136" text-anchor="middle">pg_reportes</text>
+    <text class="t-sub" x="1036" y="182" text-anchor="middle">rm_ventas, se llena</text>
+    <text class="t-sub" x="1036" y="197" text-anchor="middle">solo con eventos</text>
+    <path class="d-prohibido" d="M334 54C356 70 376 80 392 98" marker-end="url(#fr)"/>
+    <path class="d-prohibido" style="stroke-dasharray:none" d="M354 64l14 14M368 64l-14 14"/>
+    <text class="t-roja" x="365" y="232" text-anchor="middle">ms-inventario no puede ni conectarse a pg_ventas</text>
+  </svg>
   <p class="pie">Y así con las nueve. En desarrollo es un contenedor Postgres con nueve bases; en
   producción serían nueve instancias.</p>
 </section>
 
-<!-- 7 -->
+<!-- 9 -->
 <section class="lamina"
   data-tiempo="2 min, Javier"
-  data-guion="Javier toma la palabra. Empieza por adentro de un servicio: cuatro paquetes, y las dependencias apuntan hacia el dominio. El punto que vale la pena decir es que esa regla no la cuida la revisión de código, la cuida un test. Muestra el fragmento de ArchUnit y cuenta que ya nos atrapó una vez: un caso de uso de ventas importaba su cliente HTTP."
+  data-guion="Javier toma la palabra. Empieza por el dibujo: cuatro anillos, y las dependencias apuntan hacia el dominio. Luego señala el código de la derecha y dilo así: la regla de Clean Architecture no depende de que alguien la vigile en la revisión de código, la vigila una prueba. ArchUnit lee las clases compiladas y revisa sus imports; si mañana alguien importa un cliente HTTP desde un caso de uso, el build falla antes de llegar a producción. Cierra con el caso real, que es lo que convence: la primera vez que corrió encontró justo eso en ms-ventas, y se corrigió con un puerto."
   data-puntos="Cuatro paquetes, un solo módulo Maven por servicio|La regla la impone un test, no la buena voluntad|Ya atrapó un error real en ms-ventas|Si preguntan por qué no módulos Maven: serían 63 pom.xml para probar lo que prueba un test de 20 líneas">
   <div class="kicker">Bloque 2, Javier</div>
   <h2>Dentro de cada servicio: Clean Architecture con un test que la cuida</h2>
-  <div class="rejilla r2">
-    <pre style="margin:0">ms-ventas/
-├── domain/          reglas puras, sin Spring
-├── usecases/        confirmar, anular, pagar
-├── adapters/
-│   ├── web/         controladores REST
-│   ├── persistence/ SQL con JdbcClient
-│   ├── clientes/    llamadas HTTP a otros
-│   └── messaging/   consumidores de Kafka
-└── infrastructure/  configuración de Spring
-
-Las dependencias apuntan hacia adentro.</pre>
-    <pre style="margin:0">// ArquitecturaTest.java, en los nueve servicios
+  <div class="rejilla r2" style="align-items:center">
+    <svg class="diagrama" viewBox="0 0 420 375" role="img" style="max-width:460px;margin:0"
+      aria-label="Cuatro anillos: infrastructure afuera, luego adapters, usecases y domain al centro; las dependencias apuntan hacia adentro">
+      <defs><marker id="fc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" class="m-sinc"/></marker></defs>
+      <circle class="d-anillo-1" cx="210" cy="172" r="168"/>
+      <circle class="d-anillo-2" cx="210" cy="172" r="128"/>
+      <circle class="d-anillo-3" cx="210" cy="172" r="88"/>
+      <circle class="d-anillo-4" cx="210" cy="172" r="46"/>
+      <text class="t-nombre" x="210" y="26" text-anchor="middle">infrastructure</text>
+      <text class="t-sub" x="210" y="41" text-anchor="middle">configuración de Spring, @Bean</text>
+      <text class="t-nombre" x="210" y="66" text-anchor="middle">adapters</text>
+      <text class="t-sub" x="210" y="81" text-anchor="middle">web, JdbcClient, HTTP, Kafka</text>
+      <text class="t-nombre" x="210" y="106" text-anchor="middle">usecases</text>
+      <text class="t-sub" x="210" y="121" text-anchor="middle">confirmar, anular, puertos</text>
+      <text class="t-nombre" x="210" y="170" text-anchor="middle">domain</text>
+      <text class="t-sub" x="210" y="186" text-anchor="middle">sin Spring</text>
+      <path class="d-sinc" style="stroke-width:2.2" d="M372 250L262 196" marker-end="url(#fc)"/>
+      <path class="d-sinc" style="stroke-width:2.2" d="M48 250L158 196" marker-end="url(#fc)"/>
+      <text class="t-sub" x="210" y="366" text-anchor="middle">las dependencias apuntan hacia adentro</text>
+    </svg>
+    <div>
+      <p style="margin-bottom:8px"><strong>ArchUnit</strong> es una librería de pruebas para Java.
+      No prueba si una suma da bien: prueba <strong>quién puede importar a quién</strong>. Lee las
+      clases compiladas y, si una depende de algo que no debe, <code>./mvnw test</code> sale en rojo.</p>
+      <pre style="margin:0">// ArquitecturaTest.java, en los nueve servicios
 layeredArchitecture()
-  .layer("dominio").definedBy("..domain..")
-  .layer("casos de uso").definedBy("..usecases..")
-  .layer("adaptadores").definedBy("..adapters..")
+  .layer("dominio").definedBy("..domain..")        // las capas se
+  .layer("casos de uso").definedBy("..usecases..") // declaran por
+  .layer("adaptadores").definedBy("..adapters..")  // paquete
   .whereLayer("adaptadores")
       .mayOnlyBeAccessedByLayers("infraestructura")
+      // a los adaptadores solo los conoce la configuración
   .whereLayer("casos de uso")
-      .mayOnlyBeAccessedByLayers("adaptadores",
-                                 "infraestructura")
-  .check(clases);</pre>
+      .mayOnlyBeAccessedByLayers("adaptadores", "infraestructura")
+      // a los casos de uso los llaman los de afuera
+  .check(clases);   // si alguien rompe la regla, falla</pre>
+      <p class="pie" style="margin-top:6px">Son los anillos del dibujo escritos como prueba: uno de
+      afuera puede usar a uno de adentro, nunca al revés. El archivo trae dos reglas más: el
+      dominio no importa Spring ni JPA, y un caso de uso no importa un adaptador.</p>
+    </div>
   </div>
-  <div class="nota">
-    <p>Este test encontró un caso de uso de ventas que importaba su cliente HTTP. Compilaba y
-    funcionaba, pero para probar una suma había que levantar timeouts y circuit breakers.</p>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>El caso real: la primera vez que corrió, falló</h4>
+      <ul>
+        <li><strong>Qué encontró:</strong> un caso de uso de ventas que importaba directo su
+        cliente HTTP. Compilaba y funcionaba.</li>
+        <li><strong>Por qué importa:</strong> para probar una simple suma de la venta había que
+        levantar timeouts y circuit breakers.</li>
+        <li><strong>Cómo se corrigió:</strong> con la interfaz <code>ServiciosExternosPort</code>.
+        El caso de uso pide lo que necesita por ese puerto y el adaptador HTTP lo implementa
+        desde afuera.</li>
+      </ul>
+    </div>
+    <div class="tarjeta">
+      <h4>¿Por qué no módulos Maven, como en el monolito?</h4>
+      <p>Serían 9 servicios por 7 módulos: 63 <code>pom.xml</code>. Esta prueba de unas 20 líneas
+      garantiza lo mismo, corre en segundos y falla con un mensaje que dice qué clase rompió
+      la regla.</p>
+    </div>
   </div>
 </section>
 
-<!-- 8 -->
+<!-- 10 -->
 <section class="lamina"
   data-tiempo="3 min, Javier"
   data-guion="Cuéntalo como lo vive el cajero. Mientras arma la venta todo es HTTP y Kafka no se entera de nada. Confirmar es una transacción local: guarda la venta y escribe el evento en una tabla, no llama a nadie. Por eso responde en menos de 500 ms y por eso facturación caída no para la caja. Kafka entra después, cuando el cliente ya se fue. Si tienen el sistema levantado, confirma una venta y muestra los tres mensajes en Kafka UI."
-  data-puntos="Confirmar no llama a nadie: transacción local más un evento|Kafka entra después del commit, unos 200 ms más tarde|Una venta deja tres mensajes: confirmada, lotes asignados, comprobante emitido|Sé honesto: tres tópicos se publican y nadie los lee, uno toca SUNAT">
+  data-puntos="Confirmar no llama a nadie: transacción local más un evento|Kafka entra después del commit, unos 200 ms más tarde|Una venta deja tres mensajes: confirmada, lotes asignados, comprobante emitido|Sé honesto: tres tópicos se publican y nadie los lee, uno toca SUNAT|Si preguntan qué es la outbox: la bandeja de salida, una tabla en pg_ventas donde se anota el evento antes de mandarlo a Kafka">
   <div class="kicker">Bloque 2, Javier</div>
   <h2>El camino de una venta, y en qué momento entra Kafka</h2>
-  <pre>1. Escanear producto     ventas llama por HTTP a catálogo, inventario y promociones
-2. Identificar cliente   ventas llama a clientes
-3. Confirmar             UNA transacción local, sin llamar a nadie:
-                           venta CONFIRMADA + saga abierta + evento en la tabla outbox
-                         ──► responde al cajero. Aquí termina lo que el cliente espera.
-
-4. Ya sin el cliente     cada 200 ms el outbox pasa el evento a Kafka
-                           pos.ventas.confirmadas    inventario, crédito, facturación, reportes
-                           pos.stock.lotes-asignados inventario aplicó FEFO, avisa a ventas
-                           pos.comprobantes.emitidos SUNAT aceptó, ventas cierra la saga</pre>
+  <div class="leyenda">
+    <span><i></i>HTTP</span>
+    <span><i class="asinc"></i>evento en Kafka</span>
+  </div>
+  <div class="nota" style="max-width:none">
+    <p><strong>La outbox es la bandeja de salida de ms-ventas:</strong> una tabla más dentro
+    de pg_ventas. Al confirmar, ventas no le habla a Kafka: anota el evento en esa tabla, en la
+    misma transacción que la venta. Un proceso aparte revisa la bandeja cada 200 ms y lo manda
+    a Kafka. Si Kafka está caído, el evento espera en la tabla y la venta ya quedó cobrada.</p>
+  </div>
+  <svg class="diagrama" viewBox="0 0 1100 520" role="img"
+    aria-label="Secuencia de una venta: mientras el cliente espera todo es HTTP y confirmar escribe venta, saga y evento en una sola transacción; después el outbox publica a Kafka, inventario asigna lotes, facturación emite ante SUNAT y ventas cierra la saga">
+    <defs>
+      <marker id="fs2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="m-sinc"/></marker>
+      <marker id="fa2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="m-asinc"/></marker>
+    </defs>
+    <rect class="d-zona" x="8" y="62" width="1084" height="190" rx="8"/>
+    <text class="t-titulo" x="1084" y="80" text-anchor="end">lo que espera el cliente</text>
+    <text class="t-titulo" x="18" y="282">el cliente ya se fue</text>
+    <path class="d-vida" d="M65 54V512"/>
+    <rect class="d-web" x="7" y="10" width="116" height="44" rx="8"/>
+    <text class="t-nombre" style="font-size:12px" x="65" y="37" text-anchor="middle">Cajero</text>
+    <path class="d-vida" d="M235 54V512"/>
+    <rect class="d-ms" x="177" y="10" width="116" height="44" rx="8"/>
+    <text class="t-nombre" style="font-size:12px" x="235" y="37" text-anchor="middle">ms-ventas</text>
+    <path class="d-vida" d="M420 54V512"/>
+    <rect class="d-ms" x="362" y="10" width="116" height="44" rx="8"/>
+    <text class="t-sub" x="420" y="29" text-anchor="middle">catálogo, inventario,</text>
+    <text class="t-sub" x="420" y="44" text-anchor="middle">promociones</text>
+    <path class="d-vida" d="M590 54V512"/>
+    <rect class="d-caja" x="532" y="10" width="116" height="44" rx="8"/>
+    <text class="t-nombre" style="font-size:12px" x="590" y="29" text-anchor="middle">outbox</text>
+    <text class="t-sub" x="590" y="44" text-anchor="middle">tabla en pg_ventas</text>
+    <path class="d-vida" d="M750 54V512"/>
+    <rect class="d-ter" x="692" y="10" width="116" height="44" rx="8"/>
+    <text class="t-nombre" style="font-size:12px" x="750" y="37" text-anchor="middle">Kafka</text>
+    <path class="d-vida" d="M900 54V512"/>
+    <rect class="d-ms" x="842" y="10" width="116" height="44" rx="8"/>
+    <text class="t-nombre" style="font-size:12px" x="900" y="37" text-anchor="middle">ms-inventario</text>
+    <path class="d-vida" d="M1035 54V512"/>
+    <rect class="d-ms" x="977" y="10" width="116" height="44" rx="8"/>
+    <text class="t-nombre" style="font-size:12px" x="1035" y="37" text-anchor="middle">ms-facturacion</text>
+    <path class="d-sinc" d="M65 90H231" marker-end="url(#fs2)"/>
+    <text class="t-flecha" x="150" y="83" text-anchor="middle">agregar línea</text>
+    <path class="d-sinc" d="M235 118H416" marker-end="url(#fs2)"/>
+    <text class="t-flecha" x="327" y="111" text-anchor="middle">precio, stock, descuento</text>
+    <path class="d-sinc" style="stroke-dasharray:2 3" d="M420 146H239" marker-end="url(#fs2)"/>
+    <text class="t-flecha" x="327" y="139" text-anchor="middle">menos de 200 ms</text>
+    <path class="d-sinc" d="M65 180H231" marker-end="url(#fs2)"/>
+    <text class="t-flecha" x="150" y="173" text-anchor="middle">confirmar + Idempotency-Key</text>
+    <path class="d-sinc" d="M235 208H586" marker-end="url(#fs2)"/>
+    <text class="t-flecha" x="412" y="201" text-anchor="middle">1 transacción: venta, saga, evento</text>
+    <path class="d-sinc" style="stroke-dasharray:2 3" d="M235 236H69" marker-end="url(#fs2)"/>
+    <text class="t-flecha" x="150" y="229" text-anchor="middle">CONFIRMADA, menos de 500 ms</text>
+    <path class="d-asinc" d="M590 300H746" marker-end="url(#fa2)"/>
+    <text class="t-flecha" x="670" y="293" text-anchor="middle">cada 200 ms</text>
+    <path class="d-asinc" d="M750 328H896" marker-end="url(#fa2)"/>
+    <text class="t-mono" x="825" y="321" text-anchor="middle">ventas.confirmadas</text>
+    <path class="d-asinc" d="M900 356H754" marker-end="url(#fa2)"/>
+    <text class="t-flecha" x="825" y="349" text-anchor="middle">lotes-asignados</text>
+    <path class="d-asinc" d="M750 384H239" marker-end="url(#fa2)"/>
+    <text class="t-flecha" x="492" y="377" text-anchor="middle">saga: stock listo</text>
+    <path class="d-asinc" d="M750 412H1031" marker-end="url(#fa2)"/>
+    <text class="t-mono" x="892" y="405" text-anchor="middle">ventas.confirmadas</text>
+    <path class="d-asinc" d="M1035 470H754" marker-end="url(#fa2)"/>
+    <text class="t-mono" x="892" y="463" text-anchor="middle">comprobantes.emitidos</text>
+    <path class="d-asinc" d="M750 498H239" marker-end="url(#fa2)"/>
+    <text class="t-flecha" x="492" y="491" text-anchor="middle">saga COMPLETADA</text>
+    <rect class="d-ter" x="1047" y="426" width="44" height="28" rx="5"/>
+    <text class="t-sub" x="1069" y="444" text-anchor="middle">SUNAT</text>
+    <text class="t-sub" x="1028" y="444" text-anchor="end">hasta 15 s</text>
+  </svg>
   <div class="rejilla r2">
     <div class="tarjeta">
       <h4>Qué se ve en Kafka UI</h4>
@@ -508,19 +582,25 @@ layeredArchitecture()
   </div>
 </section>
 
-<!-- 9 -->
+<!-- 11 -->
 <section class="lamina"
   data-tiempo="3 min, Javier"
-  data-guion="El momento técnico fuerte, ensáyalo. Tres problemas que aparecen al partir el sistema, cada uno con su código real. El stock: un solo UPDATE que reserva solo si alcanza, sin bloqueos explícitos. El evento: se guarda en la misma transacción que la venta, así que no puede quedar una venta sin evento. El consumidor: Kafka puede entregar dos veces, así que cada consumidor anota qué eventos ya procesó."
-  data-puntos="UPDATE condicional: 0 filas afectadas es no hay stock, en un solo viaje a la base|Outbox: la venta y su evento entran juntos o no entra ninguno|Kafka entrega al menos una vez: por eso unaVez(eventoId)|Si preguntan por qué no bloqueo optimista de JPA: a 200 ventas por segundo los reintentos se vuelven tormenta">
+  data-guion="Cuenta cada problema como una historia de tres frases: qué pasaría, por qué pasa y cómo lo evitamos. Uno: dos cajas en el mismo local venden la última unidad a la vez. Si cada una lee el stock, ve 1 y resta, vendimos dos cosas que no existen. Lo evitamos pidiéndole a Postgres que reste solo si alcanza, en la misma sentencia: si otra caja ganó, la sentencia no toca ninguna fila y le decimos al cajero que no hay stock. Dos: la venta se guarda en la base y el aviso a Kafka es otra cosa; si el servidor se cae entre las dos, queda una venta sin comprobante. Lo evitamos guardando el aviso en una tabla de la misma base, en la misma transacción: o entran los dos o no entra ninguno. Tres: Kafka garantiza que el mensaje llega, pero a veces llega dos veces. Si facturación lo procesa dos veces, emite dos comprobantes. Lo evitamos anotando el id de cada evento procesado: si ya está anotado, no se hace nada."
+  data-puntos="UPDATE condicional: 0 filas afectadas es no hay stock, en un solo viaje a la base|Outbox: la venta y su evento entran juntos o no entra ninguno|Kafka entrega al menos una vez: por eso unaVez(eventoId)|Si preguntan por qué no bloqueo optimista de JPA: a 200 ventas por segundo los reintentos se vuelven tormenta|Pregunta probable: ¿y si el cliente ya se fue y no había stock? En el caso normal no pasa: el stock se aparta al escanear, con el cliente presente. El cajero ve Solo quedan 2 en ese momento|Al confirmar, esas unidades ya están apartadas para esa venta. Lo que pasa después no decide si hay stock, solo de qué lote sale|Caso borde 1: el contador dice que hay, pero los lotes están vencidos. FEFO no despacha un vencido y falla a propósito|Caso borde 2: la reserva dura 15 minutos. Si el cajero tarda más en confirmar, otra caja pudo llevarse las unidades|Qué pasa hoy: la venta queda cobrada y con comprobante; el evento va a la cola muerta tras 6 reintentos y la saga queda EN_CURSO. No hay alerta|Cómo defenderlo: la venta no se anula porque el producto ya salió con el cliente. Es una diferencia de inventario y se corrige con un ajuste, como en cualquier botica|Lo que falta, dilo tú: alerta de sagas estancadas, que confirmar revise que la reserva sigue viva y no reintentar un minuto algo que no se arregla reintentando">
   <div class="kicker">Bloque 2, Javier</div>
   <h2>Tres problemas duros, en código</h2>
   <h3>1. Dos cajas venden la última caja de paracetamol</h3>
+  <p><strong>Qué pasaría:</strong> las dos leen "queda 1", las dos venden y el stock queda en
+  menos uno. <strong>Cómo lo evitamos:</strong> Postgres resta solo si alcanza, en una sola
+  sentencia. La caja que llega segunda no toca ninguna fila y el cajero ve "sin stock".</p>
   <pre>UPDATE stock_local
    SET reservado = reservado + ?
  WHERE producto_id = ? AND local_id = ?
    AND disponible - reservado >= ?      -- 0 filas afectadas: no hay stock</pre>
   <h3>2. La venta se guardó pero el evento no salió</h3>
+  <p><strong>Qué pasaría:</strong> se cobra, el servidor se reinicia antes de avisar a Kafka y
+  esa venta nunca tiene comprobante. <strong>Cómo lo evitamos:</strong> el aviso se guarda en
+  la tabla outbox, en la misma transacción que la venta. O se guardan los dos o ninguno.</p>
   <pre>@Transactional
 public Venta confirmar(UUID ventaId, String tipoComprobante) {
     venta.confirmar();
@@ -529,6 +609,9 @@ public Venta confirmar(UUID ventaId, String tipoComprobante) {
     eventos.publicar("venta", venta.id(), Topicos.VENTAS_CONFIRMADAS, venta.localId(), evento);
 }   // publicar() escribe en la tabla outbox, dentro de la misma transacción</pre>
   <h3>3. Kafka entrega el mismo evento dos veces</h3>
+  <p><strong>Qué pasaría:</strong> facturación recibe la misma venta dos veces y emite dos
+  comprobantes. <strong>Cómo lo evitamos:</strong> cada evento trae un id; el consumidor lo
+  anota en <code>evento_procesado</code> y, si ya estaba, no hace nada.</p>
   <pre>@KafkaListener(topics = Topicos.VENTAS_CONFIRMADAS, groupId = "ms-facturacion")
 public void recibir(String mensaje, Acknowledgment ack) {
     idempotencia.unaVez(sobre.eventoId(), "ms-facturacion.venta-confirmada",
@@ -537,45 +620,224 @@ public void recibir(String mensaje, Acknowledgment ack) {
 }</pre>
 </section>
 
-<!-- 10 -->
+<!-- 12 -->
 <section class="lamina"
   data-tiempo="2 min, Javier"
-  data-guion="La regla que ordena todo el sistema, léela tal cual: nada fuera de stock y pago puede impedir una venta. Recorre la tabla. El punto que tiene que quedar: un sistema que se niega a cobrar porque promociones está lento no es resiliente, le hizo perder la venta a la botica. Y sé honesto con crédito: el servicio existe, pero la venta todavía no lo consulta."
-  data-puntos="Lee la regla en voz alta|Negarse a cobrar por un descuento le hace perder la venta a la botica|Crédito: diseñado, pero la venta todavía no lo consulta. Dilo tal cual|Cada degradación queda en el log: callarla sería peor">
+  data-guion="Esta lámina sigue una venta después de cobrar, en el orden de los números. Uno: el cajero confirma. Dos: en una sola transacción se guardan la venta, su ficha de saga con dos casillas vacías y el aviso en la outbox. Ahí termina la espera del cajero. Tres: el publicador revisa la outbox cada 200 ms y manda el aviso a Kafka; si Kafka está caído, el aviso espera y sale en la próxima vuelta. Cuatro: Kafka lo reparte. Cinco: inventario descuenta el stock y facturación emite el comprobante, cada uno por su lado. Seis: cada uno avisa de vuelta y ventas marca su casilla. Con las dos marcadas, la venta queda COMPLETADA. Lo rojo es lo que pasa si ese paso falla: ninguna falla hace perder la venta."
+  data-puntos="SKIP LOCKED: con varias copias de ms-ventas, cada una se salta lo que otra ya tomó|La saga es una ficha con casillas, no un proceso que llama a otros|Nunca se marca publicado algo que Kafka no confirmó|La saga cierra con dos banderas, no con un orquestador|COMPENSADA existe y nadie la marca: dilo antes de que lo encuentren|La métrica outbox.antiguedad.segundos dice cuándo pasar a Debezium">
+  <div class="kicker">Bloque 2, Javier</div>
+  <h2>Por dentro: el outbox publica y la saga se cierra sola</h2>
+  <div class="leyenda">
+    <span><i></i>dentro de ms-ventas</span>
+    <span><i class="asinc"></i>evento en Kafka</span>
+    <span style="color:var(--alerta)">en rojo: qué pasa si ese paso falla</span>
+  </div>
+  <svg class="diagrama" viewBox="0 0 1100 440" role="img"
+    aria-label="Flujo de una venta confirmada: una transacción guarda venta, saga y aviso; el publicador lo manda a Kafka; inventario y facturación hacen lo suyo y avisan; ventas marca las dos casillas y la saga queda COMPLETADA">
+    <defs>
+      <marker id="fs4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="m-sinc"/></marker>
+      <marker id="fa4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="m-asinc"/></marker>
+    </defs>
+
+    <!-- flechas -->
+    <path class="d-sinc" d="M160 75H186" marker-end="url(#fs4)"/>
+    <path class="d-sinc" d="M475 139H526" marker-end="url(#fs4)"/>
+    <path class="d-asinc" d="M700 139H746" marker-end="url(#fa4)"/>
+    <path class="d-asinc" d="M825 174V210H720V246" marker-end="url(#fa4)"/>
+    <path class="d-asinc" d="M825 210H960V246" marker-end="url(#fa4)"/>
+    <path class="d-asinc" d="M620 285H494" marker-end="url(#fa4)"/>
+    <text class="t-mono" x="557" y="277" text-anchor="middle">lotes-asignados</text>
+    <path class="d-asinc" d="M1060 285H1085V400H340V364" marker-end="url(#fa4)"/>
+    <text class="t-mono" x="650" y="393" text-anchor="middle">comprobantes.emitidos</text>
+
+    <!-- 1 -->
+    <rect class="d-web" x="10" y="40" width="150" height="70" rx="9"/>
+    <text class="t-nombre" x="24" y="66">1. Confirmar</text>
+    <text class="t-sub" x="24" y="86">el cajero cobra</text>
+    <text class="t-sub" x="10" y="136">responde al cajero aquí:</text>
+    <text class="t-sub" x="10" y="152">su espera termina en el</text>
+    <text class="t-sub" x="10" y="168">paso 2, menos de 500 ms</text>
+
+    <!-- 2 -->
+    <rect class="d-caja" style="stroke-dasharray:6 4" x="190" y="14" width="300" height="156" rx="10"/>
+    <text class="t-titulo" x="204" y="36">2. una sola transacción en pg_ventas</text>
+    <rect class="d-ms" x="205" y="50" width="270" height="30" rx="6"/>
+    <text class="t-mono" x="217" y="70">venta</text>
+    <text class="t-nombre" x="300" y="70">CONFIRMADA</text>
+    <rect class="d-ms" x="205" y="88" width="270" height="30" rx="6"/>
+    <text class="t-mono" x="217" y="108">saga</text>
+    <text class="t-nombre" x="252" y="108">EN_CURSO</text>
+    <rect class="d-caja" x="330" y="97" width="12" height="12" rx="2"/>
+    <text class="t-sub" style="font-size:11px" x="346" y="108">stock</text>
+    <rect class="d-caja" x="382" y="97" width="12" height="12" rx="2"/>
+    <text class="t-sub" style="font-size:11px" x="398" y="108">comprobante</text>
+    <rect class="d-ter" x="205" y="124" width="270" height="30" rx="6"/>
+    <text class="t-mono" x="217" y="144">outbox</text>
+    <text class="t-sub" x="275" y="144">aviso pendiente de enviar</text>
+
+    <!-- 3 -->
+    <rect class="d-ms" x="530" y="104" width="170" height="70" rx="9"/>
+    <text class="t-nombre" x="544" y="128">3. Publicador</text>
+    <text class="t-sub" x="544" y="146">cada 200 ms toma los</text>
+    <text class="t-sub" x="544" y="162">pendientes y los envía</text>
+    <text class="t-roja" x="530" y="196">Kafka caído: el aviso sigue</text>
+    <text class="t-roja" x="530" y="212">pendiente y sale en la</text>
+    <text class="t-roja" x="530" y="228">próxima vuelta</text>
+
+    <!-- 4 -->
+    <rect class="d-ter" x="750" y="104" width="150" height="70" rx="9"/>
+    <text class="t-nombre" x="764" y="128">4. Kafka</text>
+    <text class="t-mono" x="764" y="150">pos.ventas.</text>
+    <text class="t-mono" x="764" y="164">confirmadas</text>
+
+    <!-- 5 -->
+    <rect class="d-ms" x="620" y="250" width="200" height="70" rx="9"/>
+    <text class="t-nombre" x="634" y="274">5a. ms-inventario</text>
+    <text class="t-sub" x="634" y="292">descuenta el stock y</text>
+    <text class="t-sub" x="634" y="308">elige lotes (FEFO)</text>
+    <text class="t-roja" x="634" y="346">si falla: 6 reintentos, cola</text>
+    <text class="t-roja" x="634" y="362">muerta, saga en EN_CURSO</text>
+
+    <rect class="d-ms" x="860" y="250" width="200" height="70" rx="9"/>
+    <text class="t-nombre" x="874" y="274">5b. ms-facturacion</text>
+    <text class="t-sub" x="874" y="292">emite el comprobante</text>
+    <text class="t-sub" x="874" y="308">y SUNAT lo acepta</text>
+    <text class="t-roja" x="874" y="346">SUNAT caída: pendiente,</text>
+    <text class="t-roja" x="874" y="362">reintenta cada 5 s</text>
+
+    <!-- 6 -->
+    <rect class="d-ms" x="190" y="240" width="300" height="120" rx="10"/>
+    <text class="t-nombre" x="204" y="264">6. ms-ventas marca las casillas</text>
+    <rect class="d-caja" x="206" y="282" width="14" height="14" rx="2"/>
+    <path class="d-check" d="M209 289l3 3 6-7"/>
+    <text class="t-mono" x="228" y="294">stock_confirmado</text>
+    <rect class="d-caja" x="206" y="308" width="14" height="14" rx="2"/>
+    <path class="d-check" d="M209 315l3 3 6-7"/>
+    <text class="t-mono" x="228" y="320">comprobante_emitido</text>
+    <text class="t-sub" x="390" y="294">con las dos:</text>
+    <text class="t-nombre" x="390" y="320" style="fill:var(--acento)">COMPLETADA</text>
+    <text class="t-sub" x="204" y="346">cada aviso llega por su cuenta, en cualquier orden</text>
+
+    <text class="t-sub" x="10" y="264">Si se anula la venta:</text>
+    <text class="t-sub" x="10" y="280">la saga pasa a</text>
+    <text class="t-sub" x="10" y="296">COMPENSANDO y</text>
+    <text class="t-sub" x="10" y="312">cada servicio deshace</text>
+    <text class="t-sub" x="10" y="328">lo suyo</text>
+  </svg>
+  <div class="rejilla r2" style="align-items:start">
+    <pre style="margin:0">// paso 3, PublicadorOutbox.java
+SELECT id, tipo, clave, payload FROM outbox
+ WHERE publicado_en IS NULL
+ ORDER BY creado_en LIMIT ?
+   FOR UPDATE SKIP LOCKED   -- cada copia de ms-ventas toma filas distintas
+
+kafka.send(...).get(5, SECONDS);   // espera que Kafka confirme
+UPDATE outbox SET publicado_en = now() ...   // solo lo confirmado</pre>
+    <div class="tarjeta">
+      <h4>La saga es una ficha, no un director</h4>
+      <p>Nadie le ordena a inventario ni a facturación qué hacer: cada uno escucha el evento y
+      trabaja solo. Ventas solo lleva la ficha y marca las casillas cuando llegan los avisos.
+      <code>COMPENSADA</code> existe en el código, pero nadie la marca todavía.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 13 -->
+<section class="lamina"
+  data-tiempo="2 min, Javier"
+  data-guion="Lee la regla en voz alta. Luego recorre el gráfico de arriba abajo: está ordenado por el momento de la venta. Cada barra es cuánto espera ms-ventas a ese servicio antes de pasar al plan B, y a la derecha está el plan B. Rojo: si falla, esa línea no entra. Ámbar: la venta sigue con menos. Gris: pasa después de cobrar, así que la caja ni se entera. El punto que tiene que quedar: un sistema que se niega a cobrar porque promociones está lento no es resiliente, le hizo perder la venta a la botica. Termina con el circuit breaker: si un servicio ya está fallando, no tiene sentido esperarlo 300 ms en cada venta; el circuito se abre y el plan B sale al instante. Sé honesto con catálogo y con crédito."
+  data-puntos="Lee la regla en voz alta|Negarse a cobrar por un descuento le hace perder la venta a la botica|Crédito: diseñado, pero la venta todavía no lo consulta. Dilo tal cual|Catálogo caído sí impide vender: el caché de precios está dentro de ms-catalogo, no en ventas|Si preguntan cómo calcularon los tiempos: no se midieron, son presupuestos que salen de las metas de p99. Medirlos es la prueba de carga que falta|SUNAT está simulada: 800 ms de demora y 15% de rechazos, para probar reintentos|Cada degradación queda en el log: callarla sería peor|Cómo leer el gráfico: largo de la barra es la espera máxima, color es qué pasa si falla, la columna derecha es el plan B|Circuit breaker, en simple: como el breaker de la luz. Si salta, deja de mandar llamadas a un servicio que ya está fallando por 10 s y luego prueba con 3|Si preguntan qué es la outbox: la bandeja de salida de ms-ventas, una tabla en pg_ventas donde se anota el evento en la misma transacción que la venta, antes de mandarlo a Kafka|Si preguntan qué es la saga: una ficha por venta con casillas (stock, comprobante). Cada servicio marca la suya cuando termina; con todas marcadas, la venta está COMPLETADA|Si preguntan qué es FEFO: First Expired, First Out. Sale primero el lote que vence antes. En botica es obligatorio: un vencido en anaquel es observación de DIGEMID|Si preguntan para qué usamos Redis: dos cosas. Uno, guarda 24 h la respuesta de cada Idempotency-Key: si la caja reintenta, se devuelve la misma respuesta y no se cobra dos veces|Dos, el gateway limita a 50 peticiones por segundo por usuario, con picos de 100. El contador vive en Redis porque el gateway puede tener varias copias y el contador tiene que ser uno solo|Por qué Redis y no Postgres: son datos efímeros y de altísima frecuencia; en Postgres serían una escritura en disco más en cada cobro|Si Redis se cae: se pierden el límite y el atajo del reintento, no la venta. Confirmar dos veces igual lo rechaza el dominio: solo se confirma una venta en BORRADOR|Redis NO cachea el catálogo: ese caché vive en la memoria de cada copia de ms-catalogo (Caffeine, 60 s)|Crédito, dilo así: el plan era que si ms-credito no responde en 800 ms, el cajero cobre con otra forma de pago. Ese plan está escrito en ClientesDeServicios, pero ningún caso de uso lo llama|Hoy pagar con crédito de farmacia no mira el límite ni descuenta el saldo: solo registra el pago. Es lo primero de la lista de pendientes">
   <div class="kicker">Bloque 2, Javier</div>
   <h2>Qué se degrada y qué no</h2>
   <div class="nota">
-    <p><strong>Nada fuera de stock y pago puede impedir una venta.</strong></p>
+    <p><strong>La regla: nada fuera de stock y pago puede impedir una venta.</strong> Hoy la
+    cumplimos en todo menos en catálogo.</p>
   </div>
-  <table>
-    <tr><th>Si falla</th><th>Espera como máximo</th><th>Qué pasa</th></tr>
-    <tr><td>inventario</td><td class="num">500 ms</td><td>Falla la línea y el cajero lo ve</td></tr>
-    <tr><td>catálogo</td><td class="num">200 ms</td><td>Precio del caché aunque esté vencido</td></tr>
-    <tr><td>promociones</td><td class="num">300 ms</td><td>Venta sin descuento, queda en el log</td></tr>
-    <tr><td>clientes</td><td class="num">300 ms</td><td>Venta anónima</td></tr>
-    <tr><td>SUNAT</td><td class="num">15 s</td><td>Comprobante pendiente, se reintenta cada 5 s</td></tr>
-    <tr><td>Kafka</td><td>no se espera</td><td>La venta se confirma, el evento espera en el outbox</td></tr>
-    <tr><td>Redis</td><td class="num">200 ms</td><td>Sin límite de peticiones, la venta sigue</td></tr>
-    <tr><td>crédito</td><td class="num">800 ms</td><td>Diseñado para ofrecer efectivo. <span class="etiqueta ambar">hoy no se consulta</span></td></tr>
-  </table>
-  <p>Cada llamada tiene su timeout y su circuit breaker. No reintentamos entre servicios: el que
-  reintenta es la caja, con su <code>Idempotency-Key</code>, para no cobrar dos veces.</p>
+  <div class="leyenda">
+    <span><i class="b-r"></i>si falla, la línea no entra</span>
+    <span><i class="b-a"></i>si falla, la venta sigue con menos</span>
+    <span><i class="b-n"></i>fuera del camino de la caja</span>
+  </div>
+  <svg class="diagrama" viewBox="0 0 1100 384" role="img"
+    aria-label="Cuánto espera ms-ventas a cada dependencia antes de pasar al plan B, agrupado por el momento de la venta en que se llama">
+    <text class="t-flecha" x="170" y="18" text-anchor="middle">0 ms</text>
+    <text class="t-flecha" x="295" y="18" text-anchor="middle">250 ms</text>
+    <text class="t-flecha" x="420" y="18" text-anchor="middle">500 ms</text>
+    <text class="t-flecha" x="545" y="18" text-anchor="middle">750 ms</text>
+    <text class="t-flecha" x="670" y="18" text-anchor="middle">1000 ms</text>
+    <path class="d-vida" style="stroke-dasharray:none;opacity:.7" d="M170 26V378"/>
+    <path class="d-vida" style="stroke-dasharray:none;opacity:.7" d="M295 26V378"/>
+    <path class="d-vida" style="stroke-dasharray:none;opacity:.7" d="M420 26V378"/>
+    <path class="d-vida" style="stroke-dasharray:none;opacity:.7" d="M545 26V378"/>
+    <path class="d-vida" style="stroke-dasharray:none;opacity:.7" d="M670 26V378"/>
+    <text class="t-titulo" x="16" y="52">al agregar una línea, con el cliente presente</text>
+    <g><title>catálogo: espera 200 ms. Si falla: sin precio: la línea no entra</title><rect x="0" y="60" width="1100" height="30" fill="transparent"/><text class="t-nombre" x="24" y="79">catálogo</text><rect class="b-r" x="170" y="69" width="100" height="12" rx="2"/><text class="t-mono" x="278" y="79">200 ms</text><text class="t-roja" x="740" y="79">sin precio: la línea no entra</text></g>
+    <g><title>inventario: espera 500 ms. Si falla: sin stock apartado: la línea no entra</title><rect x="0" y="90" width="1100" height="30" fill="transparent"/><text class="t-nombre" x="24" y="109">inventario</text><rect class="b-r" x="170" y="99" width="250" height="12" rx="2"/><text class="t-mono" x="428" y="109">500 ms</text><text class="t-roja" x="740" y="109">sin stock apartado: la línea no entra</text></g>
+    <g><title>promociones: espera 300 ms. Si falla: venta sin descuento, queda en el log</title><rect x="0" y="120" width="1100" height="30" fill="transparent"/><text class="t-nombre" x="24" y="139">promociones</text><rect class="b-a" x="170" y="129" width="150" height="12" rx="2"/><text class="t-mono" x="328" y="139">300 ms</text><text class="t-sub" x="740" y="139">venta sin descuento, queda en el log</text></g>
+    <text class="t-titulo" x="16" y="168">al identificar al cliente y al pagar</text>
+    <g><title>clientes: espera 300 ms. Si falla: venta anónima</title><rect x="0" y="176" width="1100" height="30" fill="transparent"/><text class="t-nombre" x="24" y="195">clientes</text><rect class="b-a" x="170" y="185" width="150" height="12" rx="2"/><text class="t-mono" x="328" y="195">300 ms</text><text class="t-sub" x="740" y="195">venta anónima</text></g>
+    <g><title>crédito: espera 800 ms. Si falla: se ofrece efectivo (hoy no se consulta)</title><rect x="0" y="206" width="1100" height="30" fill="transparent"/><text class="t-nombre" x="24" y="225">crédito</text><rect class="b-a" x="170" y="215" width="400" height="12" rx="2"/><text class="t-mono" x="578" y="225">800 ms</text><text class="t-sub" x="740" y="225">se ofrece efectivo (hoy no se consulta)</text></g>
+    <text class="t-titulo" x="16" y="254">en cada petición, en el gateway</text>
+    <g><title>Redis: espera 200 ms. Si falla: sin límite de peticiones, la venta sigue</title><rect x="0" y="262" width="1100" height="30" fill="transparent"/><text class="t-nombre" x="24" y="281">Redis</text><rect class="b-a" x="170" y="271" width="100" height="12" rx="2"/><text class="t-mono" x="278" y="281">200 ms</text><text class="t-sub" x="740" y="281">sin límite de peticiones, la venta sigue</text></g>
+    <text class="t-titulo" x="16" y="310">después de cobrar, sin el cliente</text>
+    <g><title>Kafka: espera no se espera. Si falla: la venta se confirma, el evento espera en la outbox</title><rect x="0" y="318" width="1100" height="30" fill="transparent"/><text class="t-nombre" x="24" y="337">Kafka</text><text class="t-sub" x="170" y="337">no se espera</text><text class="t-sub" x="740" y="337">la venta se confirma, el evento espera en la outbox</text></g>
+    <g><title>SUNAT: espera 15 s. Si falla: comprobante pendiente, reintenta cada 5 s</title><rect x="0" y="348" width="1100" height="30" fill="transparent"/><text class="t-nombre" x="24" y="367">SUNAT</text><rect class="b-n" x="170" y="357" width="500" height="12" rx="2"/><path class="d-corte" d="M656 372l6 -18M663 372l6 -18"/><text class="t-mono" x="678" y="367">15 s</text><text class="t-sub" x="740" y="367">comprobante pendiente, reintenta cada 5 s</text></g>
+  </svg>
+  <p>No reintentamos entre servicios: el que reintenta es la caja, con su
+  <code>Idempotency-Key</code>, para no cobrar dos veces.</p>
+  <div class="rejilla r2">
+    <div class="tarjeta">
+      <h4>De dónde salen los tiempos</h4>
+      <p>No son mediciones ni el tiempo normal: son el tope que se espera antes de pasar al
+      plan B. Están en <code>ClientesDeServicios.java</code>, uno por destino. Las esperas caen al
+      agregar líneas; confirmar no llama a nadie, por eso cumple sus 500 ms aunque todo lo demás
+      esté caído.</p>
+    </div>
+    <div class="tarjeta">
+      <h4>Cómo funciona el circuit breaker</h4>
+      <p>Resilience4j, en <code>ClientesHttpConfig.java</code>. Si el destino ya está fallando,
+      deja de esperarlo: responde con el plan B al instante.</p>
+      <svg class="diagrama" viewBox="0 0 520 170" role="img" style="margin:6px 0 0"
+        aria-label="Circuit breaker: cerrado llama normal; si fallan 10 de las últimas 20 llamadas se abre y responde con el plan B por 10 s; luego medio abierto prueba 3 llamadas">
+        <defs><marker id="fs5" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" class="m-sinc"/></marker></defs>
+        <path class="d-sinc" d="M150 44H246" marker-end="url(#fs5)"/>
+        <text class="t-flecha" x="198" y="30" text-anchor="middle">falla la mitad</text>
+        <text class="t-flecha" x="198" y="62" text-anchor="middle">de 20</text>
+        <path class="d-sinc" d="M328 72V104" marker-end="url(#fs5)"/>
+        <text class="t-flecha" x="338" y="92">pasan 10 s</text>
+        <path class="d-sinc" d="M250 134H80V76" marker-end="url(#fs5)"/>
+        <text class="t-flecha" x="165" y="126" text-anchor="middle">responden</text>
+        <path class="d-prohibido" style="stroke-dasharray:4 3" d="M406 134H470V44H410" marker-end="url(#fs5)"/>
+        <text class="t-roja" x="476" y="92">fallan</text>
+
+        <rect class="d-ms" x="10" y="20" width="140" height="52" rx="8"/>
+        <text class="t-nombre" x="80" y="42" text-anchor="middle">CERRADO</text>
+        <text class="t-sub" x="80" y="60" text-anchor="middle">llama normal</text>
+        <rect class="d-ms d-critico" x="250" y="20" width="156" height="52" rx="8"/>
+        <text class="t-nombre" x="328" y="42" text-anchor="middle">ABIERTO</text>
+        <text class="t-sub" x="328" y="60" text-anchor="middle">ni llama: plan B directo</text>
+        <rect class="d-ter" x="250" y="108" width="156" height="52" rx="8"/>
+        <text class="t-nombre" x="328" y="130" text-anchor="middle">MEDIO ABIERTO</text>
+        <text class="t-sub" x="328" y="148" text-anchor="middle">prueba con 3 llamadas</text>
+      </svg>
+    </div>
+  </div>
 </section>
 
-<!-- 11 -->
+<!-- 14 -->
 <section class="lamina"
   data-tiempo="3 min, Javier"
   data-guion="No es el diseño prometiéndolo, es una prueba que apaga piezas mientras se vende. Recorre los escenarios y termina en el cuadre. Después cuenta con honestidad lo que la prueba encontró la primera vez: los consumidores de Kafka descartaban eventos, o sea ventas sin comprobante. Compilar y pasar las pruebas no lo mostraba. Esa honestidad suma."
-  data-puntos="Una prueba que apaga piezas, no una promesa|El cuadre final es la frase: seis ventas, seis comprobantes, seis en reportes|Lo más caro que encontramos: Spring Kafka descartaba el evento tras diez reintentos|El navegador encontró doce contratos rotos que ninguna prueba veía">
+  data-puntos="Una prueba que apaga piezas, no una promesa|El cuadre final es la frase: seis ventas, seis comprobantes, seis en reportes|Lo más caro que encontramos: Spring Kafka descartaba el evento tras diez reintentos|El navegador encontró doce contratos rotos que ninguna prueba veía|Si preguntan cómo contaron: psql cuenta en pg_ventas, pg_facturacion y pg_reportes las ventas de esta corrida|El 6 no es una muestra: son todas las ventas que hizo la prueba, 3 en el primer escenario y 1 en cada uno de los otros tres|Herramientas: bash, Docker Compose, curl, psql y kafka-console-producer. Nada más">
   <div class="kicker">Bloque 2, Javier</div>
   <h2>Lo probamos rompiendo piezas</h2>
   <table>
-    <tr><th>Qué apagamos mientras se vendía</th><th>Qué pasó</th><th></th></tr>
+    <tr><th>Qué rompimos mientras se vendía</th><th>Qué pasó</th><th></th></tr>
     <tr><td>Facturación</td><td>Las cajas vendieron igual; al volver emitió los pendientes</td><td><span class="etiqueta">pasó</span></td></tr>
     <tr><td>La base de facturación, 8 s</td><td>El consumidor esperó, reintentó y emitió</td><td><span class="etiqueta">pasó</span></td></tr>
     <tr><td>Un evento corrupto</td><td>Quedó en la cola muerta; las demás ventas siguieron</td><td><span class="etiqueta">pasó</span></td></tr>
     <tr><td>Kafka entero</td><td>La venta se confirmó; el evento salió al volver Kafka</td><td><span class="etiqueta">pasó</span></td></tr>
-    <tr class="total"><td>Cuadre final</td><td>6 ventas, 6 comprobantes, 6 en reportes, 6 sagas cerradas</td><td><span class="etiqueta">pasó</span></td></tr>
+    <tr class="total"><td>Cuadre final</td><td>6 ventas (3 + 1 + 1 + 1, una tanda por escenario): 6 comprobantes, 6 en reportes, 6 sagas cerradas</td><td><span class="etiqueta">pasó</span></td></tr>
   </table>
   <div class="rejilla r2">
     <div class="tarjeta">
@@ -585,15 +847,22 @@ public void recibir(String mensaje, Acknowledgment ack) {
       muerta.</p>
     </div>
     <div class="tarjeta">
-      <h4>Cómo se repite</h4>
-      <pre style="margin:4px 0 0">./mvnw test                          # 49 pruebas
-./scripts/verificar.sh               # venta completa
-./scripts/verificar-resiliencia.sh   # apaga piezas</pre>
+      <h4>Con qué lo hicimos</h4>
+      <p>Un script de bash, <code>scripts/verificar-resiliencia.sh</code>, que corre contra el
+      sistema levantado con Docker Compose. Tarda unos cuatro minutos.</p>
+      <ul>
+        <li><strong>Romper:</strong> <code>docker compose stop</code> y <code>start</code>;
+        renombrar la tabla de comprobantes 8 s; <code>kafka-console-producer</code> para meter
+        un mensaje basura</li>
+        <li><strong>Vender:</strong> <code>curl</code> contra el gateway, igual que la caja</li>
+        <li><strong>Comprobar:</strong> <code>psql</code> cuenta filas en cada base y
+        <code>docker compose logs</code> busca los reintentos</li>
+      </ul>
     </div>
   </div>
 </section>
 
-<!-- 12 -->
+<!-- 15 -->
 <section class="lamina"
   data-tiempo="2 min, Javier y Juan"
   data-guion="Cierran los dos. Javier dice lo que falta sin maquillarlo. Juan cierra con la idea que ordena todo: para 20 locales esto sería un sobrecosto, para 500 se justifica. Saber cuándo no aplicar un patrón demuestra más criterio que aplicarlo. Terminen agradeciendo y abran preguntas; la presentación larga queda de respaldo."
@@ -630,7 +899,7 @@ public void recibir(String mensaje, Acknowledgment ack) {
 
 </div>
 
-<div class="progreso"><div id="barra" style="width:8.3%"></div></div>
+<div class="progreso"><div id="barra" style="width:6.7%"></div></div>
 
 <div class="notas" id="notas">
   <div class="notas-cuerpo">
@@ -640,92 +909,6 @@ public void recibir(String mensaje, Acknowledgment ack) {
   </div>
 </div>
 
-<script>
-(function () {
-  var laminas = Array.prototype.slice.call(document.querySelectorAll('.lamina'));
-  var actual = 0;
-
-  var contador = document.getElementById('contador');
-  var barra = document.getElementById('barra');
-  var panelNotas = document.getElementById('notas');
-  var btnNotas = document.getElementById('btnNotas');
-  var guion = document.getElementById('guion');
-  var puntos = document.getElementById('puntos');
-  var tiempo = document.getElementById('tiempo');
-
-  function pintarNotas() {
-    var l = laminas[actual];
-    guion.textContent = l.dataset.guion || 'Sin guion para esta diapositiva.';
-    tiempo.textContent = l.dataset.tiempo ? '· ' + l.dataset.tiempo : '';
-    puntos.innerHTML = '';
-    (l.dataset.puntos || '').split('|').filter(Boolean).forEach(function (p) {
-      var li = document.createElement('li');
-      li.textContent = p;
-      puntos.appendChild(li);
-    });
-  }
-
-  function ir(n) {
-    actual = Math.max(0, Math.min(laminas.length - 1, n));
-    laminas.forEach(function (l, i) { l.classList.toggle('activa', i === actual); });
-    contador.textContent = (actual + 1) + ' / ' + laminas.length;
-    barra.style.width = ((actual + 1) / laminas.length * 100) + '%';
-    laminas[actual].scrollTop = 0;
-    pintarNotas();
-    // El hash permite abrir directo en una diapositiva (#8) y sobrevive a un F5
-    // en medio de la exposicion, que es cuando mas duele perder el sitio.
-    if (location.hash !== '#' + (actual + 1)) {
-      history.replaceState(null, '', '#' + (actual + 1));
-    }
-    try { localStorage.setItem('expo-lamina', String(actual)); } catch (e) { /* modo privado */ }
-  }
-
-  function alternarNotas() {
-    var abierto = panelNotas.classList.toggle('abierto');
-    btnNotas.setAttribute('aria-pressed', abierto ? 'true' : 'false');
-    try { localStorage.setItem('expo-notas', abierto ? '1' : '0'); } catch (e) { /* modo privado */ }
-  }
-
-  document.getElementById('btnSig').onclick = function () { ir(actual + 1); };
-  document.getElementById('btnAnt').onclick = function () { ir(actual - 1); };
-  btnNotas.onclick = alternarNotas;
-
-  document.getElementById('btnTema').onclick = function () {
-    var raiz = document.documentElement;
-    var oscuro = raiz.getAttribute('data-theme') === 'dark'
-      || (!raiz.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);
-    raiz.setAttribute('data-theme', oscuro ? 'light' : 'dark');
-    try { localStorage.setItem('pos-tema', oscuro ? 'light' : 'dark'); } catch (e) { /* modo privado */ }
-  };
-
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') { e.preventDefault(); ir(actual + 1); }
-    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); ir(actual - 1); }
-    else if (e.key === 'Home') { ir(0); }
-    else if (e.key === 'End') { ir(laminas.length - 1); }
-    else if (e.key === 'n' || e.key === 'N') { alternarNotas(); }
-  });
-
-  window.addEventListener('hashchange', function () {
-    var n = parseInt(location.hash.slice(1), 10);
-    if (!isNaN(n) && n - 1 !== actual) { ir(n - 1); }
-  });
-
-  // El hash manda sobre lo guardado: si alguien comparte el enlace de la
-  // diapositiva 8, tiene que abrir en la 8 aunque el navegador recuerde otra.
-  var inicial = parseInt(location.hash.slice(1), 10);
-  try {
-    var t = localStorage.getItem('pos-tema');
-    if (t) { document.documentElement.setAttribute('data-theme', t); }
-    if (localStorage.getItem('expo-notas') === '1') { alternarNotas(); }
-    if (isNaN(inicial)) {
-      inicial = parseInt(localStorage.getItem('expo-lamina') || '0', 10) + 1;
-    }
-  } catch (e) {
-    // Ventana privada o almacenamiento bloqueado: se arranca en la primera.
-  }
-  ir(isNaN(inicial) ? 0 : inicial - 1);
-})();
-</script>
+<script src="exposicion.js"></script>
 </body>
 </html>

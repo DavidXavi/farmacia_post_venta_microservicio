@@ -21,7 +21,8 @@ quien aprueba el presupuesto, no solo quien programa.
 | Archivo | Qué es |
 |---|---|
 | `../presentacion/arquitectura.html` | Diagrama interactivo con cuatro recorridos guiados |
-| `../presentacion/exposicion.html` | 12 láminas en dos bloques (Juan y Javier), la que se expone |
+| `../presentacion/exposicion.html` | 15 láminas en dos bloques (Juan y Javier), la que se expone; estilos en `exposicion.css` y navegación en `exposicion.js` |
+| `../presentacion/POS_Farmacia_Microservicios.pptx` | La misma exposición en PowerPoint, más didáctica: una analogía por lámina y los datos técnicos en las notas |
 | `../presentacion/diapositivas.html` | 28 diapositivas de respaldo, con guion por diapositiva |
 
 ## De dónde viene este proyecto

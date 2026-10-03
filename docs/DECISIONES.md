@@ -174,7 +174,7 @@ pool aparte perdía el `SecurityContext` y las llamadas salían sin token.
 |---|---|---|
 | ventas → inventario | 500 ms | Falla la línea, el cajero lo ve |
 | ventas → crédito | 800 ms | Falla el pago a crédito, se ofrece efectivo. **Hoy no se consulta** (`ESTADO.md`, punto 5) |
-| ventas → catálogo | 200 ms | Sirve del caché aunque esté vencido |
+| ventas → catálogo | 200 ms | Falla la línea: sin precio no se cotiza. El caché vive en ms-catalogo, no en ventas, así que no cubre la caída del servicio |
 | ventas → promociones | 300 ms | Venta sin promoción, degradación registrada |
 | ventas → clientes | 300 ms | Venta anónima |
 | facturación → SUNAT | 15 s | Queda pendiente y se reintenta cada 5 s, la venta ya terminó |

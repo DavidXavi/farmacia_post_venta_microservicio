@@ -87,7 +87,7 @@ arquitectura_3_t1/
 │   └── DECISIONES.md        qué se decidió, por qué, y qué lo cambiaría
 └── presentacion/
     ├── arquitectura.html    diagrama interactivo (Archify)
-    ├── exposicion.html      12 láminas en dos bloques, la que se expone
+    ├── exposicion.html      15 láminas en dos bloques, la que se expone
     └── diapositivas.html    28 láminas, respaldo para preguntas
 ```
 
@@ -123,14 +123,3 @@ y después:
 kubectl apply -k k8s/base
 kubectl get pods -n pos-farmacia
 ```
-
-## Presentación
-
-- `presentacion/arquitectura.html`: diagrama interactivo, con cuatro recorridos guiados,
-  tema claro y oscuro y exportación. Se abre con doble clic, no necesita internet.
-- `presentacion/exposicion.html`: las 12 láminas que se exponen. Bloque 1 (Juan): por qué
-  el sistema quedó así. Bloque 2 (Javier): cómo funciona por dentro, con código, y cómo se
-  probó. Cada lámina lleva su guion y quién la expone.
-- `presentacion/diapositivas.html`: 28 diapositivas de respaldo con el botón "Cómo exponer", que
-  muestra el guion y los puntos clave de cada una. Flechas para navegar, tecla N para las
-  notas.

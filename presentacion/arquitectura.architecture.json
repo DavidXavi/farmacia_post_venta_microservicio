@@ -20,7 +20,7 @@
           "catalogo",
           "inventario"
         ],
-        "note": "Lo que pasa mientras el cajero escanea y cobra. Solo stock y credito pueden frenarla."
+        "note": "Lo que pasa mientras el cajero escanea y cobra. La frenan stock y catalogo; credito deberia, pero hoy no se consulta."
       },
       {
         "id": "saga",
@@ -32,7 +32,7 @@
           "reportes",
           "inventario"
         ],
-        "note": "La venta se confirma local y los cuatro consumidores se enteran despues, por evento."
+        "note": "La venta se confirma local; despues, por evento, inventario asigna lotes, facturacion emite y reportes proyecta."
       },
       {
         "id": "sunat",
@@ -217,7 +217,7 @@
       "id": "redis",
       "type": "database",
       "label": "Redis",
-      "sublabel": "cache e idempotencia",
+      "sublabel": "limite e idempotencia",
       "pos": [
         42,
         330
@@ -231,7 +231,7 @@
       "id": "observabilidad",
       "type": "cloud",
       "label": "Observabilidad",
-      "sublabel": "OTel, Prometheus, Tempo",
+      "sublabel": "Prometheus, Grafana, Loki",
       "pos": [
         42,
         450
@@ -436,6 +436,14 @@
       "toSide": "top"
     },
     {
+      "id": "kafka-inventario",
+      "from": "kafka",
+      "to": "inventario",
+      "label": "asigna lotes FEFO",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
       "id": "kafka-facturacion",
       "from": "kafka",
       "to": "facturacion",
@@ -464,7 +472,7 @@
       "id": "gateway-observabilidad",
       "from": "gateway",
       "to": "observabilidad",
-      "label": "trazas y metricas",
+      "label": "metricas y logs",
       "variant": "dashed",
       "labelAt": [
         282,
@@ -484,9 +492,9 @@
     },
     {
       "dot": "emerald",
-      "title": "Solo stock y credito frenan una venta",
+      "title": "Que frena una venta y que no",
       "items": [
-        "Criticas: inventario 500 ms, credito 800 ms",
+        "Frenan: inventario 500 ms y catalogo 200 ms, sin precio no se cotiza",
         "Degradables: promociones y clientes 300 ms, la venta sigue",
         "SUNAT caida: el comprobante queda PENDIENTE y la caja sigue cobrando"
       ]
